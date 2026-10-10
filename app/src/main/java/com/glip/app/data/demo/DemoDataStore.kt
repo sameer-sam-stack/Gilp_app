@@ -1,0 +1,231 @@
+package com.glip.app.data.demo
+
+import com.glip.app.domain.model.DriverProfile
+import com.glip.app.domain.model.LocalPromotion
+import com.glip.app.domain.model.Route
+import com.glip.app.domain.model.RouteStatus
+import com.glip.app.domain.model.RouteStop
+import com.glip.app.domain.model.SeatAvailability
+import com.glip.app.domain.model.Vehicle
+import com.glip.app.domain.model.VehicleCategory
+
+object DemoDataStore {
+
+    // Demo Center: Connaught Place, New Delhi (28.6315, 77.2167)
+    const val DEMO_CENTER_LAT = 28.6315
+    const val DEMO_CENTER_LNG = 77.2167
+
+    val demoRoutes = listOf(
+        Route(
+            routeId = "route-001",
+            originName = "Connaught Place",
+            destinationName = "Cyber Hub Gurugram",
+            originLat = 28.6315,
+            originLng = 77.2167,
+            destinationLat = 28.4950,
+            destinationLng = 77.0895,
+            totalDistanceKm = 24.5,
+            estimatedDurationMinutes = 45,
+            polylinePoints = listOf(
+                Pair(28.6315, 77.2167),
+                Pair(28.6139, 77.2090),
+                Pair(28.5800, 77.1650),
+                Pair(28.5280, 77.1200),
+                Pair(28.4950, 77.0895)
+            ),
+            stops = listOf(
+                RouteStop("s1", "Dhaula Kuan", 28.5921, 77.1610, 1, 12),
+                RouteStop("s2", "Mahipalpur Bypass", 28.5440, 77.1280, 2, 22),
+                RouteStop("s3", "Ambience Mall", 28.5042, 77.0970, 3, 35)
+            )
+        ),
+        Route(
+            routeId = "route-002",
+            originName = "Karol Bagh Metro",
+            destinationName = "Noida Sector 62",
+            originLat = 28.6515,
+            originLng = 77.1905,
+            destinationLat = 28.6280,
+            destinationLng = 77.3648,
+            totalDistanceKm = 21.0,
+            estimatedDurationMinutes = 50,
+            polylinePoints = listOf(
+                Pair(28.6515, 77.1905),
+                Pair(28.6350, 77.2250),
+                Pair(28.6180, 77.2780),
+                Pair(28.6280, 77.3648)
+            ),
+            stops = listOf(
+                RouteStop("s4", "ITO Junction", 28.6289, 77.2405, 1, 15),
+                RouteStop("s5", "Akshardham", 28.6127, 77.2773, 2, 25),
+                RouteStop("s6", "Indirapuram Crossing", 28.6350, 77.3450, 3, 40)
+            )
+        ),
+        Route(
+            routeId = "route-003",
+            originName = "Saket District Centre",
+            destinationName = "Nehru Place",
+            originLat = 28.5244,
+            originLng = 77.2177,
+            destinationLat = 28.5494,
+            destinationLng = 77.2520,
+            totalDistanceKm = 6.8,
+            estimatedDurationMinutes = 20,
+            polylinePoints = listOf(
+                Pair(28.5244, 77.2177),
+                Pair(28.5360, 77.2340),
+                Pair(28.5494, 77.2520)
+            ),
+            stops = listOf(
+                RouteStop("s7", "Chirag Dilli", 28.5390, 77.2290, 1, 8),
+                RouteStop("s8", "Greater Kailash 1", 28.5460, 77.2410, 2, 14)
+            )
+        ),
+        Route(
+            routeId = "route-004",
+            originName = "Rohini West",
+            destinationName = "Rajouri Garden",
+            originLat = 28.7144,
+            originLng = 77.1147,
+            destinationLat = 28.6492,
+            destinationLng = 77.1220,
+            totalDistanceKm = 11.2,
+            estimatedDurationMinutes = 30,
+            polylinePoints = listOf(
+                Pair(28.7144, 77.1147),
+                Pair(28.6820, 77.1180),
+                Pair(28.6492, 77.1220)
+            ),
+            stops = listOf(
+                RouteStop("s9", "Pitampura", 28.6990, 77.1320, 1, 10),
+                RouteStop("s10", "Punjabi Bagh", 28.6690, 77.1240, 2, 20)
+            )
+        )
+    )
+
+    val demoVehicles = listOf(
+        Vehicle(
+            vehicleId = "GLIP-V-101",
+            licensePlateMasked = "DL 01 ** 4812",
+            category = VehicleCategory.SEDAN,
+            modelName = "Maruti Suzuki Dzire",
+            currentLat = 28.6250,
+            currentLng = 77.2120,
+            headingDegrees = 45f,
+            route = demoRoutes[0],
+            routeStatus = RouteStatus.EN_ROUTE,
+            seatAvailability = SeatAvailability(totalSeats = 4, occupiedSeats = 1),
+            driver = DriverProfile(
+                driverId = "DRV-001",
+                fullName = "Rajesh Sharma",
+                rating = 4.85,
+                totalRidesCompleted = 340,
+                isVerified = true
+            ),
+            farePerKmEstimate = 8.5
+        ),
+        Vehicle(
+            vehicleId = "GLIP-V-102",
+            licensePlateMasked = "DL 03 ** 9021",
+            category = VehicleCategory.AUTO_RICKSHAW,
+            modelName = "Bajaj Compact 4S",
+            currentLat = 28.6360,
+            currentLng = 77.2280,
+            headingDegrees = 110f,
+            route = demoRoutes[1],
+            routeStatus = RouteStatus.EN_ROUTE,
+            seatAvailability = SeatAvailability(totalSeats = 3, occupiedSeats = 1),
+            driver = DriverProfile(
+                driverId = "DRV-002",
+                fullName = "Manoj Kumar",
+                rating = 4.90,
+                totalRidesCompleted = 612,
+                isVerified = true
+            ),
+            farePerKmEstimate = 6.0
+        ),
+        Vehicle(
+            vehicleId = "GLIP-V-103",
+            licensePlateMasked = "DL 09 ** 1145",
+            category = VehicleCategory.SUV,
+            modelName = "Tata Nexon EV",
+            currentLat = 28.5320,
+            currentLng = 77.2280,
+            headingDegrees = 20f,
+            route = demoRoutes[2],
+            routeStatus = RouteStatus.SCHEDULED,
+            seatAvailability = SeatAvailability(totalSeats = 4, occupiedSeats = 2),
+            driver = DriverProfile(
+                driverId = "DRV-003",
+                fullName = "Vikram Singh",
+                rating = 4.75,
+                totalRidesCompleted = 189,
+                isVerified = true
+            ),
+            farePerKmEstimate = 9.0
+        ),
+        Vehicle(
+            vehicleId = "GLIP-V-104",
+            licensePlateMasked = "DL 04 ** 7733",
+            category = VehicleCategory.E_RICKSHAW,
+            modelName = "Mayuri Electric Loader",
+            currentLat = 28.7000,
+            currentLng = 77.1190,
+            headingDegrees = 180f,
+            route = demoRoutes[3],
+            routeStatus = RouteStatus.EN_ROUTE,
+            seatAvailability = SeatAvailability(totalSeats = 4, occupiedSeats = 3),
+            driver = DriverProfile(
+                driverId = "DRV-004",
+                fullName = "Sunil Verma",
+                rating = 4.65,
+                totalRidesCompleted = 420,
+                isVerified = true
+            ),
+            farePerKmEstimate = 4.5
+        )
+    )
+
+    val demoPromotions = listOf(
+        LocalPromotion(
+            id = "promo-001",
+            title = "15% Off Fresh Organic Groceries",
+            businessName = "Apna Kirana & Fresh Mart",
+            category = "Daily Groceries",
+            discountDescription = "Flat 15% discount on orders above ₹499",
+            distanceDescription = "350 m away along Dhaula Kuan route",
+            validUntil = "Valid till 30th of this month",
+            terms = "Show Glip demo token at the billing counter. Demo partner listing."
+        ),
+        LocalPromotion(
+            id = "promo-002",
+            title = "Free Kadak Chai with Samosa Plate",
+            businessName = "Sharma Sweets & Chaat Corner",
+            category = "Food & Snacks",
+            discountDescription = "Complimentary hot tea with morning snack platter",
+            distanceDescription = "500 m away near Karol Bagh stop",
+            validUntil = "Daily 7:00 AM – 11:00 AM",
+            terms = "Valid for in-store dining. Not redeemable for cash."
+        ),
+        LocalPromotion(
+            id = "promo-003",
+            title = "10% Discount on School Stationery & Books",
+            businessName = "Vidyarthi Book Depot & Supplies",
+            category = "Stationery & Education",
+            discountDescription = "10% off on all NCERT guides, notebook bundles and pens",
+            distanceDescription = "1.2 km away near Saket sector",
+            validUntil = "Ongoing academic season",
+            terms = "Applicable on cash and UPI payments."
+        ),
+        LocalPromotion(
+            id = "promo-004",
+            title = "Fast Phone Screen Guard & Back Cover ₹99",
+            businessName = "Speed Mobile Care & Accessories",
+            category = "Electronics Care",
+            discountDescription = "Tempered glass installation and shockproof case bundle",
+            distanceDescription = "800 m away near Nehru Place transit hub",
+            validUntil = "Limited demo stock",
+            terms = "Valid across standard smartphone models."
+        )
+    )
+}

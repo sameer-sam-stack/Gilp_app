@@ -1,0 +1,61 @@
+<resources>
+    <string name="app_name">Glip</string>
+    <string name="tagline">Smart Local Mobility &amp; Route Sharing</string>
+    <string name="demo_notice_badge">DEMO MVP</string>
+
+    <!-- Registration -->
+    <string name="register_title">Welcome to Glip</string>
+    <string name="register_subtitle">Discover empty seats along your daily route. Safe, affordable &amp; local.</string>
+    <string name="full_name_label">Full Name</string>
+    <string name="full_name_hint">e.g. Ramesh Kumar</string>
+    <string name="mobile_number_label">Indian Mobile Number</string>
+    <string name="mobile_number_hint">10 digits (e.g. 9876543210)</string>
+    <string name="email_label">Email (Optional)</string>
+    <string name="email_hint">e.g. ramesh@example.com</string>
+    <string name="get_otp_button">Get Demo OTP</string>
+    <string name="otp_label">Enter 6-Digit OTP</string>
+    <string name="verify_and_continue">Verify &amp; Continue</string>
+    <string name="resend_otp">Resend OTP</string>
+    <string name="error_invalid_name">Please enter your full name.</string>
+    <string name="error_invalid_phone">Please enter a valid 10-digit Indian mobile number.</string>
+    <string name="error_invalid_email">Please enter a valid email address or leave blank.</string>
+    <string name="error_empty_otp">Please enter the 6-digit OTP.</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_services">Services</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Home & Map -->
+    <string name="map_legend_title">Simulated Demo Area (Delhi NCR)</string>
+    <string name="map_legend_subtitle">Vehicles &amp; routes shown are mock simulations. Live vehicle tracking is not connected yet.</string>
+    <string name="map_fallback_title">Interactive Route Map</string>
+    <string name="map_fallback_description">Showing simulated vehicles currently sharing seats on active corridors.</string>
+    <string name="recenter_map">Recenter Map</string>
+    <string name="seats_available">Seats Available</string>
+    <string name="sample_fare_est">Est. ₹%s/km</string>
+    <string name="driver_rating">Rating: %s ★</string>
+
+    <!-- Services -->
+    <string name="service_ride_pool_title">Local Ride Pooling</string>
+    <string name="service_ride_pool_desc">Find occupied local vehicles already travelling along your route with empty seats.</string>
+    <string name="service_parcel_title">Local Parcel Delivery</string>
+    <string name="service_parcel_desc">Affordable intra-city packages delivered by drivers already travelling along the route.</string>
+    <string name="service_school_title">School Transportation</string>
+    <string name="service_school_desc">Safe community-pooled student commutes with verified neighbourhood vehicles.</string>
+    <string name="service_shops_title">Local Shops &amp; Offers</string>
+    <string name="service_shops_desc">Exclusive verified discounts from neighborhood merchants along your daily transit.</string>
+    <string name="coming_soon">Coming Soon</string>
+    <string name="demo_content">Demo Listing</string>
+
+    <!-- Profile -->
+    <string name="profile_title">My Profile</string>
+    <string name="profile_demo_account">Local Demo Account</string>
+    <string name="settings_title">Settings &amp; Preferences</string>
+    <string name="privacy_title">Privacy &amp; Data Notice</string>
+    <string name="privacy_summary">This demo stores only your name and phone number locally in device preferences. No personal tracking, contacts, or background location data is accessed.</string>
+    <string name="support_title">Help &amp; Support</string>
+    <string name="logout_button">Log Out</string>
+    <string name="clear_data_button">Clear Demo Data</string>
+    <string name="app_version_label">Version 1.0.0 (Demo MVP)</string>
+</resources>
