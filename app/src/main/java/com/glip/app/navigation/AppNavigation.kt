@@ -68,7 +68,7 @@ fun AppNavigation(
                     NavigationBarItem(
                         selected = currentBottomTab == 1,
                         onClick = { currentBottomTab = 1 },
-                        icon = { Icon(Icons.Default.NearMe, contentDescription = null) },
+                        icon = { Icon(Icons.Default.MiscellaneousServices, contentDescription = null) },
                         label = { Text("All Services") }
                     )
                     NavigationBarItem(
