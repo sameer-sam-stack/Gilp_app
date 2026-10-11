@@ -63,19 +63,19 @@ fun AppNavigation(
                         selected = currentBottomTab == 0,
                         onClick = { currentBottomTab = 0 },
                         icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                        label = { Text(stringResource(id = R.string.nav_home)) }
+                        label = { Text("Ride") }
                     )
                     NavigationBarItem(
                         selected = currentBottomTab == 1,
                         onClick = { currentBottomTab = 1 },
-                        icon = { Icon(Icons.Default.MiscellaneousServices, contentDescription = null) },
-                        label = { Text(stringResource(id = R.string.nav_services)) }
+                        icon = { Icon(Icons.Default.NearMe, contentDescription = null) },
+                        label = { Text("All Services") }
                     )
                     NavigationBarItem(
                         selected = currentBottomTab == 2,
                         onClick = { currentBottomTab = 2 },
                         icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                        label = { Text(stringResource(id = R.string.nav_profile)) }
+                        label = { Text("Profile") }
                     )
                 }
             }

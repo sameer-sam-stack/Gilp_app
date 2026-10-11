@@ -229,30 +229,6 @@ fun InteractiveDemoMap(
             }
         }
 
-        // Tap targets for vehicles (placed at top-right for easy one-handed switching)
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            vehicles.take(3).forEach { vehicle ->
-                val isSelected = vehicle.vehicleId == selectedVehicle?.vehicleId
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (isSelected) GlipOrangeAccent else Color.White.copy(alpha = 0.9f),
-                    shadowElevation = 2.dp,
-                    modifier = Modifier.clickable { onVehicleSelect(vehicle) }
-                ) {
-                    Text(
-                        text = vehicle.vehicleId.takeLast(3),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        }
+        // Top-left Map status pill
     }
 }
