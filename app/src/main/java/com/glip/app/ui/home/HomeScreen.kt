@@ -217,11 +217,17 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.filteredVehicles) { vehicle ->
-                        VehicleCard(
-                            vehicle = vehicle,
-                            isSelected = vehicle.vehicleId == uiState.selectedVehicle?.vehicleId,
-                            onClick = { viewModel.selectVehicle(vehicle) }
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            VehicleCard(
+                                vehicle = vehicle,
+                                isSelected = vehicle.vehicleId == uiState.selectedVehicle?.vehicleId,
+                                onClick = { viewModel.selectVehicle(vehicle) },
+                                modifier = Modifier.fillMaxWidth(0.85f)
+                            )
+                        }
                     }
                 }
             }
@@ -256,14 +262,21 @@ fun HomeScreen(
             }
         }
 
-        // 3. Compact Vehicle Details Box (exactly 4 items: Driver Name, Seats Free, Vehicle No, Call Button)
+        // 3. Compact Vehicle Details Box (centered, reduced width)
         uiState.selectedVehicle?.let { vehicle ->
-            VehicleCard(
-                vehicle = vehicle,
-                isSelected = true,
-                onClick = {},
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                VehicleCard(
+                    vehicle = vehicle,
+                    isSelected = true,
+                    onClick = {},
+                    modifier = Modifier.fillMaxWidth(0.82f)
+                )
+            }
         }
     }
 }
@@ -286,7 +299,6 @@ fun VehicleCard(
 
     Card(
         modifier = modifier
-            .fillMaxWidth()
             .clickable { onClick() },
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(

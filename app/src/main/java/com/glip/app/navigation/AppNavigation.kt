@@ -24,6 +24,9 @@ import com.glip.app.ui.registration.RegistrationViewModel
 import com.glip.app.ui.services.ServicesScreen
 import com.glip.app.ui.services.ServicesViewModel
 
+import androidx.compose.ui.text.font.FontWeight
+import com.glip.app.ui.theme.GlipGreenPrimary
+
 @Composable
 fun AppNavigation(
     preferences: DemoProfilePreferences,
@@ -53,33 +56,9 @@ fun AppNavigation(
             },
             modifier = modifier
         )
-    } else if (!hasSearchedRide && currentBottomTab == 0) {
-        // Center Floating Pickup & Drop Card (matches user's image)
-        Scaffold(
-            modifier = modifier.fillMaxSize(),
-            contentWindowInsets = WindowInsets.safeDrawing,
-            bottomBar = {
-                GlipCompactBottomBar(
-                    currentTab = currentBottomTab,
-                    onTabSelected = { currentBottomTab = it }
-                )
-            }
-        ) { innerPadding ->
-            RideSearchScreen(
-                initialPickup = selectedPickup,
-                initialDrop = selectedDrop,
-                onConfirmRideSearch = { pickup, drop ->
-                    selectedPickup = pickup
-                    selectedDrop = drop
-                    hasSearchedRide = true
-                },
-                modifier = Modifier.padding(innerPadding)
-            )
-        }
     } else {
         Scaffold(
             modifier = modifier.fillMaxSize(),
-            contentWindowInsets = WindowInsets.safeDrawing,
             bottomBar = {
                 GlipCompactBottomBar(
                     currentTab = currentBottomTab,
@@ -90,14 +69,27 @@ fun AppNavigation(
             val contentModifier = Modifier.padding(innerPadding)
             when (currentBottomTab) {
                 0 -> {
-                    val homeViewModel = remember { HomeViewModel(mobilityRepository) }
-                    HomeScreen(
-                        viewModel = homeViewModel,
-                        pickupLocation = selectedPickup,
-                        dropLocation = selectedDrop,
-                        onChangeLocation = { hasSearchedRide = false },
-                        modifier = contentModifier
-                    )
+                    if (!hasSearchedRide) {
+                        RideSearchScreen(
+                            initialPickup = selectedPickup,
+                            initialDrop = selectedDrop,
+                            onConfirmRideSearch = { pickup, drop ->
+                                selectedPickup = pickup
+                                selectedDrop = drop
+                                hasSearchedRide = true
+                            },
+                            modifier = contentModifier
+                        )
+                    } else {
+                        val homeViewModel = remember { HomeViewModel(mobilityRepository) }
+                        HomeScreen(
+                            viewModel = homeViewModel,
+                            pickupLocation = selectedPickup,
+                            dropLocation = selectedDrop,
+                            onChangeLocation = { hasSearchedRide = false },
+                            modifier = contentModifier
+                        )
+                    }
                 }
                 1 -> {
                     val servicesViewModel = remember { ServicesViewModel(mobilityRepository) }
@@ -127,7 +119,7 @@ fun AppNavigation(
 }
 
 /**
- * Compact, sleek Bottom Navigation Bar with reduced height, smaller icons, and tight width
+ * Compact, robust Bottom Navigation Bar with clear icons & labels that never clips or disappears
  */
 @Composable
 fun GlipCompactBottomBar(
@@ -135,8 +127,7 @@ fun GlipCompactBottomBar(
     onTabSelected: (Int) -> Unit
 ) {
     NavigationBar(
-        tonalElevation = 6.dp,
-        modifier = Modifier.height(60.dp),
+        tonalElevation = 8.dp,
         containerColor = Color.White
     ) {
         NavigationBarItem(
@@ -146,15 +137,23 @@ fun GlipCompactBottomBar(
                 Icon(
                     imageVector = Icons.Default.DirectionsCar,
                     contentDescription = "Ride",
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             },
             label = {
                 Text(
                     text = "Ride",
-                    fontSize = 11.sp
+                    fontSize = 12.sp,
+                    fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Normal
                 )
-            }
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = GlipGreenPrimary,
+                selectedTextColor = GlipGreenPrimary,
+                indicatorColor = GlipGreenPrimary.copy(alpha = 0.15f),
+                unselectedIconColor = Color(0xFF64748B),
+                unselectedTextColor = Color(0xFF64748B)
+            )
         )
         NavigationBarItem(
             selected = currentTab == 1,
@@ -163,15 +162,23 @@ fun GlipCompactBottomBar(
                 Icon(
                     imageVector = Icons.Default.MiscellaneousServices,
                     contentDescription = "All Services",
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             },
             label = {
                 Text(
                     text = "All Services",
-                    fontSize = 11.sp
+                    fontSize = 12.sp,
+                    fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Normal
                 )
-            }
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = GlipGreenPrimary,
+                selectedTextColor = GlipGreenPrimary,
+                indicatorColor = GlipGreenPrimary.copy(alpha = 0.15f),
+                unselectedIconColor = Color(0xFF64748B),
+                unselectedTextColor = Color(0xFF64748B)
+            )
         )
         NavigationBarItem(
             selected = currentTab == 2,
@@ -180,15 +187,23 @@ fun GlipCompactBottomBar(
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Profile",
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             },
             label = {
                 Text(
                     text = "Profile",
-                    fontSize = 11.sp
+                    fontSize = 12.sp,
+                    fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Normal
                 )
-            }
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = GlipGreenPrimary,
+                selectedTextColor = GlipGreenPrimary,
+                indicatorColor = GlipGreenPrimary.copy(alpha = 0.15f),
+                unselectedIconColor = Color(0xFF64748B),
+                unselectedTextColor = Color(0xFF64748B)
+            )
         )
     }
 }
