@@ -1,5 +1,7 @@
 package com.glip.app.ui.home
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -8,7 +10,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -17,11 +18,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.glip.app.R
 import com.glip.app.domain.model.Vehicle
 import com.glip.app.ui.theme.GlipGreenDark
 import com.glip.app.ui.theme.GlipGreenPrimary
@@ -30,9 +30,18 @@ import com.glip.app.ui.theme.GlipOrangeAccent
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    pickupLocation: String = "",
+    dropLocation: String = "",
+    onChangeLocation: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Sync search query if passed from search card
+    LaunchedEffect(pickupLocation, dropLocation) {
+        if (pickupLocation.isNotBlank()) viewModel.onPickupQueryChange(pickupLocation)
+        if (dropLocation.isNotBlank()) viewModel.onDropQueryChange(dropLocation)
+    }
 
     Column(
         modifier = modifier
@@ -42,21 +51,21 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 1. Promotional / Advertisement Banner Box at Top
+        // 1. Top AD Banner Box with increased height (around 90dp)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(68.dp),
-            shape = RoundedCornerShape(14.dp),
+                .height(90.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF1E293B) // Sleek dark slate ad card
+                containerColor = Color(0xFF0F172A)
             ),
-            elevation = CardDefaults.cardElevation(2.dp)
+            elevation = CardDefaults.cardElevation(3.dp)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 14.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -66,8 +75,8 @@ fun HomeScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(46.dp)
+                            .clip(RoundedCornerShape(12.dp))
                             .background(GlipOrangeAccent.copy(alpha = 0.2f)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -75,18 +84,18 @@ fun HomeScreen(
                             imageVector = Icons.Default.Campaign,
                             contentDescription = null,
                             tint = GlipOrangeAccent,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(26.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(verticalArrangement = Arrangement.Center) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = "Glip Pool Pass",
-                                style = MaterialTheme.typography.titleSmall,
+                                text = "Glip Monthly Pass",
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
-                                fontSize = 14.sp
+                                fontSize = 15.sp
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Surface(
@@ -94,16 +103,17 @@ fun HomeScreen(
                                 color = GlipOrangeAccent
                             ) {
                                 Text(
-                                    text = "AD",
+                                    text = "SPONSORED",
                                     color = Color.White,
-                                    fontSize = 9.sp,
+                                    fontSize = 8.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                 )
                             }
                         }
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "Save 25% on daily shared office rides",
+                            text = "Save up to ₹1,200/month on daily office routes",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF94A3B8),
                             fontSize = 11.sp
@@ -111,54 +121,84 @@ fun HomeScreen(
                     }
                 }
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = GlipGreenPrimary,
                     modifier = Modifier.clickable { }
                 ) {
                     Text(
-                        text = "Claim",
+                        text = "Claim ₹99",
                         color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // 2. Compact Pickup & Drop Input Boxes (Width & Height reduced)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Compact Pickup Box
-            CompactLocationInput(
-                value = uiState.pickupQuery,
-                onValueChange = { viewModel.onPickupQueryChange(it) },
-                label = "Pickup",
-                placeholder = "Current location",
-                icon = Icons.Default.LocationOn,
-                iconTint = GlipGreenPrimary,
-                modifier = Modifier.weight(1f)
-            )
-
-            // Compact Drop Box
-            CompactLocationInput(
-                value = uiState.dropQuery,
-                onValueChange = { viewModel.onDropQueryChange(it) },
-                label = "Drop",
-                placeholder = "Where to?",
-                icon = Icons.Default.Navigation,
-                iconTint = GlipOrangeAccent,
-                modifier = Modifier.weight(1f)
-            )
+        // Selected Route Badge showing current pickup -> drop with edit button
+        if (pickupLocation.isNotBlank() || dropLocation.isNotBlank()) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onChangeLocation() },
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(GlipGreenPrimary)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = pickupLocation.ifBlank { "Pickup" },
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "➔", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFEF4444))
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = dropLocation.ifBlank { "Drop" },
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Text(
+                        text = "Change",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GlipGreenPrimary
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // 3. Map View Area
+        // 2. Map Area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -189,7 +229,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // Switch between Map & List view
+        // View toggle
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -198,7 +238,7 @@ fun HomeScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${uiState.filteredVehicles.size} active shared ride(s)",
+                text = "${uiState.filteredVehicles.size} active shared vehicle(s)",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp
@@ -208,7 +248,7 @@ fun HomeScreen(
                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
             ) {
                 Text(
-                    text = if (uiState.isFallbackListVisible) "Show Map View" else "Show List",
+                    text = if (uiState.isFallbackListVisible) "Show Map" else "Show List",
                     fontSize = 12.sp,
                     color = GlipGreenPrimary,
                     fontWeight = FontWeight.SemiBold
@@ -216,7 +256,7 @@ fun HomeScreen(
             }
         }
 
-        // 4. Redesigned Vehicle Details Card at Bottom
+        // 3. Compact Vehicle Details Box (exactly 4 items: Driver Name, Seats Free, Vehicle No, Call Button)
         uiState.selectedVehicle?.let { vehicle ->
             VehicleCard(
                 vehicle = vehicle,
@@ -229,85 +269,11 @@ fun HomeScreen(
 }
 
 /**
- * Compact Single-Line Input Field for Pickup / Drop
- */
-@Composable
-fun CompactLocationInput(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    placeholder: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    iconTint: Color,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.height(48.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0)),
-        shadowElevation = 1.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = label,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                BasicTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 12.sp
-                    ),
-                    decorationBox = { innerTextField ->
-                        if (value.isEmpty()) {
-                            Text(
-                                text = placeholder,
-                                fontSize = 11.sp,
-                                color = Color(0xFF94A3B8)
-                            )
-                        }
-                        innerTextField()
-                    }
-                )
-            }
-            if (value.isNotEmpty()) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Clear",
-                    tint = Color(0xFF94A3B8),
-                    modifier = Modifier
-                        .size(14.dp)
-                        .clickable { onValueChange("") }
-                )
-            }
-        }
-    }
-}
-
-/**
- * Modern Redesigned Vehicle Details Card
+ * Compact Redesigned Vehicle Box with ONLY 4 items:
+ * 1. Rajesh Sharma (Driver Ka naam)
+ * 2. 3/4 Seats free
+ * 3. DL 01**4812 (Vehicle number)
+ * 4. Call icon button -> opens phone dialer with 1234567890
  */
 @Composable
 fun VehicleCard(
@@ -316,209 +282,91 @@ fun VehicleCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(
             width = 1.dp,
-            color = if (isSelected) GlipGreenPrimary.copy(alpha = 0.5f) else Color(0xFFE2E8F0)
+            color = if (isSelected) GlipGreenPrimary.copy(alpha = 0.6f) else Color(0xFFE2E8F0)
         )
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            // Header: Vehicle Name & Available Seats Pill
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp)
+        ) {
+            // Row 1: Driver Name (Left) & Seats Free (Right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(GlipGreenPrimary.copy(alpha = 0.12f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DirectionsCar,
-                            contentDescription = null,
-                            tint = GlipGreenPrimary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = vehicle.modelName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = vehicle.licensePlateMasked,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
+                Text(
+                    text = vehicle.driver.fullName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = if (vehicle.seatAvailability.availableSeats > 0) Color(0xFFDCFCE7) else Color(0xFFFFEDD5)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(if (vehicle.seatAvailability.availableSeats > 0) GlipGreenDark else GlipOrangeAccent)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = "${vehicle.seatAvailability.availableSeats}/${vehicle.seatAvailability.totalSeats} seats free",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = if (vehicle.seatAvailability.availableSeats > 0) GlipGreenDark else GlipOrangeAccent,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Route Section: Origin to Destination with clear badge connectors
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.TripOrigin,
-                        contentDescription = null,
-                        tint = GlipGreenPrimary,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = vehicle.route.originName,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "➔",
-                        fontSize = 12.sp,
-                        color = Color(0xFF94A3B8)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Default.Place,
-                        contentDescription = null,
-                        tint = GlipOrangeAccent,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = vehicle.route.destinationName,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "${vehicle.seatAvailability.availableSeats}/${vehicle.seatAvailability.totalSeats} Seats free",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = if (vehicle.seatAvailability.availableSeats > 0) GlipGreenDark else GlipOrangeAccent,
+                        fontSize = 11.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Footer: Driver info, Fare estimate & Book/Share Seat button
+            // Row 2: Vehicle Number (Left) & Call Icon Button (Right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFE2E8F0)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = vehicle.driver.fullName.first().toString(),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            color = Color(0xFF334155)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Column {
-                        Text(
-                            text = vehicle.driver.fullName,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                tint = Color(0xFFF59E0B),
-                                modifier = Modifier.size(11.dp)
-                            )
-                            Spacer(modifier = Modifier.width(2.dp))
-                            Text(
-                                text = "${vehicle.driver.rating}",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = vehicle.licensePlateMasked,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF475569),
+                    fontSize = 13.sp
+                )
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "₹${vehicle.farePerKmEstimate.toInt()}/km",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = GlipGreenPrimary,
-                        fontSize = 15.sp
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Button(
-                        onClick = { },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = GlipGreenPrimary
-                        ),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                        modifier = Modifier.height(34.dp)
-                    ) {
-                        Text(
-                            text = "Share Ride",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                Surface(
+                    shape = CircleShape,
+                    color = GlipGreenPrimary,
+                    shadowElevation = 2.dp,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clickable {
+                            val callIntent = Intent(Intent.ACTION_DIAL).apply {
+                                data = Uri.parse("tel:1234567890")
+                            }
+                            context.startActivity(callIntent)
+                        }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Call,
+                            contentDescription = "Call Driver",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
