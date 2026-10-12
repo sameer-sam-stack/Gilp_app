@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -55,21 +56,23 @@ fun RideSearchScreen(
             .fillMaxSize()
             .background(Color(0xFF0F172A))
     ) {
-        // 1. Real OpenStreetMap background (Touch blocked: user cannot pan or drag behind)
+        // 1. Real OpenStreetMap background (80% blur effect + Touch blocked)
         InteractiveDemoMap(
             vehicles = emptyList(),
             selectedVehicle = null,
             onVehicleSelect = {},
             onRecenter = {},
             isInteractive = false,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(radius = 20.dp)
         )
 
-        // Touch absorber overlay to completely prevent any interaction with the background map
+        // 80% Frosted Blur overlay Scrim to soften map details and prevent background interaction
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.20f))
+                .background(Color(0xFF0F172A).copy(alpha = 0.80f))
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
@@ -86,18 +89,18 @@ fun RideSearchScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TOP: Empty Box for Ad (User requested: no mock ads, just empty container ready for Ad)
+            // TOP: Empty Box for Ad (Increased height to 105dp & translucent frosted glass)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(76.dp)
-                    .padding(top = 8.dp),
+                    .height(105.dp)
+                    .padding(top = 6.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.92f)
+                    containerColor = Color.White.copy(alpha = 0.15f)
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f))
             ) {
                 // Empty container ready for Ad
                 Box(modifier = Modifier.fillMaxSize())
