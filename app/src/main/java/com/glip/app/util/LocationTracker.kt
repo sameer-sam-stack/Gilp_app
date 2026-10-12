@@ -89,4 +89,34 @@ object LocationTracker {
             Log.e("LocationTracker", "Error refreshing location", e)
         }
     }
+
+    /**
+     * Reverse-geocodes given latitude and longitude into the most detailed readable address.
+     */
+    fun reverseGeocode(context: Context, latitude: Double, longitude: Double): String {
+        try {
+            val geocoder = Geocoder(context, Locale.getDefault())
+            val list = geocoder.getFromLocation(latitude, longitude, 1)
+            val addr = list?.firstOrNull()
+            if (addr != null) {
+                val fullLine = addr.getAddressLine(0)
+                if (!fullLine.isNullOrBlank()) {
+                    return fullLine
+                }
+                val parts = listOfNotNull(
+                    addr.featureName,
+                    addr.subLocality,
+                    addr.locality,
+                    addr.subAdminArea,
+                    addr.adminArea
+                ).distinct()
+                if (parts.isNotEmpty()) {
+                    return parts.joinToString(", ")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("LocationTracker", "Reverse geocode failed", e)
+        }
+        return "Pin Location (${String.format(Locale.US, "%.4f, %.4f", latitude, longitude)})"
+    }
 }

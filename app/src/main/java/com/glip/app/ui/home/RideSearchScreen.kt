@@ -23,14 +23,19 @@ import androidx.compose.ui.unit.sp
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.util.LocationTracker
 
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.PinDrop
+import androidx.compose.ui.zIndex
+
 /**
  * RideSearchScreen:
  * Landing screen when app opens.
  * 1. Top: Empty Box for future Ad
- * 2. Center: Pickup and Drop address inputs + "Ride ->" button
+ * 2. Center: Pickup and Drop address inputs (with map picker buttons) + "Ride ->" button
  * 3. Bottom: Empty Box for future Ad
  * 4. Background: Real OSM street map (Non-interactive, touch blocked)
  * 5. GPS auto-detects user location and pre-fills into Pickup box
+ * 6. Map picker modal with fixed center pin for exact location selection
  */
 @Composable
 fun RideSearchScreen(
@@ -40,14 +45,23 @@ fun RideSearchScreen(
     modifier: Modifier = Modifier
 ) {
     val liveAddress by LocationTracker.currentAddress.collectAsState()
+    val liveCoords by LocationTracker.currentCoordinates.collectAsState()
 
     var pickup by remember { mutableStateOf(initialPickup) }
     var drop by remember { mutableStateOf(initialDrop) }
 
+    // Coordinates state
+    var pickupCoordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var dropCoordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+
+    // Map selection modal state: null = closed, "pickup" = selecting pickup, "drop" = selecting drop
+    var selectingLocationMode by remember { mutableStateOf<String?>(null) }
+
     // Auto-fill pickup with live GPS location as soon as detected
-    LaunchedEffect(liveAddress) {
+    LaunchedEffect(liveAddress, liveCoords) {
         if (!liveAddress.isNullOrBlank() && pickup.isBlank()) {
             pickup = liveAddress ?: ""
+            pickupCoordinates = liveCoords
         }
     }
 
@@ -173,7 +187,7 @@ fun RideSearchScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Pickup Input Box
+                        // Pickup Input Box with Map Icon Button on right
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
@@ -182,33 +196,51 @@ fun RideSearchScreen(
                             color = Color(0xFFF8FAFC),
                             border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                         ) {
-                            Box(
+                            Row(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 10.dp),
-                                contentAlignment = Alignment.CenterStart
+                                    .padding(start = 10.dp, end = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                BasicTextField(
-                                    value = pickup,
-                                    onValueChange = { pickup = it },
-                                    singleLine = true,
-                                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF0F172A)
-                                    ),
-                                    decorationBox = { innerTextField ->
-                                        if (pickup.isEmpty()) {
-                                            Text(
-                                                text = "Pickup address",
-                                                fontSize = 12.sp,
-                                                color = Color(0xFF94A3B8)
-                                            )
-                                        }
-                                        innerTextField()
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                Box(
+                                    modifier = Modifier.weight(1f),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    BasicTextField(
+                                        value = pickup,
+                                        onValueChange = { pickup = it },
+                                        singleLine = true,
+                                        textStyle = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF0F172A)
+                                        ),
+                                        decorationBox = { innerTextField ->
+                                            if (pickup.isEmpty()) {
+                                                Text(
+                                                    text = "Pickup address",
+                                                    fontSize = 12.sp,
+                                                    color = Color(0xFF94A3B8)
+                                                )
+                                            }
+                                            innerTextField()
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                // Map Icon Button for Pickup
+                                IconButton(
+                                    onClick = { selectingLocationMode = "pickup" },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Map,
+                                        contentDescription = "Pick Pickup on Map",
+                                        tint = Color(0xFF2563EB),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
 
@@ -220,7 +252,7 @@ fun RideSearchScreen(
                             fontWeight = FontWeight.Bold
                         )
 
-                        // Drop Input Box
+                        // Drop Input Box with Map Icon Button on right
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
@@ -229,33 +261,51 @@ fun RideSearchScreen(
                             color = Color(0xFFF8FAFC),
                             border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                         ) {
-                            Box(
+                            Row(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 10.dp),
-                                contentAlignment = Alignment.CenterStart
+                                    .padding(start = 10.dp, end = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                BasicTextField(
-                                    value = drop,
-                                    onValueChange = { drop = it },
-                                    singleLine = true,
-                                    textStyle = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF0F172A)
-                                    ),
-                                    decorationBox = { innerTextField ->
-                                        if (drop.isEmpty()) {
-                                            Text(
-                                                text = "Drop address",
-                                                fontSize = 12.sp,
-                                                color = Color(0xFF94A3B8)
-                                            )
-                                        }
-                                        innerTextField()
-                                    },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                Box(
+                                    modifier = Modifier.weight(1f),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    BasicTextField(
+                                        value = drop,
+                                        onValueChange = { drop = it },
+                                        singleLine = true,
+                                        textStyle = MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFF0F172A)
+                                        ),
+                                        decorationBox = { innerTextField ->
+                                            if (drop.isEmpty()) {
+                                                Text(
+                                                    text = "Drop address",
+                                                    fontSize = 12.sp,
+                                                    color = Color(0xFF94A3B8)
+                                                )
+                                            }
+                                            innerTextField()
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                // Map Icon Button for Drop
+                                IconButton(
+                                    onClick = { selectingLocationMode = "drop" },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Map,
+                                        contentDescription = "Pick Drop on Map",
+                                        tint = Color(0xFFEF4444),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -323,6 +373,39 @@ fun RideSearchScreen(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // Location Picker Overlay (Opens map selection screen with fixed center pin)
+        if (selectingLocationMode != null) {
+            val isPickup = selectingLocationMode == "pickup"
+            val title = if (isPickup) "Select Pickup on Map" else "Select Drop on Map"
+            val currentLat = if (isPickup) pickupCoordinates?.first else dropCoordinates?.first
+            val currentLng = if (isPickup) pickupCoordinates?.second else dropCoordinates?.second
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(100f)
+            ) {
+                LocationPickerScreen(
+                    title = title,
+                    initialLat = currentLat,
+                    initialLng = currentLng,
+                    onLocationConfirmed = { detailedAddress, lat, lng ->
+                        if (isPickup) {
+                            pickup = detailedAddress
+                            pickupCoordinates = Pair(lat, lng)
+                        } else {
+                            drop = detailedAddress
+                            dropCoordinates = Pair(lat, lng)
+                        }
+                        selectingLocationMode = null
+                    },
+                    onDismiss = {
+                        selectingLocationMode = null
+                    }
+                )
+            }
         }
     }
 }
