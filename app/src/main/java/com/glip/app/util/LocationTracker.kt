@@ -41,6 +41,28 @@ object LocationTracker {
     fun refreshLocation(context: Context) {
         try {
             val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return
+
+            fun processLocation(location: Location) {
+                _currentCoordinates.value = Pair(location.latitude, location.longitude)
+                try {
+                    val geocoder = Geocoder(context, Locale.getDefault())
+                    val list = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                    val addr = list?.firstOrNull()
+                    if (addr != null) {
+                        val fullLine = addr.getAddressLine(0)
+                        val shortLoc = addr.subLocality ?: addr.locality ?: addr.featureName
+                        _currentAddress.value = when {
+                            !shortLoc.isNullOrBlank() -> shortLoc
+                            !fullLine.isNullOrBlank() -> fullLine.split(",").take(2).joinToString(",").trim()
+                            else -> "My Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"
+                        }
+                        return
+                    }
+                } catch (_: Exception) {}
+                _currentAddress.value = "My Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"
+            }
+
+            // 1. Instant check from last known GPS/Network location
             val lastLocation: Location? = when {
                 lm.isProviderEnabled(LocationManager.GPS_PROVIDER) -> lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
                 lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
@@ -48,17 +70,20 @@ object LocationTracker {
             }
 
             if (lastLocation != null) {
-                _currentCoordinates.value = Pair(lastLocation.latitude, lastLocation.longitude)
-                try {
-                    val geocoder = Geocoder(context, Locale.getDefault())
-                    val list = geocoder.getFromLocation(lastLocation.latitude, lastLocation.longitude, 1)
-                    val loc = list?.firstOrNull()?.locality ?: list?.firstOrNull()?.subLocality ?: list?.firstOrNull()?.featureName
-                    if (!loc.isNullOrBlank()) {
-                        _currentAddress.value = loc
-                        return
-                    }
-                } catch (_: Exception) {}
-                _currentAddress.value = "Current Location (${String.format(Locale.US, "%.3f, %.3f", lastLocation.latitude, lastLocation.longitude)})"
+                processLocation(lastLocation)
+            }
+
+            // 2. Request a fresh real-time single fix from GPS/Network provider
+            val provider = when {
+                lm.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
+                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
+                else -> null
+            }
+
+            if (provider != null) {
+                lm.requestSingleUpdate(provider, { liveLoc ->
+                    processLocation(liveLoc)
+                }, android.os.Looper.getMainLooper())
             }
         } catch (e: Exception) {
             Log.e("LocationTracker", "Error refreshing location", e)

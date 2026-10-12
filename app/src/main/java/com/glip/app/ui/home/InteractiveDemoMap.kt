@@ -43,6 +43,7 @@ fun InteractiveDemoMap(
     val context = LocalContext.current
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
+    val liveAddress by LocationTracker.currentAddress.collectAsState()
 
     DisposableEffect(Unit) {
         onDispose {
@@ -85,14 +86,16 @@ fun InteractiveDemoMap(
                 if (view is MapView) {
                     view.overlays.clear()
 
-                    // User live location marker
+                    // User live location marker & map center
                     userCoords?.let { (uLat, uLng) ->
                         val userMarker = Marker(view).apply {
                             position = GeoPoint(uLat, uLng)
-                            title = "My Current Location"
+                            title = liveAddress ?: "My Current Location"
+                            subDescription = "You are here"
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                         }
                         view.overlays.add(userMarker)
+                        view.controller.setCenter(GeoPoint(uLat, uLng))
                     }
 
                     // Vehicles markers
