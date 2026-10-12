@@ -11,11 +11,11 @@ package com.glip.app.data.remote
  * 5. Run the provided SQL in Supabase SQL Editor to create the 'users' table.
  */
 object SupabaseConfig {
-    // Replace with your real Supabase Project URL (e.g. "https://abcdefghijkl.supabase.co")
-    var SUPABASE_URL: String = "https://YOUR_SUPABASE_PROJECT_URL.supabase.co"
+    // User Supabase Project URL
+    var SUPABASE_URL: String = "https://yrvustyzhhiciyrawwxr.supabase.co"
 
-    // Replace with your real Supabase Anon Public Key
-    var SUPABASE_ANON_KEY: String = "YOUR_SUPABASE_ANON_KEY"
+    // User Supabase Anon Public Key
+    var SUPABASE_ANON_KEY: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlydnVzdHl6aGhpY2l5cmF3d3hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3NDc1ODcsImV4cCI6MjEwNzMyMzU4N30.TrQEX8ANq4ogMhh-IiWGUYjU2l8NuHFjqn8UPBY91Ik"
 
     const val TABLE_USERS = "users"
 }
