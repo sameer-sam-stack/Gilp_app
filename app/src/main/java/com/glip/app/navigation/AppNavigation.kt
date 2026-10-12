@@ -127,86 +127,91 @@ fun GlipCompactBottomBar(
     currentTab: Int,
     onTabSelected: (Int) -> Unit
 ) {
-    NavigationBar(
-        modifier = Modifier.height(60.dp),
-        tonalElevation = 6.dp,
-        containerColor = Color(0xFFFFFFFF),
-        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color(0xFFFFFFFF),
+        shadowElevation = 8.dp
     ) {
-        NavigationBarItem(
-            selected = currentTab == 0,
-            onClick = { onTabSelected(0) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.DirectionsCar,
-                    contentDescription = "Ride",
-                    modifier = Modifier.size(22.dp)
+        NavigationBar(
+            tonalElevation = 0.dp,
+            containerColor = Color(0xFFFFFFFF),
+            windowInsets = WindowInsets.navigationBars
+        ) {
+            NavigationBarItem(
+                selected = currentTab == 0,
+                onClick = { onTabSelected(0) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.DirectionsCar,
+                        contentDescription = "Ride",
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                label = {
+                    Text(
+                        text = "Ride",
+                        fontSize = 12.sp,
+                        fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFF1D4ED8),
+                    selectedTextColor = Color(0xFF1D4ED8),
+                    indicatorColor = Color(0xFFDBEAFE),
+                    unselectedIconColor = Color(0xFF64748B),
+                    unselectedTextColor = Color(0xFF64748B)
                 )
-            },
-            label = {
-                Text(
-                    text = "Ride",
-                    fontSize = 11.sp,
-                    fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Normal
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF1D4ED8),
-                selectedTextColor = Color(0xFF1D4ED8),
-                indicatorColor = Color(0xFFDBEAFE),
-                unselectedIconColor = Color(0xFF64748B),
-                unselectedTextColor = Color(0xFF64748B)
             )
-        )
-        NavigationBarItem(
-            selected = currentTab == 1,
-            onClick = { onTabSelected(1) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.GridView,
-                    contentDescription = "All Services",
-                    modifier = Modifier.size(22.dp)
+            NavigationBarItem(
+                selected = currentTab == 1,
+                onClick = { onTabSelected(1) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.GridView,
+                        contentDescription = "All Services",
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                label = {
+                    Text(
+                        text = "All Services",
+                        fontSize = 12.sp,
+                        fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFF1D4ED8),
+                    selectedTextColor = Color(0xFF1D4ED8),
+                    indicatorColor = Color(0xFFDBEAFE),
+                    unselectedIconColor = Color(0xFF64748B),
+                    unselectedTextColor = Color(0xFF64748B)
                 )
-            },
-            label = {
-                Text(
-                    text = "All Services",
-                    fontSize = 11.sp,
-                    fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Normal
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF1D4ED8),
-                selectedTextColor = Color(0xFF1D4ED8),
-                indicatorColor = Color(0xFFDBEAFE),
-                unselectedIconColor = Color(0xFF64748B),
-                unselectedTextColor = Color(0xFF64748B)
             )
-        )
-        NavigationBarItem(
-            selected = currentTab == 2,
-            onClick = { onTabSelected(2) },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile",
-                    modifier = Modifier.size(22.dp)
+            NavigationBarItem(
+                selected = currentTab == 2,
+                onClick = { onTabSelected(2) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        modifier = Modifier.size(24.dp)
+                    )
+                },
+                label = {
+                    Text(
+                        text = "Profile",
+                        fontSize = 12.sp,
+                        fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Normal
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color(0xFF1D4ED8),
+                    selectedTextColor = Color(0xFF1D4ED8),
+                    indicatorColor = Color(0xFFDBEAFE),
+                    unselectedIconColor = Color(0xFF64748B),
+                    unselectedTextColor = Color(0xFF64748B)
                 )
-            },
-            label = {
-                Text(
-                    text = "Profile",
-                    fontSize = 11.sp,
-                    fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Normal
-                )
-            },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF1D4ED8),
-                selectedTextColor = Color(0xFF1D4ED8),
-                indicatorColor = Color(0xFFDBEAFE),
-                unselectedIconColor = Color(0xFF64748B),
-                unselectedTextColor = Color(0xFF64748B)
             )
-        )
+        }
     }
 }

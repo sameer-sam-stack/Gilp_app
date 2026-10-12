@@ -56,7 +56,7 @@ fun RideSearchScreen(
             .fillMaxSize()
             .background(Color(0xFF0F172A))
     ) {
-        // 1. Real OpenStreetMap background (Extra deep blur effect + Touch blocked)
+        // 1. Real OpenStreetMap background (Blur effect + Touch blocked)
         InteractiveDemoMap(
             vehicles = emptyList(),
             selectedVehicle = null,
@@ -65,14 +65,14 @@ fun RideSearchScreen(
             isInteractive = false,
             modifier = Modifier
                 .fillMaxSize()
-                .blur(radius = 40.dp)
+                .blur(radius = 12.dp)
         )
 
-        // Extra deep Frosted Blur overlay Scrim to completely obscure map details and block background interaction
+        // Frosted Blur overlay Scrim (Semi-transparent so map streets & shapes are visible through frosted glass without being readable)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0F172A).copy(alpha = 0.92f))
+                .background(Color(0xFF0F172A).copy(alpha = 0.40f))
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
@@ -89,11 +89,11 @@ fun RideSearchScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TOP: Empty Box for Ad (Height increased from 105dp to 150dp downwards)
+            // TOP: Empty Box for Ad (Height increased to 250dp downwards)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(250.dp)
                     .padding(top = 6.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
