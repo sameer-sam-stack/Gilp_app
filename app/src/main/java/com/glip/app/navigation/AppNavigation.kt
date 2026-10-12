@@ -3,7 +3,7 @@ package com.glip.app.navigation
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.MiscellaneousServices
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -128,8 +128,10 @@ fun GlipCompactBottomBar(
     onTabSelected: (Int) -> Unit
 ) {
     NavigationBar(
-        tonalElevation = 8.dp,
-        containerColor = Color.White
+        modifier = Modifier.height(60.dp),
+        tonalElevation = 6.dp,
+        containerColor = Color(0xFFFFFFFF),
+        windowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp)
     ) {
         NavigationBarItem(
             selected = currentTab == 0,
@@ -138,20 +140,20 @@ fun GlipCompactBottomBar(
                 Icon(
                     imageVector = Icons.Default.DirectionsCar,
                     contentDescription = "Ride",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             },
             label = {
                 Text(
                     text = "Ride",
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Normal
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF18181B),
-                selectedTextColor = Color(0xFF18181B),
-                indicatorColor = GlipGreenPrimary.copy(alpha = 0.5f),
+                selectedIconColor = Color(0xFF1D4ED8),
+                selectedTextColor = Color(0xFF1D4ED8),
+                indicatorColor = Color(0xFFDBEAFE),
                 unselectedIconColor = Color(0xFF64748B),
                 unselectedTextColor = Color(0xFF64748B)
             )
@@ -161,22 +163,22 @@ fun GlipCompactBottomBar(
             onClick = { onTabSelected(1) },
             icon = {
                 Icon(
-                    imageVector = Icons.Default.MiscellaneousServices,
+                    imageVector = Icons.Default.GridView,
                     contentDescription = "All Services",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             },
             label = {
                 Text(
                     text = "All Services",
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Normal
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF18181B),
-                selectedTextColor = Color(0xFF18181B),
-                indicatorColor = GlipGreenPrimary.copy(alpha = 0.5f),
+                selectedIconColor = Color(0xFF1D4ED8),
+                selectedTextColor = Color(0xFF1D4ED8),
+                indicatorColor = Color(0xFFDBEAFE),
                 unselectedIconColor = Color(0xFF64748B),
                 unselectedTextColor = Color(0xFF64748B)
             )
@@ -188,20 +190,20 @@ fun GlipCompactBottomBar(
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Profile",
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             },
             label = {
                 Text(
                     text = "Profile",
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Normal
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF18181B),
-                selectedTextColor = Color(0xFF18181B),
-                indicatorColor = GlipGreenPrimary.copy(alpha = 0.5f),
+                selectedIconColor = Color(0xFF1D4ED8),
+                selectedTextColor = Color(0xFF1D4ED8),
+                indicatorColor = Color(0xFFDBEAFE),
                 unselectedIconColor = Color(0xFF64748B),
                 unselectedTextColor = Color(0xFF64748B)
             )

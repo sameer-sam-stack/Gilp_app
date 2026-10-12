@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,99 +52,39 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 1. Top AD Banner Box with increased height (around 90dp)
+        // 1. Top AD Banner Box: clean, empty white ad space for future API-based ads
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(90.dp),
-            shape = RoundedCornerShape(16.dp),
+                .height(80.dp),
+            shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF0F172A)
+                containerColor = Color.White
             ),
-            elevation = CardDefaults.cardElevation(3.dp)
+            elevation = CardDefaults.cardElevation(2.dp),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
         ) {
-            Row(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(46.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(GlipOrangeAccent.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Campaign,
-                            contentDescription = null,
-                            tint = GlipOrangeAccent,
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(verticalArrangement = Arrangement.Center) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Glip Monthly Pass",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                fontSize = 15.sp
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = GlipOrangeAccent
-                            ) {
-                                Text(
-                                    text = "SPONSORED",
-                                    color = Color.White,
-                                    fontSize = 8.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "Save up to ₹1,200/month on daily office routes",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF94A3B8),
-                            fontSize = 11.sp
-                        )
-                    }
-                }
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = GlipGreenPrimary,
-                    modifier = Modifier.clickable { }
-                ) {
-                    Text(
-                        text = "Claim ₹99",
-                        color = Color.Black,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
-                    )
-                }
+                Text(
+                    text = "Advertisement Space",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF94A3B8),
+                    fontSize = 11.sp
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Selected Route Badge showing current pickup -> drop with edit button
+        // 2. Selected Route Badge showing current pickup -> drop with ONLY Change clickable
         if (pickupLocation.isNotBlank() || dropLocation.isNotBlank()) {
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onChangeLocation() },
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -191,14 +132,17 @@ fun HomeScreen(
                         text = "Change",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GlipGreenPrimary
+                        color = GlipGreenPrimary,
+                        modifier = Modifier
+                            .clickable { onChangeLocation() }
+                            .padding(start = 8.dp, top = 2.dp, bottom = 2.dp)
                     )
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // 2. Map Area
+        // Map Area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -219,13 +163,13 @@ fun HomeScreen(
                     items(uiState.filteredVehicles) { vehicle ->
                         Box(
                             modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.CenterStart
                         ) {
                             VehicleCard(
                                 vehicle = vehicle,
                                 isSelected = vehicle.vehicleId == uiState.selectedVehicle?.vehicleId,
                                 onClick = { viewModel.selectVehicle(vehicle) },
-                                modifier = Modifier.fillMaxWidth(0.85f)
+                                modifier = Modifier.width(280.dp)
                             )
                         }
                     }
@@ -262,20 +206,50 @@ fun HomeScreen(
             }
         }
 
-        // 3. Compact Vehicle Details Box (centered, reduced width)
-        uiState.selectedVehicle?.let { vehicle ->
-            Box(
+        // 3. Compact Vehicle Details: left-aligned, horizontal swipe support, empty ad fallback
+        if (uiState.filteredVehicles.isNotEmpty()) {
+            LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 6.dp),
-                contentAlignment = Alignment.Center
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = PaddingValues(horizontal = 2.dp)
             ) {
-                VehicleCard(
-                    vehicle = vehicle,
-                    isSelected = true,
-                    onClick = {},
-                    modifier = Modifier.fillMaxWidth(0.82f)
-                )
+                items(uiState.filteredVehicles) { vehicle ->
+                    val isSelected = vehicle.vehicleId == (uiState.selectedVehicle?.vehicleId ?: uiState.filteredVehicles.firstOrNull()?.vehicleId)
+                    VehicleCard(
+                        vehicle = vehicle,
+                        isSelected = isSelected,
+                        onClick = { viewModel.selectVehicle(vehicle) },
+                        modifier = Modifier.width(280.dp)
+                    )
+                }
+            }
+        } else {
+            // If no vehicles are available, show clean white ad space instead
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(76.dp)
+                    .padding(bottom = 6.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(2.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Advertisement Space",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF94A3B8),
+                        fontSize = 11.sp
+                    )
+                }
             }
         }
     }
@@ -365,7 +339,7 @@ fun VehicleCard(
                     color = GlipGreenPrimary,
                     shadowElevation = 2.dp,
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(30.dp)
                         .clickable {
                             val callIntent = Intent(Intent.ACTION_DIAL).apply {
                                 data = Uri.parse("tel:1234567890")
@@ -378,7 +352,7 @@ fun VehicleCard(
                             imageVector = Icons.Default.Call,
                             contentDescription = "Call Driver",
                             tint = Color.Black,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                     }
                 }

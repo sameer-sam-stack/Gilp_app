@@ -1,11 +1,15 @@
 package com.glip.app.ui.home
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,6 +49,31 @@ fun InteractiveDemoMap(
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
     val liveAddress by LocationTracker.currentAddress.collectAsState()
 
+    // Helper to generate a clean blue circular marker with a white dot in the center
+    val blueLocationIcon = remember(context) {
+        val sizePx = (24 * context.resources.displayMetrics.density).toInt()
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        val center = sizePx / 2f
+        val radius = sizePx / 2f
+
+        // Outer white border ring for contrast
+        paint.color = android.graphics.Color.WHITE
+        canvas.drawCircle(center, center, radius, paint)
+
+        // Blue circle
+        paint.color = android.graphics.Color.parseColor("#2563EB")
+        canvas.drawCircle(center, center, radius - 2f * context.resources.displayMetrics.density, paint)
+
+        // Center white dot
+        paint.color = android.graphics.Color.WHITE
+        canvas.drawCircle(center, center, radius * 0.35f, paint)
+
+        BitmapDrawable(context.resources, bitmap)
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             mapViewRef?.onPause()
@@ -65,7 +94,8 @@ fun InteractiveDemoMap(
                     Configuration.getInstance().userAgentValue = ctx.packageName
                     MapView(ctx).apply {
                         setTileSource(TileSourceFactory.MAPNIK)
-                        setMultiTouchControls(isInteractive)
+                        setBuiltInZoomControls(false) // Remove visible + and - zoom buttons
+                        setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
                         isTilesScaledToDpi = true
 
                         if (!isInteractive) {
@@ -86,13 +116,14 @@ fun InteractiveDemoMap(
                 if (view is MapView) {
                     view.overlays.clear()
 
-                    // User live location marker & map center
+                    // User live location marker & map center (blue circular marker with white center dot)
                     userCoords?.let { (uLat, uLng) ->
                         val userMarker = Marker(view).apply {
                             position = GeoPoint(uLat, uLng)
                             title = liveAddress ?: "My Current Location"
                             subDescription = "You are here"
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                            icon = blueLocationIcon
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                         }
                         view.overlays.add(userMarker)
                         view.controller.setCenter(GeoPoint(uLat, uLng))
@@ -119,36 +150,7 @@ fun InteractiveDemoMap(
         )
 
         if (isInteractive) {
-            // Rapido-style Status Badge
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(12.dp),
-                shape = RoundedCornerShape(20.dp),
-                color = Color.White.copy(alpha = 0.95f),
-                shadowElevation = 2.dp
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(GlipGreenPrimary) // Rapido signature yellow
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Live Street Map • Delhi NCR",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-
-            // Bottom-Right Recenter Button
+            // Small circular current location button on top-right to recenter without reloading
             SmallFloatingActionButton(
                 onClick = {
                     val targetLat = userCoords?.first ?: 28.6139
@@ -158,15 +160,17 @@ fun InteractiveDemoMap(
                     onRecenter()
                 },
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(12.dp),
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .size(40.dp),
                 containerColor = Color.White,
-                contentColor = Color(0xFF18181B),
-                shape = CircleShape
+                contentColor = Color(0xFF2563EB),
+                shape = CircleShape,
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 3.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "Recenter Map",
+                    imageVector = Icons.Default.MyLocation,
+                    contentDescription = "Current Location",
                     modifier = Modifier.size(20.dp)
                 )
             }
