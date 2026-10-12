@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.glip.app.domain.model.UserProfile
 import com.glip.app.domain.repository.UserRepository
-import com.glip.app.domain.usecase.EmailValidator
 import com.glip.app.domain.usecase.OtpVerificationManager
 import com.glip.app.domain.usecase.PhoneValidator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,16 +16,14 @@ import java.util.UUID
 data class RegistrationUiState(
     val fullName: String = "",
     val phoneNumber: String = "",
-    val email: String = "",
     val otpInput: String = "",
     val isOtpRequested: Boolean = false,
-    val demoGeneratedOtp: String? = null, // Visible ONLY for local demo testing in debug builds
+    val demoGeneratedOtp: String? = null,
     val attemptsRemaining: Int = 3,
     val cooldownSeconds: Long = 0,
     val isLoading: Boolean = false,
     val fullNameError: String? = null,
     val phoneError: String? = null,
-    val emailError: String? = null,
     val otpError: String? = null,
     val isRegistrationSuccess: Boolean = false,
     val generalMessage: String? = null
@@ -48,10 +45,6 @@ class RegistrationViewModel(
         _uiState.update { it.copy(phoneNumber = phone, phoneError = null) }
     }
 
-    fun onEmailChange(email: String) {
-        _uiState.update { it.copy(email = email, emailError = null) }
-    }
-
     fun onOtpInputChange(otp: String) {
         if (otp.length <= 6 && otp.all { it.isDigit() }) {
             _uiState.update { it.copy(otpInput = otp, otpError = null) }
@@ -69,11 +62,6 @@ class RegistrationViewModel(
 
         if (!PhoneValidator.isValidIndianMobile(state.phoneNumber)) {
             _uiState.update { it.copy(phoneError = "Please enter a valid 10-digit Indian mobile number") }
-            hasError = true
-        }
-
-        if (!EmailValidator.isValidEmail(state.email)) {
-            _uiState.update { it.copy(emailError = "Please enter a valid email address or leave empty") }
             hasError = true
         }
 
@@ -119,7 +107,7 @@ class RegistrationViewModel(
                         userId = "USR-${UUID.randomUUID().toString().take(8).uppercase()}",
                         fullName = state.fullName.trim(),
                         phoneNumber = cleanPhone,
-                        email = state.email.trim().ifEmpty { null }
+                        email = null
                     )
                     val saveResult = userRepository.saveUserProfile(profile)
                     if (saveResult.isSuccess) {

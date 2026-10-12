@@ -56,6 +56,20 @@ fun AppNavigation(
             },
             modifier = modifier
         )
+    } else if (!hasSearchedRide) {
+        // App opens directly to Pickup & Drop page. No other tabs (Ride, All Services, Profile)
+        // are accessible until Pickup and Drop locations are entered and Ride is clicked!
+        RideSearchScreen(
+            initialPickup = selectedPickup,
+            initialDrop = selectedDrop,
+            onConfirmRideSearch = { pickup, drop ->
+                selectedPickup = pickup
+                selectedDrop = drop
+                hasSearchedRide = true
+                currentBottomTab = 0
+            },
+            modifier = modifier.fillMaxSize()
+        )
     } else {
         Scaffold(
             modifier = modifier.fillMaxSize(),
@@ -69,27 +83,14 @@ fun AppNavigation(
             val contentModifier = Modifier.padding(innerPadding)
             when (currentBottomTab) {
                 0 -> {
-                    if (!hasSearchedRide) {
-                        RideSearchScreen(
-                            initialPickup = selectedPickup,
-                            initialDrop = selectedDrop,
-                            onConfirmRideSearch = { pickup, drop ->
-                                selectedPickup = pickup
-                                selectedDrop = drop
-                                hasSearchedRide = true
-                            },
-                            modifier = contentModifier
-                        )
-                    } else {
-                        val homeViewModel = remember { HomeViewModel(mobilityRepository) }
-                        HomeScreen(
-                            viewModel = homeViewModel,
-                            pickupLocation = selectedPickup,
-                            dropLocation = selectedDrop,
-                            onChangeLocation = { hasSearchedRide = false },
-                            modifier = contentModifier
-                        )
-                    }
+                    val homeViewModel = remember { HomeViewModel(mobilityRepository) }
+                    HomeScreen(
+                        viewModel = homeViewModel,
+                        pickupLocation = selectedPickup,
+                        dropLocation = selectedDrop,
+                        onChangeLocation = { hasSearchedRide = false },
+                        modifier = contentModifier
+                    )
                 }
                 1 -> {
                     val servicesViewModel = remember { ServicesViewModel(mobilityRepository) }
@@ -148,9 +149,9 @@ fun GlipCompactBottomBar(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = GlipGreenPrimary,
-                selectedTextColor = GlipGreenPrimary,
-                indicatorColor = GlipGreenPrimary.copy(alpha = 0.15f),
+                selectedIconColor = Color(0xFF18181B),
+                selectedTextColor = Color(0xFF18181B),
+                indicatorColor = GlipGreenPrimary.copy(alpha = 0.5f),
                 unselectedIconColor = Color(0xFF64748B),
                 unselectedTextColor = Color(0xFF64748B)
             )
@@ -173,9 +174,9 @@ fun GlipCompactBottomBar(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = GlipGreenPrimary,
-                selectedTextColor = GlipGreenPrimary,
-                indicatorColor = GlipGreenPrimary.copy(alpha = 0.15f),
+                selectedIconColor = Color(0xFF18181B),
+                selectedTextColor = Color(0xFF18181B),
+                indicatorColor = GlipGreenPrimary.copy(alpha = 0.5f),
                 unselectedIconColor = Color(0xFF64748B),
                 unselectedTextColor = Color(0xFF64748B)
             )
@@ -198,9 +199,9 @@ fun GlipCompactBottomBar(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = GlipGreenPrimary,
-                selectedTextColor = GlipGreenPrimary,
-                indicatorColor = GlipGreenPrimary.copy(alpha = 0.15f),
+                selectedIconColor = Color(0xFF18181B),
+                selectedTextColor = Color(0xFF18181B),
+                indicatorColor = GlipGreenPrimary.copy(alpha = 0.5f),
                 unselectedIconColor = Color(0xFF64748B),
                 unselectedTextColor = Color(0xFF64748B)
             )

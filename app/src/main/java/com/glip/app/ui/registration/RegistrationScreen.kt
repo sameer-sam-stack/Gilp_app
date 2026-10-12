@@ -9,8 +9,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
@@ -132,35 +130,6 @@ fun RegistrationScreen(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Phone,
-                    imeAction = ImeAction.Next
-                ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Email Input (Optional)
-            OutlinedTextField(
-                value = uiState.email,
-                onValueChange = { viewModel.onEmailChange(it) },
-                label = { Text(stringResource(id = R.string.email_label)) },
-                placeholder = { Text(stringResource(id = R.string.email_hint)) },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Email, contentDescription = null)
-                },
-                isError = uiState.emailError != null,
-                supportingText = {
-                    uiState.emailError?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
@@ -170,7 +139,7 @@ fun RegistrationScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             // Get OTP Button
             if (!uiState.isOtpRequested) {
@@ -184,74 +153,43 @@ fun RegistrationScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GlipGreenPrimary
+                        containerColor = MaterialTheme.colorScheme.primary
                     )
                 ) {
                     Text(
                         text = stringResource(id = R.string.get_otp_button),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
                     )
                 }
             }
 
             // OTP Section
             if (uiState.isOtpRequested) {
-                // Developer/Demo OTP Helper Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = GlipOrangeAccent.copy(alpha = 0.10f)
-                    )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = GlipOrangeAccent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "LOCAL DEMO MODE (DEBUG ONLY)",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = GlipOrangeAccent
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "No SMS service is connected. Your simulated 6-digit verification code is:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
+                    Text(
+                        text = "Enter 6-digit OTP sent to +91 ${uiState.phoneNumber}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    uiState.demoGeneratedOtp?.let { code ->
+                        TextButton(
+                            onClick = { viewModel.fillDemoOtp() },
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                         ) {
-                            Text(
-                                text = uiState.demoGeneratedOtp ?: "------",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = GlipGreenPrimary,
-                                letterSpacing = 4.sp
-                            )
-                            OutlinedButton(
-                                onClick = { viewModel.fillDemoOtp() },
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Text("Auto Fill", fontSize = 12.sp)
-                            }
+                            Text("Auto Fill ($code)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // OTP Field
                 OutlinedTextField(

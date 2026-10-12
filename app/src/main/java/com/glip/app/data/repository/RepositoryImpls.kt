@@ -22,6 +22,8 @@ class UserRepositoryImpl(
     override suspend fun saveUserProfile(profile: UserProfile): Result<Unit> {
         return try {
             preferences.saveUserProfile(profile)
+            // Asynchronously sync to Supabase (safe & non-blocking if offline/unconfigured)
+            com.glip.app.data.remote.SupabaseClient.insertUser(profile.fullName, profile.phoneNumber)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

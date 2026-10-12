@@ -44,27 +44,12 @@ fun GlipBrandHeader(
         Spacer(modifier = Modifier.width(12.dp))
 
         Column {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Glip",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = GlipOrangeAccent.copy(alpha = 0.15f)
-                ) {
-                    Text(
-                        text = "DEMO MVP",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = GlipOrangeAccent
-                    )
-                }
-            }
+            Text(
+                text = "Glip",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
             Text(
                 text = "Smart Local Route Pooling",
                 style = MaterialTheme.typography.bodySmall,

@@ -127,7 +127,7 @@ fun HomeScreen(
                 ) {
                     Text(
                         text = "Claim ₹99",
-                        color = Color.White,
+                        color = Color.Black,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
@@ -377,7 +377,7 @@ fun VehicleCard(
                         Icon(
                             imageVector = Icons.Default.Call,
                             contentDescription = "Call Driver",
-                            tint = Color.White,
+                            tint = Color.Black,
                             modifier = Modifier.size(18.dp)
                         )
                     }

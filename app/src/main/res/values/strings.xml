@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Glip</string>
     <string name="tagline">Smart Local Mobility &amp; Route Sharing</string>
-    <string name="demo_notice_badge">DEMO MVP</string>
+    <string name="demo_notice_badge">Glip</string>
 
     <!-- Registration -->
     <string name="register_title">Welcome to Glip</string>
@@ -12,7 +12,7 @@
     <string name="mobile_number_hint">10 digits (e.g. 9876543210)</string>
     <string name="email_label">Email (Optional)</string>
     <string name="email_hint">e.g. ramesh@example.com</string>
-    <string name="get_otp_button">Get Demo OTP</string>
+    <string name="get_otp_button">Get OTP</string>
     <string name="otp_label">Enter 6-Digit OTP</string>
     <string name="verify_and_continue">Verify &amp; Continue</string>
     <string name="resend_otp">Resend OTP</string>
@@ -56,6 +56,6 @@
     <string name="privacy_summary">This demo stores only your name and phone number locally in device preferences. No personal tracking, contacts, or background location data is accessed.</string>
     <string name="support_title">Help &amp; Support</string>
     <string name="logout_button">Log Out</string>
-    <string name="clear_data_button">Clear Demo Data</string>
-    <string name="app_version_label">Version 1.0.0 (Demo MVP)</string>
+    <string name="clear_data_button">Clear Account Data</string>
+    <string name="app_version_label">Version 1.0.0</string>
 </resources>

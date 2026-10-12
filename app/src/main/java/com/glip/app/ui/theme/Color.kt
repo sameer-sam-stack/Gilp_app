@@ -2,23 +2,30 @@ package com.glip.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary Glip Brand Colors: Modern Emerald Green & Vibrant Saffron Orange
-val GlipGreenPrimary = Color(0xFF0F9D58)
-val GlipGreenDark = Color(0xFF0B8043)
-val GlipGreenLight = Color(0xFFE8F5E9)
+// Rapido Brand Signature Palette (Vibrant Yellow & Deep Charcoal Black)
+val RapidoYellow = Color(0xFFFFC72C)       // Iconic Rapido Yellow
+val RapidoYellowDark = Color(0xFFE5A800)   // Dark Gold for borders & selected accents
+val RapidoYellowLight = Color(0xFFFFFBEA)  // Soft yellow tint for containers
+val RapidoBlack = Color(0xFF18181B)        // High-contrast Jet Black
+val RapidoDarkSlate = Color(0xFF27272A)
 
-val GlipOrangeAccent = Color(0xFFFF6D00)
-val GlipOrangeLight = Color(0xFFFFF3E0)
+// Primary Brand tokens aligned with Rapido styling
+val GlipGreenPrimary = Color(0xFFFFC72C)   // Rapido Yellow
+val GlipGreenDark = Color(0xFFD99B00)
+val GlipGreenLight = Color(0xFFFFFBEA)
 
-val GlipBlue = Color(0xFF1976D2)
-val GlipBlueLight = Color(0xFFE3F2FD)
+val GlipOrangeAccent = Color(0xFF18181B)   // Jet Black
+val GlipOrangeLight = Color(0xFFF4F4F5)
 
-val BackgroundLight = Color(0xFFF8F9FA)
+val GlipBlue = Color(0xFF2563EB)
+val GlipBlueLight = Color(0xFFEFF6FF)
+
+val BackgroundLight = Color(0xFFF9FAFB)
 val SurfaceLight = Color(0xFFFFFFFF)
-val TextPrimary = Color(0xFF1F2937)
-val TextSecondary = Color(0xFF6B7280)
-val BorderLight = Color(0xFFE5E7EB)
+val TextPrimary = Color(0xFF18181B)
+val TextSecondary = Color(0xFF71717A)
+val BorderLight = Color(0xFFE4E4E7)
 
-val ErrorRed = Color(0xFFD32F2F)
-val ErrorRedLight = Color(0xFFFFEBEE)
-val WarningAmber = Color(0xFFF57C00)
+val ErrorRed = Color(0xFFEF4444)
+val ErrorRedLight = Color(0xFFFEF2F2)
+val WarningAmber = Color(0xFFF59E0B)
