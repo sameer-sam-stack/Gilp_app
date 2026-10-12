@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glip.app.domain.model.Vehicle
@@ -87,13 +88,16 @@ fun HomeScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp),
+                    .padding(horizontal = 14.dp)
+                    .height(44.dp),
                 shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -112,7 +116,10 @@ fun HomeScreen(
                             text = pickupLocation.ifBlank { "Pickup" },
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(text = "➔", fontSize = 11.sp, color = Color(0xFF94A3B8))
@@ -128,7 +135,10 @@ fun HomeScreen(
                             text = dropLocation.ifBlank { "Drop" },
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
                     }
                     Text(
@@ -145,12 +155,14 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Map Area - Edge to edge with NO side gaps, strictly clipped to avoid drawing over cards
+        // Map Area - Restored to framed box with gap and rounded corners
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .clipToBounds()
+                .padding(horizontal = 14.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
         ) {
             if (!uiState.isFallbackListVisible) {
                 InteractiveDemoMap(

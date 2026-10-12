@@ -103,11 +103,11 @@ fun RideSearchScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TOP: Empty Box for Ad (Height 270dp and padding adjusted to 37dp to shift closer down)
+            // TOP: Empty Box for Ad (Height 270dp and padding adjusted to 75dp to shift closer down)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 37.dp)
+                    .padding(top = 75.dp)
                     .height(270.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(

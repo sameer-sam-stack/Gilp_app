@@ -134,14 +134,13 @@ fun InteractiveDemoMap(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .clipToBounds()
-            .clip(RoundedCornerShape(0.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(Color(0xFFE2E8F0))
     ) {
         AndroidView(
             modifier = Modifier
                 .fillMaxSize()
-                .clipToBounds(),
+                .clip(RoundedCornerShape(16.dp)),
             factory = { ctx ->
                 try {
                     Configuration.getInstance().userAgentValue = ctx.packageName
@@ -150,8 +149,6 @@ fun InteractiveDemoMap(
                         setBuiltInZoomControls(false) // Remove visible + and - zoom buttons
                         setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
                         isTilesScaledToDpi = true // Set to true to prevent tiny unreadable street text on high-density screens
-                        isHorizontalMapRepetitionEnabled = false
-                        isVerticalMapRepetitionEnabled = false
                         setDestroyMode(false)
 
                         if (!isInteractive) {
@@ -160,7 +157,7 @@ fun InteractiveDemoMap(
 
                         val startLat = userCoords?.first ?: 28.6139
                         val startLng = userCoords?.second ?: 77.2090
-                        controller.setZoom(16.0) // Crisp street level with legible street names
+                        controller.setZoom(15.5) // Crisp street level with legible street names
                         controller.setCenter(GeoPoint(startLat, startLng))
                         mapViewRef = this
                     }
@@ -182,6 +179,9 @@ fun InteractiveDemoMap(
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                         }
                         view.overlays.add(userMarker)
+                        if (vehicles.isEmpty()) {
+                            view.controller.setCenter(GeoPoint(uLat, uLng))
+                        }
                     }
 
                     // Vehicles markers with distinct vehicle icon
