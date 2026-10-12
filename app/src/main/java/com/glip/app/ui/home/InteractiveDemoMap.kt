@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -133,10 +134,14 @@ fun InteractiveDemoMap(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .clipToBounds()
+            .clip(RoundedCornerShape(0.dp))
             .background(Color(0xFFE2E8F0))
     ) {
         AndroidView(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .clipToBounds(),
             factory = { ctx ->
                 try {
                     Configuration.getInstance().userAgentValue = ctx.packageName

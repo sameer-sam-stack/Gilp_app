@@ -18,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -144,11 +145,12 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Map Area - Edge to edge with NO side gaps
+        // Map Area - Edge to edge with NO side gaps, strictly clipped to avoid drawing over cards
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .clipToBounds()
         ) {
             if (!uiState.isFallbackListVisible) {
                 InteractiveDemoMap(
@@ -183,7 +185,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // View toggle
+        // View toggle & App Version
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -191,12 +193,21 @@ fun HomeScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "${uiState.filteredVehicles.size} active vehicle",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "${uiState.filteredVehicles.size} active vehicle",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "• Version 5",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color(0xFF94A3B8),
+                    fontSize = 10.sp
+                )
+            }
             TextButton(
                 onClick = { viewModel.toggleFallbackListView() },
                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
@@ -210,34 +221,63 @@ fun HomeScreen(
             }
         }
 
-        // 3. Compact Vehicle Details: left-aligned, horizontal swipe support, empty ad fallback
+        // 3. Compact Vehicle Details Box (Width 99dp) starting from left, with trailing AD Container
         if (uiState.filteredVehicles.isNotEmpty()) {
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 14.dp)
             ) {
+                // Vehicle Details Boxes (Width 99dp each)
                 items(uiState.filteredVehicles) { vehicle ->
                     val isSelected = vehicle.vehicleId == (uiState.selectedVehicle?.vehicleId ?: uiState.filteredVehicles.firstOrNull()?.vehicleId)
                     VehicleCard(
                         vehicle = vehicle,
                         isSelected = isSelected,
                         onClick = { viewModel.selectVehicle(vehicle) },
-                        modifier = Modifier.width(230.dp)
+                        modifier = Modifier.width(99.dp)
                     )
+                }
+
+                // Trailing AD Container: placed at the end of the vehicle cards
+                item {
+                    Card(
+                        modifier = Modifier
+                            .width(99.dp)
+                            .height(86.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(2.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "AD",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF94A3B8),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
                 }
             }
         } else {
-            // If no vehicles are available, show clean white ad space instead
+            // If no vehicles are available, show ad container instead
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp)
-                    .height(76.dp)
+                    .height(86.dp)
                     .padding(bottom = 6.dp),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(2.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -279,7 +319,7 @@ fun VehicleCard(
     Card(
         modifier = modifier
             .clickable { onClick() },
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -292,60 +332,60 @@ fun VehicleCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 8.dp)
+                .padding(horizontal = 7.dp, vertical = 6.dp)
         ) {
-            // Row 1: Driver Name (Left) & Seats Free (Right)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // 1. Driver Name (Truncated cleanly)
+            Text(
+                text = vehicle.driver.fullName,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
+            )
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // 2. Seat Info
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = if (vehicle.seatAvailability.availableSeats > 0) Color(0xFFDCFCE7) else Color(0xFFFFEDD5)
             ) {
                 Text(
-                    text = vehicle.driver.fullName,
-                    style = MaterialTheme.typography.titleMedium,
+                    text = "${vehicle.seatAvailability.availableSeats}/${vehicle.seatAvailability.totalSeats} seats",
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                    style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
+                    color = if (vehicle.seatAvailability.availableSeats > 0) GlipGreenDark else GlipOrangeAccent,
+                    fontSize = 9.sp
                 )
-
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (vehicle.seatAvailability.availableSeats > 0) Color(0xFFDCFCE7) else Color(0xFFFFEDD5)
-                ) {
-                    Text(
-                        text = "${vehicle.seatAvailability.availableSeats}/${vehicle.seatAvailability.totalSeats} Seats free",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = if (vehicle.seatAvailability.availableSeats > 0) GlipGreenDark else GlipOrangeAccent,
-                        fontSize = 10.sp
-                    )
-                }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
-            // Row 2: Vehicle Number (Left) & Call Icon Button (Right)
+            // 3. Vehicle Number & Call Button in a row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = vehicle.licensePlateMasked,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = vehicle.licensePlateMasked.replace(" ", ""),
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF475569),
-                    fontSize = 12.sp
+                    fontSize = 9.sp,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f)
                 )
 
+                // 4. Call icon button
                 Surface(
                     shape = CircleShape,
                     color = GlipGreenPrimary,
-                    shadowElevation = 2.dp,
+                    shadowElevation = 1.dp,
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(22.dp)
                         .clickable {
                             val callIntent = Intent(Intent.ACTION_DIAL).apply {
                                 data = Uri.parse("tel:1234567890")
@@ -358,7 +398,7 @@ fun VehicleCard(
                             imageVector = Icons.Default.Call,
                             contentDescription = "Call Driver",
                             tint = Color.Black,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(11.dp)
                         )
                     }
                 }
