@@ -56,7 +56,7 @@ fun RideSearchScreen(
             .fillMaxSize()
             .background(Color(0xFF0F172A))
     ) {
-        // 1. Real OpenStreetMap background (80% blur effect + Touch blocked)
+        // 1. Real OpenStreetMap background (Extra deep blur effect + Touch blocked)
         InteractiveDemoMap(
             vehicles = emptyList(),
             selectedVehicle = null,
@@ -65,14 +65,14 @@ fun RideSearchScreen(
             isInteractive = false,
             modifier = Modifier
                 .fillMaxSize()
-                .blur(radius = 20.dp)
+                .blur(radius = 40.dp)
         )
 
-        // 80% Frosted Blur overlay Scrim to soften map details and prevent background interaction
+        // Extra deep Frosted Blur overlay Scrim to completely obscure map details and block background interaction
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0F172A).copy(alpha = 0.80f))
+                .background(Color(0xFF0F172A).copy(alpha = 0.92f))
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
@@ -89,11 +89,11 @@ fun RideSearchScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TOP: Empty Box for Ad (Increased height to 105dp & translucent frosted glass)
+            // TOP: Empty Box for Ad (Height increased from 105dp to 150dp downwards)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(105.dp)
+                    .height(150.dp)
                     .padding(top = 6.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(
@@ -262,19 +262,25 @@ fun RideSearchScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // RIDE BUTTON (Rapido Jet Black & Signature Yellow Arrow)
+                    val isRideEnabled = pickup.isNotBlank() && drop.isNotBlank()
+
+                    // RIDE BUTTON (Clickable ONLY when both pickup and drop are entered)
                     Button(
                         onClick = {
-                            val finalPickup = pickup.ifBlank { "Connaught Place" }
-                            val finalDrop = drop.ifBlank { "Cyber Hub Gurugram" }
-                            onConfirmRideSearch(finalPickup, finalDrop)
+                            if (isRideEnabled) {
+                                onConfirmRideSearch(pickup.trim(), drop.trim())
+                            }
                         },
+                        enabled = isRideEnabled,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF18181B)
+                            containerColor = Color(0xFF18181B),
+                            disabledContainerColor = Color(0xFF94A3B8).copy(alpha = 0.5f),
+                            contentColor = Color.White,
+                            disabledContentColor = Color.White.copy(alpha = 0.6f)
                         )
                     ) {
                         Row(
@@ -285,13 +291,13 @@ fun RideSearchScreen(
                                 text = "Ride",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = if (isRideEnabled) Color.White else Color.White.copy(alpha = 0.6f)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = Icons.Default.ArrowForward,
                                 contentDescription = null,
-                                tint = GlipGreenPrimary, // Rapido Yellow
+                                tint = if (isRideEnabled) GlipGreenPrimary else Color.White.copy(alpha = 0.6f),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
