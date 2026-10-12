@@ -17,5 +17,9 @@ class GlipApplication : Application() {
         Configuration.getInstance().userAgentValue = packageName
         Configuration.getInstance().osmdroidBasePath = basePath
         Configuration.getInstance().osmdroidTileCache = tileCache
+        Configuration.getInstance().cacheMapTileCount = 18
+        Configuration.getInstance().cacheMapTileOvershoot = 18
+        Configuration.getInstance().tileDownloadThreads = 4
+        Configuration.getInstance().tileFileSystemThreads = 4
     }
 }

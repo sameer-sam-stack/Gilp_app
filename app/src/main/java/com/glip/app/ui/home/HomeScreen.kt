@@ -48,7 +48,6 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 14.dp)
     ) {
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -56,6 +55,7 @@ fun HomeScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 14.dp)
                 .height(80.dp),
             shape = RoundedCornerShape(14.dp),
             colors = CardDefaults.cardColors(
@@ -84,7 +84,9 @@ fun HomeScreen(
         // 2. Selected Route Badge showing current pickup -> drop with ONLY Change clickable
         if (pickupLocation.isNotBlank() || dropLocation.isNotBlank()) {
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp),
                 shape = RoundedCornerShape(10.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -142,7 +144,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Map Area
+        // Map Area - Edge to edge with NO side gaps
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -157,7 +159,9 @@ fun HomeScreen(
                 )
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(uiState.filteredVehicles) { vehicle ->
@@ -183,12 +187,12 @@ fun HomeScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 2.dp),
+                .padding(horizontal = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "${uiState.filteredVehicles.size} active shared vehicle(s)",
+                text = "${uiState.filteredVehicles.size} active vehicle",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp
@@ -213,7 +217,7 @@ fun HomeScreen(
                     .fillMaxWidth()
                     .padding(bottom = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = PaddingValues(horizontal = 2.dp)
+                contentPadding = PaddingValues(horizontal = 14.dp)
             ) {
                 items(uiState.filteredVehicles) { vehicle ->
                     val isSelected = vehicle.vehicleId == (uiState.selectedVehicle?.vehicleId ?: uiState.filteredVehicles.firstOrNull()?.vehicleId)
@@ -230,6 +234,7 @@ fun HomeScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 14.dp)
                     .height(76.dp)
                     .padding(bottom = 6.dp),
                 shape = RoundedCornerShape(14.dp),

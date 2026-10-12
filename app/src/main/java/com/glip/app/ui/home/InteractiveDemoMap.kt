@@ -49,27 +49,54 @@ fun InteractiveDemoMap(
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
     val liveAddress by LocationTracker.currentAddress.collectAsState()
 
-    // Helper to generate a clean blue circular marker with a white dot in the center
-    val blueLocationIcon = remember(context) {
-        val sizePx = (24 * context.resources.displayMetrics.density).toInt()
-        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    // Helper to generate a small light-blue map style location pin
+    val lightBlueLocationIcon = remember(context) {
+        val density = context.resources.displayMetrics.density
+        val widthPx = (20 * density).toInt()
+        val heightPx = (28 * density).toInt()
+        val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-        val center = sizePx / 2f
-        val radius = sizePx / 2f
+        val centerX = widthPx / 2f
+        val headRadius = widthPx / 2f - (1.5f * density)
 
-        // Outer white border ring for contrast
+        // Draw pin head & needle path
+        val path = android.graphics.Path().apply {
+            moveTo(centerX, heightPx.toFloat())
+            // Left curve to head
+            quadTo(centerX - headRadius, heightPx * 0.55f, centerX - headRadius, headRadius + 1.5f * density)
+            // Head circle top
+            arcTo(
+                android.graphics.RectF(
+                    centerX - headRadius,
+                    1.5f * density,
+                    centerX + headRadius,
+                    headRadius * 2 + 1.5f * density
+                ),
+                180f,
+                180f,
+                false
+            )
+            // Right curve to needle tip
+            quadTo(centerX + headRadius, heightPx * 0.55f, centerX, heightPx.toFloat())
+            close()
+        }
+
+        // Drop shadow / stroke
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 2f * density
         paint.color = android.graphics.Color.WHITE
-        canvas.drawCircle(center, center, radius, paint)
+        canvas.drawPath(path, paint)
 
-        // Blue circle
-        paint.color = android.graphics.Color.parseColor("#2563EB")
-        canvas.drawCircle(center, center, radius - 2f * context.resources.displayMetrics.density, paint)
+        // Light blue fill (#38BDF8 / sky blue)
+        paint.style = Paint.Style.FILL
+        paint.color = android.graphics.Color.parseColor("#38BDF8")
+        canvas.drawPath(path, paint)
 
-        // Center white dot
+        // Small white dot inside the head
         paint.color = android.graphics.Color.WHITE
-        canvas.drawCircle(center, center, radius * 0.35f, paint)
+        canvas.drawCircle(centerX, headRadius + 1.5f * density, headRadius * 0.38f, paint)
 
         BitmapDrawable(context.resources, bitmap)
     }
@@ -84,7 +111,6 @@ fun InteractiveDemoMap(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(16.dp))
             .background(Color(0xFFE2E8F0))
     ) {
         AndroidView(
@@ -96,7 +122,10 @@ fun InteractiveDemoMap(
                         setTileSource(TileSourceFactory.MAPNIK)
                         setBuiltInZoomControls(false) // Remove visible + and - zoom buttons
                         setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
-                        isTilesScaledToDpi = true
+                        isTilesScaledToDpi = false // Ensures street labels and tiles render ultra crisp without blurry 2x stretch
+                        isHorizontalMapRepetitionEnabled = false
+                        isVerticalMapRepetitionEnabled = false
+                        setDestroyMode(false)
 
                         if (!isInteractive) {
                             setOnTouchListener { _, _ -> true } // Block map touch when on search screen
@@ -104,7 +133,7 @@ fun InteractiveDemoMap(
 
                         val startLat = userCoords?.first ?: 28.6139
                         val startLng = userCoords?.second ?: 77.2090
-                        controller.setZoom(15.0) // Detailed street level zoom
+                        controller.setZoom(16.0) // Crisp street level with legible street names
                         controller.setCenter(GeoPoint(startLat, startLng))
                         mapViewRef = this
                     }
@@ -116,14 +145,14 @@ fun InteractiveDemoMap(
                 if (view is MapView) {
                     view.overlays.clear()
 
-                    // User live location marker & map center (blue circular marker with white center dot)
+                    // User live location marker (small light-blue map pin)
                     userCoords?.let { (uLat, uLng) ->
                         val userMarker = Marker(view).apply {
                             position = GeoPoint(uLat, uLng)
                             title = liveAddress ?: "My Current Location"
                             subDescription = "You are here"
-                            icon = blueLocationIcon
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                            icon = lightBlueLocationIcon
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                         }
                         view.overlays.add(userMarker)
                         view.controller.setCenter(GeoPoint(uLat, uLng))
