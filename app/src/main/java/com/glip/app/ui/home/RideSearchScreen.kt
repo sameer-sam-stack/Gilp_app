@@ -1,48 +1,34 @@
 package com.glip.app.ui.home
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.Context
-import android.content.pm.PackageManager
-import android.location.Geocoder
-import android.location.LocationManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.input.pointer.pointerInput
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ElectricBolt
-import androidx.compose.material.icons.filled.Map
-import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import com.glip.app.ui.theme.GlipGreenPrimary
-import java.util.Locale
+import com.glip.app.util.LocationTracker
 
 /**
  * RideSearchScreen:
- * The default landing screen when the app opens.
- * 1. Top Banner Ad
- * 2. Real GPS Location request & prefill into Pickup input
- * 3. Pickup input box & Drop input box
- * 4. Ride -> Button (navigates to Ride tab)
- * 5. Chota Ad Box
- * 6. Real OpenStreetMap (OSM) background & interactive picker (100% Royalty-Free ODbL)
+ * Landing screen when app opens.
+ * 1. Top: Empty Box for future Ad
+ * 2. Center: Pickup and Drop address inputs + "Ride ->" button
+ * 3. Bottom: Empty Box for future Ad
+ * 4. Background: Real OSM street map (Non-interactive, touch blocked)
+ * 5. GPS auto-detects user location and pre-fills into Pickup box
  */
 @Composable
 fun RideSearchScreen(
@@ -51,42 +37,15 @@ fun RideSearchScreen(
     onConfirmRideSearch: (pickup: String, drop: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
+    val liveAddress by LocationTracker.currentAddress.collectAsState()
+
     var pickup by remember { mutableStateOf(initialPickup) }
     var drop by remember { mutableStateOf(initialDrop) }
-    var showMapPickerFor by remember { mutableStateOf<String?>(null) } // "pickup" or "drop" or null
 
-    // Real Location Auto-Detection
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val fineGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
-        val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (fineGranted || coarseGranted) {
-            detectCurrentLocation(context) { loc ->
-                if (pickup.isBlank() || pickup == "Pickup point") {
-                    pickup = loc
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        val finePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-        val coarsePermission = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
-        if (finePermission != PackageManager.PERMISSION_GRANTED && coarsePermission != PackageManager.PERMISSION_GRANTED) {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        } else {
-            detectCurrentLocation(context) { loc ->
-                if (pickup.isBlank()) {
-                    pickup = loc
-                }
-            }
+    // Auto-fill pickup with live GPS location as soon as detected
+    LaunchedEffect(liveAddress) {
+        if (!liveAddress.isNullOrBlank() && pickup.isBlank()) {
+            pickup = liveAddress ?: ""
         }
     }
 
@@ -95,113 +54,54 @@ fun RideSearchScreen(
             .fillMaxSize()
             .background(Color(0xFF0F172A))
     ) {
-        // Real OpenStreetMap (OSM) Background
+        // 1. Real OpenStreetMap background (Touch blocked: user cannot pan or drag behind)
         InteractiveDemoMap(
             vehicles = emptyList(),
             selectedVehicle = null,
             onVehicleSelect = {},
             onRecenter = {},
+            isInteractive = false,
             modifier = Modifier.fillMaxSize()
         )
 
-        // Subtle dark gradient scrim for readability
+        // Touch absorber overlay to completely prevent any interaction with the background map
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.22f))
+                .background(Color.Black.copy(alpha = 0.20f))
+                .pointerInput(Unit) {
+                    // Consumes all background pointer events so user cannot drag background map
+                }
         )
 
+        // Main UI Column
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 14.dp, vertical = 18.dp),
+                .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. TOP BANNER AD (Rapido style High-Contrast Banner)
+            // TOP: Empty Box for Ad (User requested: no mock ads, just empty container ready for Ad)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp),
+                    .height(76.dp)
+                    .padding(top = 8.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF18181B)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White.copy(alpha = 0.92f)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(GlipGreenPrimary), // Rapido Signature Yellow
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ElectricBolt,
-                                contentDescription = null,
-                                tint = Color.Black,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "Daily Commute Pass",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    fontSize = 14.sp
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = GlipGreenPrimary
-                                ) {
-                                    Text(
-                                        text = "OFFER",
-                                        color = Color.Black,
-                                        fontSize = 8.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                    )
-                                }
-                            }
-                            Text(
-                                text = "Save up to 40% on pool & bike rides",
-                                fontSize = 11.sp,
-                                color = Color(0xFFA1A1AA)
-                            )
-                        }
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = GlipGreenPrimary,
-                        modifier = Modifier.clickable { }
-                    ) {
-                        Text(
-                            text = "Claim ₹49",
-                            color = Color.Black,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        )
-                    }
-                }
+                // Empty container ready for Ad
+                Box(modifier = Modifier.fillMaxSize())
             }
 
-            // 2. CENTER RIDE CARD & CHOTA AD BOX
+            // CENTER: Floating Pickup & Drop Card + Ride Button
             Card(
-                modifier = Modifier.fillMaxWidth(0.95f),
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(22.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
@@ -211,9 +111,9 @@ fun RideSearchScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(18.dp)
                 ) {
-                    // Labels row: Pickup & Drop
+                    // Labels: Pickup (Green bullet) & Drop (Red bullet)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -258,68 +158,49 @@ fun RideSearchScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // Row: Pickup Input Box -> Arrow -> Drop Input Box
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         // Pickup Input Box
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(46.dp),
+                                .height(48.dp),
                             shape = RoundedCornerShape(12.dp),
                             color = Color(0xFFF8FAFC),
                             border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                         ) {
-                            Row(
+                            Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(horizontal = 10.dp),
+                                contentAlignment = Alignment.CenterStart
                             ) {
                                 BasicTextField(
                                     value = pickup,
                                     onValueChange = { pickup = it },
                                     singleLine = true,
                                     textStyle = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 11.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = Color(0xFF0F172A)
                                     ),
                                     decorationBox = { innerTextField ->
                                         if (pickup.isEmpty()) {
                                             Text(
-                                                text = "Pickup point",
-                                                fontSize = 11.sp,
+                                                text = "Pickup address",
+                                                fontSize = 12.sp,
                                                 color = Color(0xFF94A3B8)
                                             )
                                         }
                                         innerTextField()
                                     },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.MyLocation,
-                                    contentDescription = "Current Location",
-                                    tint = GlipGreenPrimary,
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .clickable {
-                                            detectCurrentLocation(context) { loc -> pickup = loc }
-                                        }
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Map,
-                                    contentDescription = "Open Map for Pickup",
-                                    tint = Color(0xFF64748B),
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .clickable { showMapPickerFor = "pickup" }
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
@@ -327,7 +208,7 @@ fun RideSearchScreen(
                         // Arrow Icon
                         Text(
                             text = "➔",
-                            fontSize = 13.sp,
+                            fontSize = 14.sp,
                             color = Color(0xFF94A3B8),
                             fontWeight = FontWeight.Bold
                         )
@@ -336,53 +217,45 @@ fun RideSearchScreen(
                         Surface(
                             modifier = Modifier
                                 .weight(1f)
-                                .height(46.dp),
+                                .height(48.dp),
                             shape = RoundedCornerShape(12.dp),
                             color = Color(0xFFF8FAFC),
                             border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                         ) {
-                            Row(
+                            Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(horizontal = 10.dp),
+                                contentAlignment = Alignment.CenterStart
                             ) {
                                 BasicTextField(
                                     value = drop,
                                     onValueChange = { drop = it },
                                     singleLine = true,
                                     textStyle = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 11.sp,
+                                        fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = Color(0xFF0F172A)
                                     ),
                                     decorationBox = { innerTextField ->
                                         if (drop.isEmpty()) {
                                             Text(
-                                                text = "Drop point",
-                                                fontSize = 11.sp,
+                                                text = "Drop address",
+                                                fontSize = 12.sp,
                                                 color = Color(0xFF94A3B8)
                                             )
                                         }
                                         innerTextField()
                                     },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Map,
-                                    contentDescription = "Open Map for Drop",
-                                    tint = Color(0xFFEF4444),
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .clickable { showMapPickerFor = "drop" }
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // 3. RIDE BUTTON (Rapido Jet Black & Yellow Arrow)
+                    // RIDE BUTTON (Rapido Jet Black & Signature Yellow Arrow)
                     Button(
                         onClick = {
                             val finalPickup = pickup.ifBlank { "Connaught Place" }
@@ -391,7 +264,7 @@ fun RideSearchScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
+                            .height(50.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF18181B)
@@ -403,7 +276,7 @@ fun RideSearchScreen(
                         ) {
                             Text(
                                 text = "Ride",
-                                fontSize = 15.sp,
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
@@ -419,150 +292,24 @@ fun RideSearchScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // 4. CHOTA AD BOX (Compact promo banner)
-                    Surface(
+                    // BOTTOM: Small Empty Box for Ad (User requested: no mock ads, just empty container ready for Ad)
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { },
-                        color = Color(0xFFFFFBEA),
-                        border = BorderStroke(1.dp, GlipGreenPrimary.copy(alpha = 0.6f))
+                            .height(44.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFF8FAFC)
+                        ),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 10.dp, vertical = 7.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(text = "⚡", fontSize = 13.sp)
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Quick Saver: Pooling from ₹15/km",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF18181B)
-                                )
-                            }
-                            Text(
-                                text = "RAPIDGLIP",
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFB45309)
-                            )
-                        }
+                        // Empty container ready for Ad
+                        Box(modifier = Modifier.fillMaxSize())
                     }
                 }
             }
 
-            // Bottom Spacer
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
         }
-
-        // Real OpenStreetMap Location Picker Dialog
-        showMapPickerFor?.let { target ->
-            AlertDialog(
-                onDismissRequest = { showMapPickerFor = null },
-                title = {
-                    Text(
-                        text = if (target == "pickup") "Select Pickup on OpenStreetMap" else "Select Drop on OpenStreetMap",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
-                    )
-                },
-                text = {
-                    Column {
-                        Text(
-                            text = "Tap a location to select:",
-                            fontSize = 12.sp,
-                            color = Color(0xFF64748B)
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(220.dp)
-                        ) {
-                            InteractiveDemoMap(
-                                vehicles = emptyList(),
-                                selectedVehicle = null,
-                                onVehicleSelect = {},
-                                onRecenter = {},
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            val options = if (target == "pickup") {
-                                listOf("Connaught Place", "Karol Bagh", "Saket")
-                            } else {
-                                listOf("Cyber Hub", "Noida Sec 62", "Nehru Place")
-                            }
-                            options.forEach { loc ->
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFF1F5F9),
-                                    modifier = Modifier.clickable {
-                                        if (target == "pickup") pickup = loc else drop = loc
-                                        showMapPickerFor = null
-                                    }
-                                ) {
-                                    Text(
-                                        text = loc,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showMapPickerFor = null }) {
-                        Text("Done", color = GlipGreenPrimary, fontWeight = FontWeight.Bold)
-                    }
-                }
-            )
-        }
-    }
-}
-
-/**
- * Detect user's current GPS location and format into human-readable text
- */
-@SuppressLint("MissingPermission")
-fun detectCurrentLocation(context: Context, onLocationFound: (String) -> Unit) {
-    try {
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
-        val isGpsEnabled = locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == true
-        val isNetworkEnabled = locationManager?.isProviderEnabled(LocationManager.NETWORK_PROVIDER) == true
-
-        val lastKnown = when {
-            isGpsEnabled -> locationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            isNetworkEnabled -> locationManager?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-            else -> null
-        }
-
-        if (lastKnown != null) {
-            try {
-                val geocoder = Geocoder(context, Locale.getDefault())
-                val addresses = geocoder.getFromLocation(lastKnown.latitude, lastKnown.longitude, 1)
-                val locality = addresses?.firstOrNull()?.locality ?: addresses?.firstOrNull()?.subLocality
-                if (!locality.isNullOrBlank()) {
-                    onLocationFound("Current Location ($locality)")
-                    return
-                }
-            } catch (_: Exception) {}
-            onLocationFound("My Location (${String.format(Locale.US, "%.3f, %.3f", lastKnown.latitude, lastKnown.longitude)})")
-        } else {
-            onLocationFound("Current Location (Delhi NCR)")
-        }
-    } catch (_: Exception) {
-        onLocationFound("Current Location (Delhi NCR)")
     }
 }
