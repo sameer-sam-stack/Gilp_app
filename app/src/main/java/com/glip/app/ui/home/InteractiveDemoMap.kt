@@ -101,6 +101,28 @@ fun InteractiveDemoMap(
         BitmapDrawable(context.resources, bitmap)
     }
 
+    // Custom vehicle icon (small green circular pin with dark border)
+    val vehicleIcon = remember(context) {
+        val density = context.resources.displayMetrics.density
+        val sizePx = (16 * density).toInt()
+        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        val center = sizePx / 2f
+        // White border
+        paint.color = android.graphics.Color.WHITE
+        canvas.drawCircle(center, center, center, paint)
+        // Green inner circle
+        paint.color = android.graphics.Color.parseColor("#10B981")
+        canvas.drawCircle(center, center, center - 1.5f * density, paint)
+        // Dark center dot
+        paint.color = android.graphics.Color.parseColor("#065F46")
+        canvas.drawCircle(center, center, center * 0.4f, paint)
+
+        BitmapDrawable(context.resources, bitmap)
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             mapViewRef?.onPause()
@@ -122,7 +144,7 @@ fun InteractiveDemoMap(
                         setTileSource(TileSourceFactory.MAPNIK)
                         setBuiltInZoomControls(false) // Remove visible + and - zoom buttons
                         setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
-                        isTilesScaledToDpi = false // Ensures street labels and tiles render ultra crisp without blurry 2x stretch
+                        isTilesScaledToDpi = true // Set to true to prevent tiny unreadable street text on high-density screens
                         isHorizontalMapRepetitionEnabled = false
                         isVerticalMapRepetitionEnabled = false
                         setDestroyMode(false)
@@ -155,15 +177,16 @@ fun InteractiveDemoMap(
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                         }
                         view.overlays.add(userMarker)
-                        view.controller.setCenter(GeoPoint(uLat, uLng))
                     }
 
-                    // Vehicles markers
+                    // Vehicles markers with distinct vehicle icon
                     vehicles.forEach { vehicle ->
                         val marker = Marker(view).apply {
                             position = GeoPoint(vehicle.currentLat, vehicle.currentLng)
                             title = "${vehicle.driver.fullName} (${vehicle.licensePlateMasked})"
                             subDescription = "${vehicle.seatAvailability.availableSeats} seats free"
+                            icon = vehicleIcon
+                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                             if (isInteractive) {
                                 setOnMarkerClickListener { _, _ ->
                                     onVehicleSelect(vehicle)

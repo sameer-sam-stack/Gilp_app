@@ -225,7 +225,7 @@ fun HomeScreen(
                         vehicle = vehicle,
                         isSelected = isSelected,
                         onClick = { viewModel.selectVehicle(vehicle) },
-                        modifier = Modifier.width(280.dp)
+                        modifier = Modifier.width(230.dp)
                     )
                 }
             }
@@ -292,7 +292,7 @@ fun VehicleCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp)
+                .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {
             // Row 1: Driver Name (Left) & Seats Free (Right)
             Row(
@@ -304,26 +304,27 @@ fun VehicleCard(
                     text = vehicle.driver.fullName,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
                 )
 
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(10.dp),
                     color = if (vehicle.seatAvailability.availableSeats > 0) Color(0xFFDCFCE7) else Color(0xFFFFEDD5)
                 ) {
                     Text(
                         text = "${vehicle.seatAvailability.availableSeats}/${vehicle.seatAvailability.totalSeats} Seats free",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (vehicle.seatAvailability.availableSeats > 0) GlipGreenDark else GlipOrangeAccent,
-                        fontSize = 11.sp
+                        fontSize = 10.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Row 2: Vehicle Number (Left) & Call Icon Button (Right)
             Row(
@@ -336,7 +337,7 @@ fun VehicleCard(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF475569),
-                    fontSize = 13.sp
+                    fontSize = 12.sp
                 )
 
                 Surface(
@@ -344,7 +345,7 @@ fun VehicleCard(
                     color = GlipGreenPrimary,
                     shadowElevation = 2.dp,
                     modifier = Modifier
-                        .size(30.dp)
+                        .size(28.dp)
                         .clickable {
                             val callIntent = Intent(Intent.ACTION_DIAL).apply {
                                 data = Uri.parse("tel:1234567890")
@@ -357,7 +358,7 @@ fun VehicleCard(
                             imageVector = Icons.Default.Call,
                             contentDescription = "Call Driver",
                             tint = Color.Black,
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }
