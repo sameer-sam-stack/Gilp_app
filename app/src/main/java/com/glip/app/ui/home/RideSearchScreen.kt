@@ -2,7 +2,8 @@ package com.glip.app.ui.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.input.pointer.pointerInput
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -69,8 +70,11 @@ fun RideSearchScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.20f))
-                .pointerInput(Unit) {
-                    // Consumes all background pointer events so user cannot drag background map
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) {
+                    // Consumes touches so user cannot click or drag through to background map
                 }
         )
 
