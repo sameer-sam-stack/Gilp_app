@@ -74,7 +74,7 @@ fun RideSearchScreen(
             .fillMaxSize()
             .background(Color(0xFF0F172A))
     ) {
-        // 1. Real OpenStreetMap background (Blur effect + Touch blocked)
+        // 1. Real OpenStreetMap background (Extra Deep Blur effect + Touch blocked)
         InteractiveDemoMap(
             vehicles = emptyList(),
             selectedVehicle = null,
@@ -83,14 +83,14 @@ fun RideSearchScreen(
             isInteractive = false,
             modifier = Modifier
                 .fillMaxSize()
-                .blur(radius = 12.dp)
+                .blur(radius = 18.dp)
         )
 
-        // Frosted Blur overlay Scrim (Semi-transparent so map streets & shapes are visible through frosted glass without being readable)
+        // Frosted Deep Blur overlay Scrim (Semi-transparent with deep frosted glass effect)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0F172A).copy(alpha = 0.40f))
+                .background(Color(0xFF0F172A).copy(alpha = 0.48f))
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
