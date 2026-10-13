@@ -72,33 +72,26 @@ fun RideSearchScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFFF8FAFC))
+            .background(Color(0xFF0F172A))
     ) {
-        // 1. Real OpenStreetMap background (Touch blocked)
+        // 1. Real OpenStreetMap background (Native Hardware Blur + Compose Blur + Touch blocked)
         InteractiveDemoMap(
             vehicles = emptyList(),
             selectedVehicle = null,
             onVehicleSelect = {},
             onRecenter = {},
             isInteractive = false,
+            isBlurred = true,
             modifier = Modifier
                 .fillMaxSize()
-                .blur(radius = 20.dp)
+                .blur(radius = 24.dp)
         )
 
-        // 2. Light White Tone Frosted Scrim (Softens street map with subtle white tone on all Android versions)
+        // 2. Frosted Blur Glass Scrim (Translucent, removes solid white so authentic blurred map shows through)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.88f),
-                            Color(0xFFF1F5F9).copy(alpha = 0.84f),
-                            Color.White.copy(alpha = 0.90f)
-                        )
-                    )
-                )
+                .background(Color(0xFF0F172A).copy(alpha = 0.38f))
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }

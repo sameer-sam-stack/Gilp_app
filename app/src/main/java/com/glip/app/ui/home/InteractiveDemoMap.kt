@@ -43,6 +43,7 @@ fun InteractiveDemoMap(
     onVehicleSelect: (Vehicle) -> Unit,
     onRecenter: () -> Unit,
     isInteractive: Boolean = true,
+    isBlurred: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -152,9 +153,22 @@ fun InteractiveDemoMap(
                             setOnTouchListener { _, _ -> true } // Block map touch when on search screen
                         }
 
+                        if (isBlurred) {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                                val blurRadiusPx = 32f * ctx.resources.displayMetrics.density
+                                setRenderEffect(
+                                    android.graphics.RenderEffect.createBlurEffect(
+                                        blurRadiusPx,
+                                        blurRadiusPx,
+                                        android.graphics.Shader.TileMode.CLAMP
+                                    )
+                                )
+                            }
+                        }
+
                         val startLat = userCoords?.first ?: 28.6139
                         val startLng = userCoords?.second ?: 77.2090
-                        controller.setZoom(15.5) // Crisp street level with legible street names
+                        controller.setZoom(if (isBlurred) 14.5 else 15.5)
                         controller.setCenter(GeoPoint(startLat, startLng))
                         mapViewRef = this
                     }
