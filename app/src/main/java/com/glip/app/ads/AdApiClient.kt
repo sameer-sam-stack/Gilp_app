@@ -51,13 +51,33 @@ object AdApiClient {
                     var ad: AppAd? = null
                     if (obj.has("ad") && !obj.isNull("ad")) {
                         val adObj = obj.getJSONObject("ad")
+                        val bannerUrl = when {
+                            adObj.has("bannerImageUrl") && !adObj.isNull("bannerImageUrl") -> adObj.optString("bannerImageUrl")
+                            adObj.has("banner_image_url") && !adObj.isNull("banner_image_url") -> adObj.optString("banner_image_url")
+                            else -> ""
+                        }
+                        val destUrl = when {
+                            adObj.has("destinationUrl") && !adObj.isNull("destinationUrl") -> adObj.optString("destinationUrl")
+                            adObj.has("destination_url") && !adObj.isNull("destination_url") -> adObj.optString("destination_url")
+                            else -> ""
+                        }
+                        val advName = when {
+                            adObj.has("advertiserName") && !adObj.isNull("advertiserName") -> adObj.optString("advertiserName")
+                            adObj.has("advertiser_name") && !adObj.isNull("advertiser_name") -> adObj.optString("advertiser_name")
+                            else -> ""
+                        }
+                        val cat = when {
+                            adObj.has("category") && !adObj.isNull("category") -> adObj.optString("category")
+                            adObj.has("target_category") && !adObj.isNull("target_category") -> adObj.optString("target_category")
+                            else -> "All Services"
+                        }
                         ad = AppAd(
                             id = adObj.optString("id"),
                             name = adObj.optString("name"),
-                            advertiserName = adObj.optString("advertiser_name"),
-                            bannerImageUrl = adObj.optString("banner_image_url"),
-                            destinationUrl = adObj.optString("destination_url"),
-                            targetCategory = adObj.optString("target_category", "All Services")
+                            advertiserName = advName,
+                            bannerImageUrl = bannerUrl,
+                            destinationUrl = destUrl,
+                            targetCategory = cat
                         )
                     }
 

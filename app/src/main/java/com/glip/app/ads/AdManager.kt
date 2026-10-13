@@ -127,6 +127,42 @@ object AdManager {
     }
 
     /**
+     * Downloads and caches animated GIF as native Drawable
+     */
+    suspend fun loadGifDrawable(context: Context, gifUrl: String): android.graphics.drawable.Drawable? = withContext(Dispatchers.IO) {
+        if (gifUrl.isBlank()) return@withContext null
+        try {
+            val fileName = "ad_gif_" + gifUrl.hashCode().toString() + ".gif"
+            val file = java.io.File(context.cacheDir, fileName)
+
+            if (!file.exists() || file.length() == 0L) {
+                val url = URL(gifUrl)
+                val connection = (url.openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 8000
+                    readTimeout = 8000
+                    doInput = true
+                    setRequestProperty("User-Agent", "GlipGo-Android-App/1.0")
+                }
+                connection.inputStream.use { input ->
+                    file.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+            }
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                val source = android.graphics.ImageDecoder.createSource(file)
+                android.graphics.ImageDecoder.decodeDrawable(source)
+            } else {
+                android.graphics.drawable.BitmapDrawable(context.resources, file.absolutePath)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load GIF drawable: $gifUrl", e)
+            null
+        }
+    }
+
+    /**
      * Records impression telemetry once per ad display
      */
     fun onAdDisplayed(adId: String, slotId: String) {
