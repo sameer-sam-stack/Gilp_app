@@ -241,7 +241,7 @@ fun HomeScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "• Version 7",
+                    text = "• Version 8",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF94A3B8),
                     fontSize = 10.sp
