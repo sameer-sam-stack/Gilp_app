@@ -1,5 +1,6 @@
 package com.glip.app.ui.profile
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -193,21 +194,29 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
+            OutlinedButton(
                 onClick = { viewModel.logout() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GlipOrangeAccent
-                )
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF18181B)
+                ),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
-                Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = Icons.Default.ExitToApp,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = Color(0xFF18181B)
+                )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = stringResource(id = R.string.logout_button),
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF18181B)
                 )
             }
 

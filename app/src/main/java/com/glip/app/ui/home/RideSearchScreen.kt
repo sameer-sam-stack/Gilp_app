@@ -25,6 +25,7 @@ import com.glip.app.util.LocationTracker
 import com.glip.app.ads.AdBannerBox
 import com.glip.app.ads.AdConfig
 
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PinDrop
 import androidx.compose.ui.zIndex
@@ -44,6 +45,7 @@ fun RideSearchScreen(
     initialPickup: String = "",
     initialDrop: String = "",
     onConfirmRideSearch: (pickup: String, drop: String) -> Unit,
+    onCancel: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val liveAddress by LocationTracker.currentAddress.collectAsState()
@@ -93,7 +95,8 @@ fun RideSearchScreen(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    // Consumes touches so user cannot click or drag through to background map
+                    // Consumes touches so user cannot click or drag through to background map, or cancels if supported
+                    onCancel?.invoke()
                 }
         )
 
@@ -155,10 +158,9 @@ fun RideSearchScreen(
                         .fillMaxWidth()
                         .padding(18.dp)
                 ) {
-                    // Labels: Pickup (Green bullet) & Drop (Red bullet)
+                    // Labels: Pickup (Green bullet) & Drop (Red bullet) + Cancel Option
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
@@ -198,6 +200,30 @@ fun RideSearchScreen(
                                 color = Color(0xFF1E293B)
                             )
                         }
+
+                        IconButton(
+                            onClick = {
+                                if (onCancel != null) {
+                                    onCancel()
+                                } else {
+                                    pickup = ""
+                                    drop = ""
+                                    pickupCoordinates = null
+                                    dropCoordinates = null
+                                }
+                            },
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF1F5F9))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cancel",
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -232,9 +258,9 @@ fun RideSearchScreen(
                                         onValueChange = { pickup = it },
                                         singleLine = true,
                                         textStyle = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF0F172A)
+                                             fontSize = 12.sp,
+                                             fontWeight = FontWeight.Medium,
+                                             color = Color(0xFF0F172A)
                                         ),
                                         decorationBox = { innerTextField ->
                                             if (pickup.isEmpty()) {
@@ -250,10 +276,28 @@ fun RideSearchScreen(
                                     )
                                 }
 
+                                // Cancel/Clear button inside Pickup input box
+                                if (pickup.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = {
+                                            pickup = ""
+                                            pickupCoordinates = null
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear Pickup",
+                                            tint = Color(0xFF94A3B8),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+
                                 // Map Icon Button for Pickup
                                 IconButton(
                                     onClick = { selectingLocationMode = "pickup" },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(30.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Map,
@@ -297,9 +341,9 @@ fun RideSearchScreen(
                                         onValueChange = { drop = it },
                                         singleLine = true,
                                         textStyle = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF0F172A)
+                                             fontSize = 12.sp,
+                                             fontWeight = FontWeight.Medium,
+                                             color = Color(0xFF0F172A)
                                         ),
                                         decorationBox = { innerTextField ->
                                             if (drop.isEmpty()) {
@@ -315,10 +359,28 @@ fun RideSearchScreen(
                                     )
                                 }
 
+                                // Cancel/Clear button inside Drop input box
+                                if (drop.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = {
+                                            drop = ""
+                                            dropCoordinates = null
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear Drop",
+                                            tint = Color(0xFF94A3B8),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+
                                 // Map Icon Button for Drop
                                 IconButton(
                                     onClick = { selectingLocationMode = "drop" },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(30.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Map,
