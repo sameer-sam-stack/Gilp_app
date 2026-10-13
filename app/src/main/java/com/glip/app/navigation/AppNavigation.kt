@@ -81,11 +81,6 @@ fun AppNavigation(
                 hasSearchedRide = true
                 currentBottomTab = 0
             },
-            onNavigateToProfile = {
-                currentBottomTab = 2
-                hasSearchedRide = true
-            },
-            preferences = preferences,
             modifier = modifier.fillMaxSize()
         )
     } else {

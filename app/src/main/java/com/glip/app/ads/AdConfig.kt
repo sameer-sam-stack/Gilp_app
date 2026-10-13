@@ -11,6 +11,7 @@ object AdConfig {
     var BASE_URL: String = "https://advertisement-management-system.vercel.app"
 
     // Slot IDs matching Glip_go in-app containers
+    const val SLOT_FIRST_SCREEN_TOP_STRIP = "first_screen_top_strip"
     const val SLOT_FIRST_SCREEN_TOP_BANNER = "first_screen_top_banner"
     const val SLOT_FIRST_SCREEN_BOTTOM_STRIP = "first_screen_bottom_strip"
     const val SLOT_HOME_TOP_BANNER = "home_top_banner"

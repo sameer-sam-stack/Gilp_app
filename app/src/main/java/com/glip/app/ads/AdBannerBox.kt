@@ -11,9 +11,13 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -22,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,14 +41,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlinx.coroutines.delay
 
 /**
- * Universal Jetpack Compose Ad Container supporting:
- * 1. Static Image Ads (JPEG, PNG, WebP)
- * 2. Animated GIF Ads
- * 3. Looping Video Ads (MP4, WebM)
- *
- * Automatically reports impressions & handles destination URL (Website/WhatsApp) clicks.
+ * Universal Multi-Ad Slider Container supporting:
+ * 1. Multiple ads per container (Ad1, Ad2, Ad3...)
+ * 2. Individual slide durations (e.g. Ad1 for 6s, Ad2 for 2s)
+ * 3. Static Images, Animated GIFs, and Looping Videos
+ * 4. Slide indicator dots & telemetry reporting
  */
 @Composable
 fun AdBannerBox(
@@ -60,16 +65,32 @@ fun AdBannerBox(
 
     // If slot is explicitly disabled by admin, hide or show fallback
     if (slot != null && !slot.isActive) {
-        if (fallbackContent != null) {
-            fallbackContent()
-        }
+        fallbackContent?.invoke()
         return
     }
 
-    val ad = slot?.ad
+    val adsList = slot?.getActiveAdsList() ?: emptyList()
 
-    if (ad != null && ad.bannerImageUrl.isNotBlank()) {
-        val mediaType = ad.getMediaType()
+    if (adsList.isNotEmpty()) {
+        // Multi-ad Slider: current slide index
+        var currentIndex by remember(adsList) { mutableIntStateOf(0) }
+        val safeIndex = if (adsList.isNotEmpty()) currentIndex % adsList.size else 0
+        val currentAd = adsList[safeIndex]
+
+        // Auto-advance slider based on individual ad's displayDurationSeconds!
+        // (e.g. 6 seconds for Ad1, 2 seconds for Ad2)
+        if (adsList.size > 1) {
+            LaunchedEffect(safeIndex, currentAd.id, adsList.size) {
+                val durationMs = (currentAd.displayDurationSeconds.coerceAtLeast(1) * 1000L)
+                delay(durationMs)
+                currentIndex = (safeIndex + 1) % adsList.size
+            }
+        }
+
+        // Report impression when current ad becomes visible
+        LaunchedEffect(currentAd.id, slotId) {
+            AdManager.onAdDisplayed(currentAd.id, slotId)
+        }
 
         Card(
             modifier = modifier,
@@ -82,111 +103,49 @@ fun AdBannerBox(
                     .fillMaxSize()
                     .clip(shape)
                     .clickable {
-                        AdManager.onAdClicked(context, ad, slotId)
+                        AdManager.onAdClicked(context, currentAd, slotId)
                     }
             ) {
-                when (mediaType) {
-                    AdMediaType.VIDEO -> {
-                        // 1. VIDEO AD: Looping, muted MP4/WebM video
-                        LaunchedEffect(ad.id) {
-                            AdManager.onAdDisplayed(ad.id, slotId)
-                        }
+                // Smooth transition between slides
+                Crossfade(targetState = currentAd, label = "AdSlideCrossfade") { ad ->
+                    AdMediaRenderer(
+                        ad = ad,
+                        contentScale = contentScale
+                    )
+                }
 
-                        AndroidView(
-                            modifier = Modifier.fillMaxSize(),
-                            factory = { ctx ->
-                                VideoView(ctx).apply {
-                                    setVideoURI(Uri.parse(ad.bannerImageUrl))
-                                    setOnPreparedListener { mp ->
-                                        mp.isLooping = true
-                                        mp.setVolume(0f, 0f) // Non-intrusive muted playback
-                                        start()
-                                    }
-                                    setOnErrorListener { _, _, _ -> true }
-                                }
-                            },
-                            update = { videoView ->
-                                if (!videoView.isPlaying) {
-                                    videoView.start()
-                                }
-                            }
-                        )
-                    }
-
-                    AdMediaType.GIF -> {
-                        // 2. ANIMATED GIF AD: Native animated drawable
-                        var gifDrawable by remember(ad.bannerImageUrl) { mutableStateOf<Drawable?>(null) }
-
-                        LaunchedEffect(ad.bannerImageUrl) {
-                            val loaded = AdManager.loadGifDrawable(context, ad.bannerImageUrl)
-                            gifDrawable = loaded
-                            if (loaded != null) {
-                                AdManager.onAdDisplayed(ad.id, slotId)
-                            }
-                        }
-
-                        if (gifDrawable != null) {
-                            AndroidView(
-                                modifier = Modifier.fillMaxSize(),
-                                factory = { ctx ->
-                                    ImageView(ctx).apply {
-                                        scaleType = ImageView.ScaleType.CENTER_CROP
-                                        setImageDrawable(gifDrawable)
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                            (gifDrawable as? AnimatedImageDrawable)?.start()
-                                        }
-                                    }
-                                },
-                                update = { imageView ->
-                                    imageView.setImageDrawable(gifDrawable)
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                        (gifDrawable as? AnimatedImageDrawable)?.start()
-                                    }
-                                }
+                // Multi-Ad Slider Indicator Dots (at bottom center)
+                if (adsList.size > 1) {
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 6.dp)
+                            .background(
+                                color = Color.Black.copy(alpha = 0.5f),
+                                shape = RoundedCornerShape(10.dp)
                             )
-                        } else {
+                            .padding(horizontal = 6.dp, vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        adsList.forEachIndexed { index, _ ->
+                            val isActive = index == safeIndex
                             Box(
                                 modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(Color.White.copy(alpha = 0.15f))
+                                    .height(4.dp)
+                                    .width(if (isActive) 12.dp else 4.dp)
+                                    .background(
+                                        color = if (isActive) Color.White else Color.White.copy(alpha = 0.45f),
+                                        shape = RoundedCornerShape(2.dp)
+                                    )
                             )
-                        }
-                    }
-
-                    AdMediaType.IMAGE -> {
-                        // 3. STATIC IMAGE AD: Cached bitmap with crossfade
-                        var bitmap by remember(ad.bannerImageUrl) { mutableStateOf<Bitmap?>(null) }
-
-                        LaunchedEffect(ad.bannerImageUrl) {
-                            val loaded = AdManager.loadBitmap(ad.bannerImageUrl)
-                            bitmap = loaded
-                            if (loaded != null) {
-                                AdManager.onAdDisplayed(ad.id, slotId)
-                            }
-                        }
-
-                        Crossfade(targetState = bitmap, label = "AdBannerCrossfade") { currentBitmap ->
-                            if (currentBitmap != null) {
-                                Image(
-                                    bitmap = currentBitmap.asImageBitmap(),
-                                    contentDescription = ad.name,
-                                    contentScale = contentScale,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            } else {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.White.copy(alpha = 0.2f))
-                                )
-                            }
                         }
                     }
                 }
 
                 // Small sponsor / ad badge
                 if (showAdBadge) {
-                    val badgeText = when (mediaType) {
+                    val badgeText = when (currentAd.getMediaType()) {
                         AdMediaType.VIDEO -> "Ad • Video"
                         AdMediaType.GIF -> "Ad • GIF"
                         AdMediaType.IMAGE -> "Ad"
@@ -224,6 +183,103 @@ fun AdBannerBox(
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Box(modifier = Modifier.fillMaxSize())
+            }
+        }
+    }
+}
+
+/**
+ * Renders individual ad media (Video, GIF, or Static Bitmap)
+ */
+@Composable
+private fun AdMediaRenderer(
+    ad: AppAd,
+    contentScale: ContentScale
+) {
+    val context = LocalContext.current
+    val mediaType = ad.getMediaType()
+
+    when (mediaType) {
+        AdMediaType.VIDEO -> {
+            // 1. VIDEO AD: Looping muted video
+            AndroidView(
+                modifier = Modifier.fillMaxSize(),
+                factory = { ctx ->
+                    VideoView(ctx).apply {
+                        setVideoURI(Uri.parse(ad.bannerImageUrl))
+                        setOnPreparedListener { mp ->
+                            mp.isLooping = true
+                            mp.setVolume(0f, 0f)
+                            start()
+                        }
+                        setOnErrorListener { _, _, _ -> true }
+                    }
+                },
+                update = { videoView ->
+                    if (!videoView.isPlaying) {
+                        videoView.start()
+                    }
+                }
+            )
+        }
+
+        AdMediaType.GIF -> {
+            // 2. ANIMATED GIF AD: Native animated drawable
+            var gifDrawable by remember(ad.bannerImageUrl) { mutableStateOf<Drawable?>(null) }
+
+            LaunchedEffect(ad.bannerImageUrl) {
+                gifDrawable = AdManager.loadGifDrawable(context, ad.bannerImageUrl)
+            }
+
+            if (gifDrawable != null) {
+                AndroidView(
+                    modifier = Modifier.fillMaxSize(),
+                    factory = { ctx ->
+                        ImageView(ctx).apply {
+                            scaleType = ImageView.ScaleType.CENTER_CROP
+                            setImageDrawable(gifDrawable)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                (gifDrawable as? AnimatedImageDrawable)?.start()
+                            }
+                        }
+                    },
+                    update = { imageView ->
+                        imageView.setImageDrawable(gifDrawable)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            (gifDrawable as? AnimatedImageDrawable)?.start()
+                        }
+                    }
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = 0.15f))
+                )
+            }
+        }
+
+        AdMediaType.IMAGE -> {
+            // 3. STATIC IMAGE AD: Cached bitmap
+            var bitmap by remember(ad.bannerImageUrl) { mutableStateOf<Bitmap?>(null) }
+
+            LaunchedEffect(ad.bannerImageUrl) {
+                bitmap = AdManager.loadBitmap(ad.bannerImageUrl)
+            }
+
+            if (bitmap != null) {
+                Image(
+                    bitmap = bitmap!!.asImageBitmap(),
+                    contentDescription = ad.name,
+                    contentScale = contentScale,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White.copy(alpha = 0.2f))
+                )
             }
         }
     }

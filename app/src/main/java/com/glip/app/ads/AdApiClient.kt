@@ -16,7 +16,56 @@ object AdApiClient {
     private const val TAG = "AdApiClient"
 
     /**
-     * Fetches current placement configurations and their active assigned ads
+     * Parses a single advertisement JSON object into an AppAd model
+     */
+    private fun parseAdObject(adObj: JSONObject): AppAd? {
+        val bannerUrl = when {
+            adObj.has("bannerImageUrl") && !adObj.isNull("bannerImageUrl") -> adObj.optString("bannerImageUrl")
+            adObj.has("banner_image_url") && !adObj.isNull("banner_image_url") -> adObj.optString("banner_image_url")
+            else -> ""
+        }
+        val destUrl = when {
+            adObj.has("destinationUrl") && !adObj.isNull("destinationUrl") -> adObj.optString("destinationUrl")
+            adObj.has("destination_url") && !adObj.isNull("destination_url") -> adObj.optString("destination_url")
+            else -> ""
+        }
+        val advName = when {
+            adObj.has("advertiserName") && !adObj.isNull("advertiserName") -> adObj.optString("advertiserName")
+            adObj.has("advertiser_name") && !adObj.isNull("advertiser_name") -> adObj.optString("advertiser_name")
+            else -> ""
+        }
+        val cat = when {
+            adObj.has("category") && !adObj.isNull("category") -> adObj.optString("category")
+            adObj.has("target_category") && !adObj.isNull("target_category") -> adObj.optString("target_category")
+            else -> "All Services"
+        }
+        val slidePos = when {
+            adObj.has("slidePosition") -> adObj.optInt("slidePosition", 1)
+            adObj.has("slide_position") -> adObj.optInt("slide_position", 1)
+            else -> 1
+        }
+        val durationSec = when {
+            adObj.has("displayDurationSeconds") -> adObj.optInt("displayDurationSeconds", 5)
+            adObj.has("display_duration_seconds") -> adObj.optInt("display_duration_seconds", 5)
+            else -> 5
+        }
+
+        if (bannerUrl.isBlank()) return null
+
+        return AppAd(
+            id = adObj.optString("id"),
+            name = adObj.optString("name"),
+            advertiserName = advName,
+            bannerImageUrl = bannerUrl,
+            destinationUrl = destUrl,
+            targetCategory = cat,
+            slidePosition = slidePos,
+            displayDurationSeconds = durationSec
+        )
+    }
+
+    /**
+     * Fetches current placement configurations and their active assigned ads (supporting Multi-Ad Slider)
      */
     suspend fun fetchPlacements(): Result<List<PlacementSlot>> = withContext(Dispatchers.IO) {
         val endpoint = "${AdConfig.BASE_URL.trimEnd('/')}/api/v1/placements"
@@ -48,38 +97,31 @@ object AdApiClient {
                     val rotationIntervalSeconds = obj.optInt("rotationIntervalSeconds", 10)
                     val isActive = obj.optBoolean("isActive", true)
 
-                    var ad: AppAd? = null
-                    if (obj.has("ad") && !obj.isNull("ad")) {
-                        val adObj = obj.getJSONObject("ad")
-                        val bannerUrl = when {
-                            adObj.has("bannerImageUrl") && !adObj.isNull("bannerImageUrl") -> adObj.optString("bannerImageUrl")
-                            adObj.has("banner_image_url") && !adObj.isNull("banner_image_url") -> adObj.optString("banner_image_url")
-                            else -> ""
+                    val adsList = mutableListOf<AppAd>()
+
+                    // 1. Parse "ads" array for multi-ad slider
+                    if (obj.has("ads") && !obj.isNull("ads")) {
+                        val adsArray = obj.getJSONArray("ads")
+                        for (j in 0 until adsArray.length()) {
+                            val parsed = parseAdObject(adsArray.getJSONObject(j))
+                            if (parsed != null) {
+                                adsList.add(parsed)
+                            }
                         }
-                        val destUrl = when {
-                            adObj.has("destinationUrl") && !adObj.isNull("destinationUrl") -> adObj.optString("destinationUrl")
-                            adObj.has("destination_url") && !adObj.isNull("destination_url") -> adObj.optString("destination_url")
-                            else -> ""
-                        }
-                        val advName = when {
-                            adObj.has("advertiserName") && !adObj.isNull("advertiserName") -> adObj.optString("advertiserName")
-                            adObj.has("advertiser_name") && !adObj.isNull("advertiser_name") -> adObj.optString("advertiser_name")
-                            else -> ""
-                        }
-                        val cat = when {
-                            adObj.has("category") && !adObj.isNull("category") -> adObj.optString("category")
-                            adObj.has("target_category") && !adObj.isNull("target_category") -> adObj.optString("target_category")
-                            else -> "All Services"
-                        }
-                        ad = AppAd(
-                            id = adObj.optString("id"),
-                            name = adObj.optString("name"),
-                            advertiserName = advName,
-                            bannerImageUrl = bannerUrl,
-                            destinationUrl = destUrl,
-                            targetCategory = cat
-                        )
                     }
+
+                    // 2. Parse single "ad" (legacy fallback)
+                    var singleAd: AppAd? = null
+                    if (obj.has("ad") && !obj.isNull("ad")) {
+                        singleAd = parseAdObject(obj.getJSONObject("ad"))
+                    }
+
+                    if (adsList.isEmpty() && singleAd != null) {
+                        adsList.add(singleAd)
+                    }
+
+                    // Sort ads by slidePosition (Slide 1 first, then Slide 2, Slide 3...)
+                    adsList.sortBy { it.slidePosition }
 
                     slotsList.add(
                         PlacementSlot(
@@ -91,7 +133,8 @@ object AdApiClient {
                             aspectRatio = aspectRatio,
                             rotationIntervalSeconds = rotationIntervalSeconds,
                             isActive = isActive,
-                            ad = ad
+                            ad = singleAd ?: adsList.firstOrNull(),
+                            ads = adsList
                         )
                     )
                 }

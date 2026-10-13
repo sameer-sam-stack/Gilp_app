@@ -20,18 +20,6 @@ class DemoProfilePreferences(context: Context) {
         private const val KEY_PHONE_NUMBER = "phone_number"
         private const val KEY_EMAIL = "email"
         private const val KEY_CREATED_AT = "created_at"
-        private const val KEY_SELECTED_CITY = "selected_city"
-        private const val KEY_SELECTED_STATE = "selected_state"
-    }
-
-    fun getSelectedCity(): String = prefs.getString(KEY_SELECTED_CITY, "Rajnandgaon") ?: "Rajnandgaon"
-    fun getSelectedState(): String = prefs.getString(KEY_SELECTED_STATE, "Chhattisgarh") ?: "Chhattisgarh"
-
-    fun saveSelectedLocation(city: String, state: String) {
-        prefs.edit()
-            .putString(KEY_SELECTED_CITY, city)
-            .putString(KEY_SELECTED_STATE, state)
-            .apply()
     }
 
     fun getUserProfile(): UserProfile? {
