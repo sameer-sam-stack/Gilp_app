@@ -72,9 +72,9 @@ fun RideSearchScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF0F172A))
+            .background(Color(0xFFF8FAFC))
     ) {
-        // 1. Real OpenStreetMap background (Extra Deep Blur effect + Touch blocked)
+        // 1. Real OpenStreetMap background (Touch blocked)
         InteractiveDemoMap(
             vehicles = emptyList(),
             selectedVehicle = null,
@@ -83,14 +83,22 @@ fun RideSearchScreen(
             isInteractive = false,
             modifier = Modifier
                 .fillMaxSize()
-                .blur(radius = 18.dp)
+                .blur(radius = 20.dp)
         )
 
-        // Frosted Deep Blur overlay Scrim (Semi-transparent with deep frosted glass effect)
+        // 2. Light White Tone Frosted Scrim (Softens street map with subtle white tone on all Android versions)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0F172A).copy(alpha = 0.48f))
+                .background(
+                    brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.88f),
+                            Color(0xFFF1F5F9).copy(alpha = 0.84f),
+                            Color.White.copy(alpha = 0.90f)
+                        )
+                    )
+                )
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
@@ -117,15 +125,15 @@ fun RideSearchScreen(
                     .padding(top = 36.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 1. TOP AD CONTAINER BOX (Low height 72dp, shifted down from top)
+                // 1. TOP AD CONTAINER BOX (Low height 72dp, white card with blue border)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(72.dp),
                     shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.5.dp, Color(0xFF2563EB).copy(alpha = 0.6f)),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.5f)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    border = BorderStroke(1.5.dp, Color(0xFF2563EB)),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
                 ) {
                     AdBannerBox(
                         slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_STRIP,
@@ -439,15 +447,15 @@ fun RideSearchScreen(
                 }
             }
 
-            // BOTTOM SECTION: Empty Bottom Ad Container Box (Low height 72dp, full width - Ad comes from API)
+            // BOTTOM SECTION: Empty Bottom Ad Container Box (Low height 72dp, white card with blue border)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(72.dp),
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.5.dp, Color(0xFF2563EB).copy(alpha = 0.6f)),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B).copy(alpha = 0.5f)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                border = BorderStroke(1.5.dp, Color(0xFF2563EB)),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
                 AdBannerBox(
                     slotId = AdConfig.SLOT_FIRST_SCREEN_BOTTOM_STRIP,
