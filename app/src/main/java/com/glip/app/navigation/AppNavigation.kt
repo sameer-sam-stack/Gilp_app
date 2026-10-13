@@ -26,6 +26,8 @@ import com.glip.app.ui.services.ServicesViewModel
 
 import androidx.compose.ui.text.font.FontWeight
 import com.glip.app.ui.theme.GlipGreenPrimary
+import com.glip.app.ui.components.AppLoadingSplashScreen
+import kotlinx.coroutines.delay
 
 @Composable
 fun AppNavigation(
@@ -37,6 +39,15 @@ fun AppNavigation(
 
     var isRegistered by remember { mutableStateOf(preferences.getUserProfile() != null) }
 
+    // Splash Loader state: shows RouteLoader on launch so screen is never blank
+    var isAppLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        // Display RouteLoader while GPS, tiles and assets initialize smoothly
+        delay(1600)
+        isAppLoading = false
+    }
+
     // On app reopen / start, show the centered Ride Search screen first!
     var hasSearchedRide by remember { mutableStateOf(false) }
     var selectedPickup by remember { mutableStateOf("") }
@@ -45,7 +56,9 @@ fun AppNavigation(
     // Bottom Navigation Tab: 0 = Ride, 1 = All Services, 2 = Profile
     var currentBottomTab by remember { mutableIntStateOf(0) }
 
-    if (!isRegistered) {
+    if (isAppLoading) {
+        AppLoadingSplashScreen(modifier = modifier)
+    } else if (!isRegistered) {
         val regViewModel = remember { RegistrationViewModel(userRepository) }
         RegistrationScreen(
             viewModel = regViewModel,

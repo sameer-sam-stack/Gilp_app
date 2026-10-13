@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.theme.GlipOrangeAccent
 import com.glip.app.ads.AdBannerBox
@@ -34,6 +36,7 @@ fun ServicesScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
     ) {
         Spacer(modifier = Modifier.height(24.dp))
@@ -176,6 +179,45 @@ fun ServicesScreen(
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                             )
                         }
+                    }
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // New Bottom AD container requested by user
+        AdBannerBox(
+            slotId = AdConfig.SLOT_SERVICES_BOTTOM_BANNER,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(115.dp)
+                .padding(bottom = 20.dp),
+            shape = RoundedCornerShape(16.dp),
+            fallbackContent = {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(115.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    elevation = CardDefaults.cardElevation(2.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Advertisement Space",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp
+                        )
                     }
                 }
             }
