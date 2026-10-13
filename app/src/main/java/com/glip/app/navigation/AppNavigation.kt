@@ -44,7 +44,7 @@ fun AppNavigation(
 
     LaunchedEffect(Unit) {
         // Display RouteLoader while GPS, tiles and assets initialize smoothly
-        delay(1600)
+        delay(2500)
         isAppLoading = false
     }
 

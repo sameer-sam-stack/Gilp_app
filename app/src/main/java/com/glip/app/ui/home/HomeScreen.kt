@@ -31,6 +31,7 @@ import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.theme.GlipOrangeAccent
 import com.glip.app.ads.AdBannerBox
 import com.glip.app.ads.AdConfig
+import com.glip.app.ui.components.RouteLoader
 
 @Composable
 fun HomeScreen(
@@ -182,16 +183,24 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Map Area - Restored to framed box with gap and rounded corners
+        // Map Area - Full Screen width on Left and Right (edge-to-edge), Top & Bottom height unchanged
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 14.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
         ) {
-            if (!uiState.isFallbackListVisible) {
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFE2E8F0)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    RouteLoader(
+                        modifier = Modifier.size(width = 240.dp, height = 136.dp)
+                    )
+                }
+            } else if (!uiState.isFallbackListVisible) {
                 InteractiveDemoMap(
                     vehicles = uiState.filteredVehicles,
                     selectedVehicle = uiState.selectedVehicle,
