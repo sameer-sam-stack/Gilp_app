@@ -199,21 +199,28 @@ fun RideSearchScreen(
                             )
                         }
 
-                        if (onCancel != null) {
-                            IconButton(
-                                onClick = onCancel,
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFF1F5F9))
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Cancel",
-                                    tint = Color(0xFF64748B),
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
+                        IconButton(
+                            onClick = {
+                                if (onCancel != null) {
+                                    onCancel()
+                                } else {
+                                    pickup = ""
+                                    drop = ""
+                                    pickupCoordinates = null
+                                    dropCoordinates = null
+                                }
+                            },
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF1F5F9))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cancel",
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
                     }
 
@@ -249,9 +256,9 @@ fun RideSearchScreen(
                                         onValueChange = { pickup = it },
                                         singleLine = true,
                                         textStyle = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF0F172A)
+                                             fontSize = 12.sp,
+                                             fontWeight = FontWeight.Medium,
+                                             color = Color(0xFF0F172A)
                                         ),
                                         decorationBox = { innerTextField ->
                                             if (pickup.isEmpty()) {
@@ -267,10 +274,28 @@ fun RideSearchScreen(
                                     )
                                 }
 
+                                // Cancel/Clear button inside Pickup input box
+                                if (pickup.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = {
+                                            pickup = ""
+                                            pickupCoordinates = null
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear Pickup",
+                                            tint = Color(0xFF94A3B8),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+
                                 // Map Icon Button for Pickup
                                 IconButton(
                                     onClick = { selectingLocationMode = "pickup" },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(30.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Map,
@@ -314,9 +339,9 @@ fun RideSearchScreen(
                                         onValueChange = { drop = it },
                                         singleLine = true,
                                         textStyle = MaterialTheme.typography.bodySmall.copy(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color(0xFF0F172A)
+                                             fontSize = 12.sp,
+                                             fontWeight = FontWeight.Medium,
+                                             color = Color(0xFF0F172A)
                                         ),
                                         decorationBox = { innerTextField ->
                                             if (drop.isEmpty()) {
@@ -332,10 +357,28 @@ fun RideSearchScreen(
                                     )
                                 }
 
+                                // Cancel/Clear button inside Drop input box
+                                if (drop.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = {
+                                            drop = ""
+                                            dropCoordinates = null
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear Drop",
+                                            tint = Color(0xFF94A3B8),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
+
                                 // Map Icon Button for Drop
                                 IconButton(
                                     onClick = { selectingLocationMode = "drop" },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(30.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Map,
