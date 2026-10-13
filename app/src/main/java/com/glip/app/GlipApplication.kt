@@ -21,5 +21,8 @@ class GlipApplication : Application() {
         Configuration.getInstance().cacheMapTileOvershoot = 18
         Configuration.getInstance().tileDownloadThreads = 4
         Configuration.getInstance().tileFileSystemThreads = 4
+
+        // Initialize Live Advertisement Management System
+        com.glip.app.ads.AdManager.initialize(this)
     }
 }

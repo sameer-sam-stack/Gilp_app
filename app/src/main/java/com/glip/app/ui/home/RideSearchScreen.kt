@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.util.LocationTracker
+import com.glip.app.ads.AdBannerBox
+import com.glip.app.ads.AdConfig
 
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PinDrop
@@ -103,22 +105,15 @@ fun RideSearchScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TOP: Empty Box for Ad (Height 270dp and padding adjusted to 75dp to shift closer down)
-            Card(
+            // TOP: Live Ad Hero Banner (Height 270dp)
+            AdBannerBox(
+                slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_BANNER,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 75.dp)
                     .height(270.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.15f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.25f))
-            ) {
-                // Empty container ready for Ad
-                Box(modifier = Modifier.fillMaxSize())
-            }
+                shape = RoundedCornerShape(16.dp)
+            )
 
             // CENTER: Floating Pickup & Drop Card + Ride Button
             Card(
@@ -355,20 +350,14 @@ fun RideSearchScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // BOTTOM: Small Empty Box for Ad (User requested: no mock ads, just empty container ready for Ad)
-                    Card(
+                    // BOTTOM: Live Ad Ticker Strip (Height 44dp)
+                    AdBannerBox(
+                        slotId = AdConfig.SLOT_FIRST_SCREEN_BOTTOM_STRIP,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(44.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFF8FAFC)
-                        ),
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                    ) {
-                        // Empty container ready for Ad
-                        Box(modifier = Modifier.fillMaxSize())
-                    }
+                        shape = RoundedCornerShape(10.dp)
+                    )
                 }
             }
 

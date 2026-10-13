@@ -29,6 +29,8 @@ import com.glip.app.domain.model.Vehicle
 import com.glip.app.ui.theme.GlipGreenDark
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.theme.GlipOrangeAccent
+import com.glip.app.ads.AdBannerBox
+import com.glip.app.ads.AdConfig
 
 @Composable
 fun HomeScreen(
@@ -53,33 +55,15 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 1. Top AD Banner Box: clean, empty white ad space for future API-based ads
-        Card(
+        // 1. Top AD Banner Box: Live AdBannerBox connected to Advertisement Management API
+        AdBannerBox(
+            slotId = AdConfig.SLOT_HOME_TOP_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp)
                 .height(80.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            ),
-            elevation = CardDefaults.cardElevation(2.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Advertisement Space",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFF94A3B8),
-                    fontSize = 11.sp
-                )
-            }
-        }
+            shape = RoundedCornerShape(14.dp)
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -253,32 +237,15 @@ fun HomeScreen(
                     )
                 }
 
-                // Trailing AD Container: placed at the end of the vehicle cards
+                // Trailing AD Container: Live AdBannerBox placed at the end of the vehicle cards
                 item {
-                    Card(
+                    AdBannerBox(
+                        slotId = AdConfig.SLOT_HOME_VEHICLE_TRAILING_CARD,
                         modifier = Modifier
                             .width(99.dp)
                             .height(86.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(2.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "AD",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF94A3B8),
-                                fontSize = 11.sp
-                            )
-                        }
-                    }
+                        shape = RoundedCornerShape(12.dp)
+                    )
                 }
             }
         } else {
