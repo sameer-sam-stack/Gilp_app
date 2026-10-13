@@ -137,6 +137,49 @@ fun HomeScreen(
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
+        } else {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp)
+                    .height(44.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { onChangeLocation() }
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(GlipGreenPrimary)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Where to? Enter pickup & drop",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF64748B)
+                        )
+                    }
+                    Text(
+                        text = "Search",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GlipGreenPrimary,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
 
         // Map Area - Restored to framed box with gap and rounded corners
@@ -198,7 +241,7 @@ fun HomeScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "• Version 5",
+                    text = "• Version 6",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color(0xFF94A3B8),
                     fontSize = 10.sp

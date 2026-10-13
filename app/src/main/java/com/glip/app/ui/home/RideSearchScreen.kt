@@ -25,6 +25,7 @@ import com.glip.app.util.LocationTracker
 import com.glip.app.ads.AdBannerBox
 import com.glip.app.ads.AdConfig
 
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PinDrop
 import androidx.compose.ui.zIndex
@@ -44,6 +45,7 @@ fun RideSearchScreen(
     initialPickup: String = "",
     initialDrop: String = "",
     onConfirmRideSearch: (pickup: String, drop: String) -> Unit,
+    onCancel: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val liveAddress by LocationTracker.currentAddress.collectAsState()
@@ -93,7 +95,8 @@ fun RideSearchScreen(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    // Consumes touches so user cannot click or drag through to background map
+                    // Consumes touches so user cannot click or drag through to background map, or cancels if supported
+                    onCancel?.invoke()
                 }
         )
 
@@ -153,10 +156,9 @@ fun RideSearchScreen(
                         .fillMaxWidth()
                         .padding(18.dp)
                 ) {
-                    // Labels: Pickup (Green bullet) & Drop (Red bullet)
+                    // Labels: Pickup (Green bullet) & Drop (Red bullet) + Cancel Option
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
@@ -195,6 +197,23 @@ fun RideSearchScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF1E293B)
                             )
+                        }
+
+                        if (onCancel != null) {
+                            IconButton(
+                                onClick = onCancel,
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFF1F5F9))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Cancel",
+                                    tint = Color(0xFF64748B),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
 
