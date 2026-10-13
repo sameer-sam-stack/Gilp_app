@@ -78,11 +78,13 @@ object AdManager {
             _slotsState.value = map
             Log.d(TAG, "Placements updated successfully. Total slots: ${map.size}")
 
-            // Pre-cache banners for instant zero-lag rendering
+            // Pre-cache banners for instant zero-lag rendering across all slider items
             list.forEach { slot ->
-                val bannerUrl = slot.ad?.bannerImageUrl
-                if (!bannerUrl.isNullOrBlank()) {
-                    loadBitmap(bannerUrl)
+                slot.getActiveAdsList().forEach { ad ->
+                    val bannerUrl = ad.bannerImageUrl
+                    if (!bannerUrl.isNullOrBlank()) {
+                        loadBitmap(bannerUrl)
+                    }
                 }
             }
         } else {

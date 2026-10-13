@@ -249,32 +249,16 @@ fun HomeScreen(
                 }
             }
         } else {
-            // If no vehicles are available, show ad container instead
-            Card(
+            // If no vehicles are available, show live ad container instead
+            AdBannerBox(
+                slotId = AdConfig.SLOT_HOME_VEHICLE_TRAILING_CARD,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp)
                     .height(86.dp)
                     .padding(bottom = 6.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(2.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Advertisement Space",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF94A3B8),
-                        fontSize = 11.sp
-                    )
-                }
-            }
+                shape = RoundedCornerShape(12.dp)
+            )
         }
     }
 }
