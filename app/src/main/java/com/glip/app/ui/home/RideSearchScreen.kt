@@ -114,10 +114,10 @@ fun RideSearchScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 18.dp),
+                    .padding(top = 36.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 1. TOP AD CONTAINER BOX (Low height 72dp, increased padding from top)
+                // 1. TOP AD CONTAINER BOX (Low height 72dp, shifted down from top)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
