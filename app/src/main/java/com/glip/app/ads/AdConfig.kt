@@ -19,6 +19,6 @@ object AdConfig {
     const val SLOT_SERVICES_PROMO_BANNER = "services_promo_banner"
     const val SLOT_SERVICES_BOTTOM_BANNER = "services_bottom_banner"
 
-    // Default polling refresh interval (60 seconds)
-    const val REFRESH_INTERVAL_MILLIS: Long = 60_000L
+    // Fast polling refresh interval (10 seconds for real-time live updates)
+    const val REFRESH_INTERVAL_MILLIS: Long = 10_000L
 }

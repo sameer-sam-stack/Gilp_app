@@ -63,6 +63,13 @@ fun AdBannerBox(
     val slotsMap by AdManager.slotsState.collectAsState()
     val slot = slotsMap[slotId]
 
+    // Trigger immediate fast refresh if slot is missing or data is stale
+    LaunchedEffect(slotId) {
+        if (slot == null || AdManager.isStale()) {
+            AdManager.refresh()
+        }
+    }
+
     // If slot is explicitly disabled by admin, hide or show fallback
     if (slot != null && !slot.isActive) {
         fallbackContent?.invoke()

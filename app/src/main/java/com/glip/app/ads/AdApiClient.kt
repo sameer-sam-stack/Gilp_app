@@ -68,14 +68,18 @@ object AdApiClient {
      * Fetches current placement configurations and their active assigned ads (supporting Multi-Ad Slider)
      */
     suspend fun fetchPlacements(): Result<List<PlacementSlot>> = withContext(Dispatchers.IO) {
-        val endpoint = "${AdConfig.BASE_URL.trimEnd('/')}/api/v1/placements"
+        val endpoint = "${AdConfig.BASE_URL.trimEnd('/')}/api/v1/placements?_t=${System.currentTimeMillis()}"
         try {
             val url = URL(endpoint)
             val connection = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
-                connectTimeout = 7000
-                readTimeout = 7000
+                useCaches = false
+                defaultUseCaches = false
+                connectTimeout = 4000
+                readTimeout = 4000
                 setRequestProperty("Accept", "application/json")
+                setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate")
+                setRequestProperty("Pragma", "no-cache")
                 setRequestProperty("User-Agent", "GlipGo-Android-App/1.0")
             }
 

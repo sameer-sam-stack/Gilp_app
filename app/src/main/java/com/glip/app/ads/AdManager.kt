@@ -43,6 +43,13 @@ object AdManager {
 
     private var isInitialized = false
 
+    // Track timestamp of last successful placement sync
+    @Volatile
+    var lastSyncTimestamp: Long = 0L
+        private set
+
+    fun isStale(): Boolean = (System.currentTimeMillis() - lastSyncTimestamp) > 8000L
+
     /**
      * Initializes background sync for in-app ad placements
      */
@@ -76,6 +83,7 @@ object AdManager {
             val list = result.getOrNull() ?: emptyList()
             val map = list.associateBy { it.slotId }
             _slotsState.value = map
+            lastSyncTimestamp = System.currentTimeMillis()
             Log.d(TAG, "Placements updated successfully. Total slots: ${map.size}")
 
             // Pre-cache banners for instant zero-lag rendering across all slider items

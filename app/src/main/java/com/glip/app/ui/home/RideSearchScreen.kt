@@ -109,10 +109,12 @@ fun RideSearchScreen(
         ) {
             // TOP SECTION: Top 72dp Empty Ad Box + Top 180dp Hero Banner
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 1. TOP AD CONTAINER BOX (Low height 72dp, full width, empty box - Ad comes from API)
+                // 1. TOP AD CONTAINER BOX (Low height 72dp, increased padding from top)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -129,7 +131,7 @@ fun RideSearchScreen(
                     )
                 }
 
-                // 2. TOP HERO AD BANNER (Height 180dp - Ad comes from API)
+                // 2. TOP HERO AD BANNER (Height 180dp - pushed further down)
                 AdBannerBox(
                     slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_BANNER,
                     modifier = Modifier
