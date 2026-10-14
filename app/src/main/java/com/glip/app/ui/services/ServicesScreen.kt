@@ -91,7 +91,7 @@ fun ServicesScreen(
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        // Promotional / Live Advertisement Banner below services
+        // Promotional / Live Advertisement Banner below services (Top Ad Container on Services Screen)
         AdBannerBox(
             slotId = AdConfig.SLOT_SERVICES_PROMO_BANNER,
             modifier = Modifier
@@ -105,81 +105,23 @@ fun ServicesScreen(
                         .height(96.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF1E293B)
+                        containerColor = Color.White
                     ),
-                    elevation = CardDefaults.cardElevation(3.dp)
+                    elevation = CardDefaults.cardElevation(2.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
                 ) {
-                    Row(
+                    Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            .padding(12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(GlipGreenPrimary.copy(alpha = 0.2f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Campaign,
-                                    contentDescription = null,
-                                    tint = GlipGreenPrimary,
-                                    modifier = Modifier.size(26.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(verticalArrangement = Arrangement.Center) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "Daily School Shuttle Pass",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        fontSize = 14.sp
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = GlipOrangeAccent
-                                    ) {
-                                        Text(
-                                            text = "PROMO",
-                                            color = Color.White,
-                                            fontSize = 8.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Verified student pools with live parent alerts",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFF94A3B8),
-                                    fontSize = 11.sp
-                                )
-                            }
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = GlipOrangeAccent,
-                            modifier = Modifier.clickable { }
-                        ) {
-                            Text(
-                                text = "Explore",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                            )
-                        }
+                        Text(
+                            text = "Advertisement Space",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF94A3B8),
+                            fontSize = 12.sp
+                        )
                     }
                 }
             }

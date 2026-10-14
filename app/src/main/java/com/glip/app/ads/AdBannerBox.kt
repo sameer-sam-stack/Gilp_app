@@ -70,13 +70,13 @@ fun AdBannerBox(
         }
     }
 
-    // If slot is explicitly disabled by admin, hide or show fallback
-    if (slot != null && !slot.isActive) {
+    val adsList = slot?.getActiveAdsList() ?: emptyList()
+
+    // If slot is explicitly disabled by admin and has no active ads, show fallback
+    if (slot != null && !slot.isActive && adsList.isEmpty()) {
         fallbackContent?.invoke()
         return
     }
-
-    val adsList = slot?.getActiveAdsList() ?: emptyList()
 
     if (adsList.isNotEmpty()) {
         // Multi-ad Slider: current slide index
