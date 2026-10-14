@@ -231,31 +231,29 @@ fun RideSearchScreen(
                             }
                         }
 
-                        val isHeaderRideEnabled = pickup.isNotBlank() && drop.isNotBlank()
-
-                        // Top-Right Arrow Action Button (➡️ icon: clickable ONLY when both pickup & drop are entered)
+                        // Top-Right Cancel / Close Action Button (✕ icon)
                         IconButton(
                             onClick = {
-                                if (isHeaderRideEnabled) {
-                                    if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
-                                        showSameLocationDialog = true
-                                    } else {
-                                        onConfirmRideSearch(pickup.trim(), drop.trim())
-                                    }
+                                if (onCancel != null) {
+                                    onCancel()
+                                } else {
+                                    pickup = ""
+                                    drop = ""
+                                    pickupCoordinates = null
+                                    dropCoordinates = null
                                 }
                             },
-                            enabled = isHeaderRideEnabled,
                             modifier = Modifier
                                 .size(30.dp)
                                 .clip(CircleShape)
-                                .background(if (isHeaderRideEnabled) Color(0xFF18181B) else Color(0xFFF1F5F9))
+                                .background(Color(0xFFF1F5F9))
                                 .border(1.dp, Color(0xFFE2E8F0), CircleShape)
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Next / Ride",
-                                tint = if (isHeaderRideEnabled) Color.White else Color(0xFF94A3B8),
-                                modifier = Modifier.size(15.dp)
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cancel",
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
