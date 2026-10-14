@@ -30,13 +30,21 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PinDrop
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.zIndex
+import com.glip.app.data.places.AutocompletePlace
+import com.glip.app.data.places.PlacesConfig
+import com.glip.app.data.places.PlacesSearchService
+import kotlinx.coroutines.delay
 
 /**
  * RideSearchScreen:
  * Landing screen when app opens.
  * 1. Top: Empty Ad Container Box (72dp) + Top Ad Hero Banner (180dp)
- * 2. Center: Pickup and Drop address inputs (with map picker buttons) + "Ride ->" button
+ * 2. Center: Pickup and Drop address inputs (with real-time Rapido-style autocomplete + map picker) + "Ride ->" button
  * 3. Bottom: Empty Ad Container Box (72dp) placed at the very bottom
  * 4. Background: Real OSM street map (Non-interactive, touch blocked)
  * 5. GPS auto-detects user location and pre-fills into Pickup box
@@ -50,6 +58,10 @@ fun RideSearchScreen(
     onCancel: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     val liveAddress by LocationTracker.currentAddress.collectAsState()
     val liveCoords by LocationTracker.currentCoordinates.collectAsState()
 
@@ -60,6 +72,15 @@ fun RideSearchScreen(
     var pickupCoordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var dropCoordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
 
+    // Selection validity tracking
+    var isPickupSelected by remember { mutableStateOf(initialPickup.isNotBlank()) }
+    var isDropSelected by remember { mutableStateOf(initialDrop.isNotBlank()) }
+
+    // Autocomplete active field: null, "pickup", or "drop"
+    var activeField by remember { mutableStateOf<String?>(null) }
+    var suggestions by remember { mutableStateOf<List<AutocompletePlace>>(emptyList()) }
+    var isSearchingPlaces by remember { mutableStateOf(false) }
+
     // Map selection modal state: null = closed, "pickup" = selecting pickup, "drop" = selecting drop
     var selectingLocationMode by remember { mutableStateOf<String?>(null) }
     var showSameLocationDialog by remember { mutableStateOf(false) }
@@ -69,6 +90,39 @@ fun RideSearchScreen(
         if (!liveAddress.isNullOrBlank() && pickup.isBlank()) {
             pickup = liveAddress ?: ""
             pickupCoordinates = liveCoords
+            isPickupSelected = true
+        }
+    }
+
+    // Debounced real-time place search based on user's current GPS coordinates
+    val currentQuery = when (activeField) {
+        "pickup" -> pickup
+        "drop" -> drop
+        else -> ""
+    }
+
+    LaunchedEffect(currentQuery, activeField, liveCoords) {
+        if (activeField == null || currentQuery.trim().length < 2) {
+            suggestions = emptyList()
+            isSearchingPlaces = false
+            return@LaunchedEffect
+        }
+
+        isSearchingPlaces = true
+        delay(PlacesConfig.DEBOUNCE_MILLIS)
+
+        try {
+            val results = PlacesSearchService.searchNearbyPlaces(
+                context = context,
+                query = currentQuery,
+                userLat = liveCoords?.first,
+                userLng = liveCoords?.second
+            )
+            suggestions = results
+        } catch (e: Exception) {
+            suggestions = emptyList()
+        } finally {
+            isSearchingPlaces = false
         }
     }
 
@@ -106,6 +160,10 @@ fun RideSearchScreen(
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
                     // Strictly consumes touch events so user cannot touch the background map. Does NOT navigate!
+                    activeField = null
+                    suggestions = emptyList()
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
                 }
         )
 
@@ -241,6 +299,10 @@ fun RideSearchScreen(
                                     drop = ""
                                     pickupCoordinates = null
                                     dropCoordinates = null
+                                    isPickupSelected = false
+                                    isDropSelected = false
+                                    activeField = null
+                                    suggestions = emptyList()
                                 }
                             },
                             modifier = Modifier
@@ -287,7 +349,12 @@ fun RideSearchScreen(
                                 ) {
                                     BasicTextField(
                                         value = pickup,
-                                        onValueChange = { pickup = it },
+                                        onValueChange = {
+                                            pickup = it
+                                            isPickupSelected = false
+                                            pickupCoordinates = null
+                                            activeField = "pickup"
+                                        },
                                         singleLine = true,
                                         textStyle = MaterialTheme.typography.bodySmall.copy(
                                              fontSize = 12.sp,
@@ -304,7 +371,13 @@ fun RideSearchScreen(
                                             }
                                             innerTextField()
                                         },
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .onFocusChanged { focusState ->
+                                                if (focusState.isFocused && activeField != "pickup") {
+                                                    activeField = "pickup"
+                                                }
+                                            }
                                     )
                                 }
 
@@ -314,6 +387,10 @@ fun RideSearchScreen(
                                         onClick = {
                                             pickup = ""
                                             pickupCoordinates = null
+                                            isPickupSelected = false
+                                            if (activeField == "pickup") {
+                                                suggestions = emptyList()
+                                            }
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
@@ -328,7 +405,10 @@ fun RideSearchScreen(
 
                                 // Location Pin Icon Button for Pickup
                                 IconButton(
-                                    onClick = { selectingLocationMode = "pickup" },
+                                    onClick = {
+                                        activeField = null
+                                        selectingLocationMode = "pickup"
+                                    },
                                     modifier = Modifier.size(30.dp)
                                 ) {
                                     Icon(
@@ -341,17 +421,33 @@ fun RideSearchScreen(
                             }
                         }
 
-                        // Center Connecting Arrow Circle (Modern UI)
+                        // Center Connecting Arrow Circle (Modern UI - Clickable to swap/reverse)
                         Box(
                             modifier = Modifier
                                 .size(24.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFF1F5F9)),
+                                .background(Color(0xFFF1F5F9))
+                                .clickable {
+                                    val tempText = pickup
+                                    pickup = drop
+                                    drop = tempText
+
+                                    val tempCoords = pickupCoordinates
+                                    pickupCoordinates = dropCoordinates
+                                    dropCoordinates = tempCoords
+
+                                    val tempSelected = isPickupSelected
+                                    isPickupSelected = isDropSelected
+                                    isDropSelected = tempSelected
+
+                                    activeField = null
+                                    suggestions = emptyList()
+                                },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
+                                contentDescription = "Swap Pickup and Drop",
                                 tint = Color(0xFF64748B),
                                 modifier = Modifier.size(13.dp)
                             )
@@ -378,7 +474,12 @@ fun RideSearchScreen(
                                 ) {
                                     BasicTextField(
                                         value = drop,
-                                        onValueChange = { drop = it },
+                                        onValueChange = {
+                                            drop = it
+                                            isDropSelected = false
+                                            dropCoordinates = null
+                                            activeField = "drop"
+                                        },
                                         singleLine = true,
                                         textStyle = MaterialTheme.typography.bodySmall.copy(
                                              fontSize = 12.sp,
@@ -395,7 +496,13 @@ fun RideSearchScreen(
                                             }
                                             innerTextField()
                                         },
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .onFocusChanged { focusState ->
+                                                if (focusState.isFocused && activeField != "drop") {
+                                                    activeField = "drop"
+                                                }
+                                            }
                                     )
                                 }
 
@@ -405,6 +512,10 @@ fun RideSearchScreen(
                                         onClick = {
                                             drop = ""
                                             dropCoordinates = null
+                                            isDropSelected = false
+                                            if (activeField == "drop") {
+                                                suggestions = emptyList()
+                                            }
                                         },
                                         modifier = Modifier.size(24.dp)
                                     ) {
@@ -419,7 +530,10 @@ fun RideSearchScreen(
 
                                 // Location Pin Icon Button for Drop
                                 IconButton(
-                                    onClick = { selectingLocationMode = "drop" },
+                                    onClick = {
+                                        activeField = null
+                                        selectingLocationMode = "drop"
+                                    },
                                     modifier = Modifier.size(30.dp)
                                 ) {
                                     Icon(
@@ -433,14 +547,44 @@ fun RideSearchScreen(
                         }
                     }
 
+                    // Real-time Autocomplete Suggestions Dropdown
+                    if (activeField != null && (currentQuery.trim().length >= 2 || isSearchingPlaces || suggestions.isNotEmpty())) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        PlaceAutocompleteDropdown(
+                            suggestions = suggestions,
+                            isLoading = isSearchingPlaces,
+                            searchQuery = currentQuery,
+                            activeField = activeField!!,
+                            onPlaceSelected = { place ->
+                                if (activeField == "pickup") {
+                                    pickup = place.primaryText
+                                    pickupCoordinates = Pair(place.latitude, place.longitude)
+                                    isPickupSelected = true
+                                } else {
+                                    drop = place.primaryText
+                                    dropCoordinates = Pair(place.latitude, place.longitude)
+                                    isDropSelected = true
+                                }
+                                activeField = null
+                                suggestions = emptyList()
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            }
+                        )
+                    }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    val isRideEnabled = pickup.isNotBlank() && drop.isNotBlank()
+                    val isRideEnabled = isPickupSelected && isDropSelected && pickup.isNotBlank() && drop.isNotBlank()
 
-                    // RIDE BUTTON (Clickable ONLY when both pickup and drop are entered)
+                    // RIDE BUTTON (Clickable ONLY when both valid pickup and drop locations are selected)
                     Button(
                         onClick = {
                             if (isRideEnabled) {
+                                activeField = null
+                                suggestions = emptyList()
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
                                 if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
                                     showSameLocationDialog = true
                                 } else {
@@ -525,10 +669,14 @@ fun RideSearchScreen(
                         if (isPickup) {
                             pickup = detailedAddress
                             pickupCoordinates = Pair(lat, lng)
+                            isPickupSelected = true
                         } else {
                             drop = detailedAddress
                             dropCoordinates = Pair(lat, lng)
+                            isDropSelected = true
                         }
+                        activeField = null
+                        suggestions = emptyList()
                         selectingLocationMode = null
                     },
                     onDismiss = {
