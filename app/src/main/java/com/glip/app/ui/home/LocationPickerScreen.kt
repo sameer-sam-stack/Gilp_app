@@ -495,7 +495,8 @@ fun LocationPickerScreen(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 14.dp, end = 14.dp, bottom = 42.dp)
+                .navigationBarsPadding()
+                .padding(start = 14.dp, end = 14.dp, bottom = 64.dp)
                 .align(Alignment.BottomCenter),
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
