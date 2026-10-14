@@ -1,11 +1,11 @@
 package com.glip.app.ui.services
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Inventory2
@@ -108,7 +108,7 @@ fun ServicesScreen(
                         containerColor = Color.White
                     ),
                     elevation = CardDefaults.cardElevation(2.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                 ) {
                     Box(
                         modifier = Modifier
@@ -147,7 +147,7 @@ fun ServicesScreen(
                         containerColor = Color.White
                     ),
                     elevation = CardDefaults.cardElevation(2.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                 ) {
                     Box(
                         modifier = Modifier
