@@ -266,12 +266,15 @@ private fun AdMediaRenderer(
             }
         }
 
-        AdMediaType.IMAGE -> {
-            // 3. STATIC IMAGE AD: Cached bitmap
-            var bitmap by remember(ad.bannerImageUrl) { mutableStateOf<Bitmap?>(null) }
+            // 3. STATIC IMAGE AD: Cached bitmap (frame 0 instant render from memory/disk cache)
+            var bitmap by remember(ad.bannerImageUrl) {
+                mutableStateOf(AdManager.getCachedBitmap(ad.bannerImageUrl))
+            }
 
             LaunchedEffect(ad.bannerImageUrl) {
-                bitmap = AdManager.loadBitmap(ad.bannerImageUrl)
+                if (bitmap == null) {
+                    bitmap = AdManager.loadBitmap(ad.bannerImageUrl)
+                }
             }
 
             if (bitmap != null) {

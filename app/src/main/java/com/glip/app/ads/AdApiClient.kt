@@ -65,9 +65,72 @@ object AdApiClient {
     }
 
     /**
-     * Fetches current placement configurations and their active assigned ads (supporting Multi-Ad Slider)
+     * Parses raw placements JSON string into a list of PlacementSlot models
      */
-    suspend fun fetchPlacements(): Result<List<PlacementSlot>> = withContext(Dispatchers.IO) {
+    fun parsePlacementsResponse(responseBody: String): List<PlacementSlot> {
+        val rootJson = JSONObject(responseBody)
+        val slotsList = mutableListOf<PlacementSlot>()
+
+        val dataArray = rootJson.optJSONArray("data") ?: JSONArray()
+        for (i in 0 until dataArray.length()) {
+            val obj = dataArray.getJSONObject(i)
+            val slotId = obj.optString("slotId")
+            val name = obj.optString("name")
+            val screenName = obj.optString("screenName")
+            val heightDp = obj.optInt("heightDp", 80)
+            val widthDp = if (obj.has("widthDp") && !obj.isNull("widthDp")) obj.optInt("widthDp") else null
+            val aspectRatio = obj.optString("aspectRatio", "")
+            val rotationIntervalSeconds = obj.optInt("rotationIntervalSeconds", 10)
+            val isActive = obj.optBoolean("isActive", true)
+
+            val adsList = mutableListOf<AppAd>()
+
+            // 1. Parse "ads" array for multi-ad slider
+            if (obj.has("ads") && !obj.isNull("ads")) {
+                val adsArray = obj.getJSONArray("ads")
+                for (j in 0 until adsArray.length()) {
+                    val parsed = parseAdObject(adsArray.getJSONObject(j))
+                    if (parsed != null) {
+                        adsList.add(parsed)
+                    }
+                }
+            }
+
+            // 2. Parse single "ad" (legacy fallback)
+            var singleAd: AppAd? = null
+            if (obj.has("ad") && !obj.isNull("ad")) {
+                singleAd = parseAdObject(obj.getJSONObject("ad"))
+            }
+
+            if (adsList.isEmpty() && singleAd != null) {
+                adsList.add(singleAd)
+            }
+
+            // Sort ads by slidePosition (Slide 1 first, then Slide 2, Slide 3...)
+            adsList.sortBy { it.slidePosition }
+
+            slotsList.add(
+                PlacementSlot(
+                    slotId = slotId,
+                    name = name,
+                    screenName = screenName,
+                    heightDp = heightDp,
+                    widthDp = widthDp,
+                    aspectRatio = aspectRatio,
+                    rotationIntervalSeconds = rotationIntervalSeconds,
+                    isActive = isActive,
+                    ad = singleAd ?: adsList.firstOrNull(),
+                    ads = adsList
+                )
+            )
+        }
+        return slotsList
+    }
+
+    /**
+     * Fetches current placement configurations and raw json string (supporting Multi-Ad Slider)
+     */
+    suspend fun fetchPlacementsRaw(): Result<Pair<List<PlacementSlot>, String>> = withContext(Dispatchers.IO) {
         val endpoint = "${AdConfig.BASE_URL.trimEnd('/')}/api/v1/placements?_t=${System.currentTimeMillis()}"
         try {
             val url = URL(endpoint)
@@ -75,8 +138,8 @@ object AdApiClient {
                 requestMethod = "GET"
                 useCaches = false
                 defaultUseCaches = false
-                connectTimeout = 4000
-                readTimeout = 4000
+                connectTimeout = 3000
+                readTimeout = 3000
                 setRequestProperty("Accept", "application/json")
                 setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate")
                 setRequestProperty("Pragma", "no-cache")
@@ -86,64 +149,8 @@ object AdApiClient {
             val responseCode = connection.responseCode
             if (responseCode in 200..299) {
                 val responseBody = connection.inputStream.bufferedReader().use { it.readText() }
-                val rootJson = JSONObject(responseBody)
-                val slotsList = mutableListOf<PlacementSlot>()
-
-                val dataArray = rootJson.optJSONArray("data") ?: JSONArray()
-                for (i in 0 until dataArray.length()) {
-                    val obj = dataArray.getJSONObject(i)
-                    val slotId = obj.optString("slotId")
-                    val name = obj.optString("name")
-                    val screenName = obj.optString("screenName")
-                    val heightDp = obj.optInt("heightDp", 80)
-                    val widthDp = if (obj.has("widthDp") && !obj.isNull("widthDp")) obj.optInt("widthDp") else null
-                    val aspectRatio = obj.optString("aspectRatio", "")
-                    val rotationIntervalSeconds = obj.optInt("rotationIntervalSeconds", 10)
-                    val isActive = obj.optBoolean("isActive", true)
-
-                    val adsList = mutableListOf<AppAd>()
-
-                    // 1. Parse "ads" array for multi-ad slider
-                    if (obj.has("ads") && !obj.isNull("ads")) {
-                        val adsArray = obj.getJSONArray("ads")
-                        for (j in 0 until adsArray.length()) {
-                            val parsed = parseAdObject(adsArray.getJSONObject(j))
-                            if (parsed != null) {
-                                adsList.add(parsed)
-                            }
-                        }
-                    }
-
-                    // 2. Parse single "ad" (legacy fallback)
-                    var singleAd: AppAd? = null
-                    if (obj.has("ad") && !obj.isNull("ad")) {
-                        singleAd = parseAdObject(obj.getJSONObject("ad"))
-                    }
-
-                    if (adsList.isEmpty() && singleAd != null) {
-                        adsList.add(singleAd)
-                    }
-
-                    // Sort ads by slidePosition (Slide 1 first, then Slide 2, Slide 3...)
-                    adsList.sortBy { it.slidePosition }
-
-                    slotsList.add(
-                        PlacementSlot(
-                            slotId = slotId,
-                            name = name,
-                            screenName = screenName,
-                            heightDp = heightDp,
-                            widthDp = widthDp,
-                            aspectRatio = aspectRatio,
-                            rotationIntervalSeconds = rotationIntervalSeconds,
-                            isActive = isActive,
-                            ad = singleAd ?: adsList.firstOrNull(),
-                            ads = adsList
-                        )
-                    )
-                }
-
-                Result.success(slotsList)
+                val slotsList = parsePlacementsResponse(responseBody)
+                Result.success(Pair(slotsList, responseBody))
             } else {
                 val errText = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: ""
                 Log.w(TAG, "Failed to fetch placements: HTTP $responseCode - $errText")
@@ -153,6 +160,13 @@ object AdApiClient {
             Log.e(TAG, "Error fetching placements from $endpoint", e)
             Result.failure(e)
         }
+    }
+
+    /**
+     * Fetches current placement configurations and their active assigned ads (supporting Multi-Ad Slider)
+     */
+    suspend fun fetchPlacements(): Result<List<PlacementSlot>> = withContext(Dispatchers.IO) {
+        fetchPlacementsRaw().map { it.first }
     }
 
     /**

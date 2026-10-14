@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import com.glip.app.ads.AdManager
 import com.glip.app.data.local.DemoProfilePreferences
 import com.glip.app.navigation.AppNavigation
 import com.glip.app.ui.theme.GlipTheme
@@ -40,6 +41,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Initialize advertisement manager at cold start for instant 0ms ad rendering
+        AdManager.initialize(applicationContext)
+
         // Prompt user for Location & GPS immediately on app open
         checkAndPromptLocation()
 
@@ -57,6 +61,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Fast sync ads when returning to the app
+        AdManager.refresh()
+
         val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
         if (fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED) {

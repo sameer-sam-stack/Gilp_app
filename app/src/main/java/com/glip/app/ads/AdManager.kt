@@ -42,29 +42,61 @@ object AdManager {
     private val recordedImpressions = mutableSetOf<String>()
 
     private var isInitialized = false
+    private var appContext: Context? = null
+
+    private const val PREFS_NAME = "glip_ads_cache"
+    private const val KEY_PLACEMENTS_JSON = "cached_placements_json"
 
     // Track timestamp of last successful placement sync
     @Volatile
     var lastSyncTimestamp: Long = 0L
         private set
 
-    fun isStale(): Boolean = (System.currentTimeMillis() - lastSyncTimestamp) > 8000L
+    fun isStale(): Boolean = (System.currentTimeMillis() - lastSyncTimestamp) > 6000L
 
     /**
      * Initializes background sync for in-app ad placements
+     * Synchronously restores cached placements from disk so UI renders instantly with 0ms blank frame.
      */
     fun initialize(context: Context) {
+        val appCtx = context.applicationContext
+        appContext = appCtx
+
         if (isInitialized) return
         isInitialized = true
 
         Log.d(TAG, "Initializing AdManager with base URL: ${AdConfig.BASE_URL}")
 
-        // Launch periodic sync coroutine
+        // 1. Immediately restore cached placements from SharedPreferences for instant UI display
+        loadCachedPlacements(appCtx)
+
+        // 2. Launch background sync coroutine loop
         scope.launch(Dispatchers.IO) {
+            // First live sync immediately
+            syncPlacements()
             while (isActive) {
-                syncPlacements()
                 delay(AdConfig.REFRESH_INTERVAL_MILLIS)
+                syncPlacements()
             }
+        }
+    }
+
+    /**
+     * Restores cached placements from SharedPreferences to show ads immediately at frame 0
+     */
+    private fun loadCachedPlacements(context: Context) {
+        try {
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val json = prefs.getString(KEY_PLACEMENTS_JSON, null)
+            if (!json.isNullOrBlank()) {
+                val slots = AdApiClient.parsePlacementsResponse(json)
+                if (slots.isNotEmpty()) {
+                    _slotsState.value = slots.associateBy { it.slotId }
+                    Log.d(TAG, "Restored ${slots.size} ad slots from disk cache immediately.")
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to restore cached placements", e)
         }
     }
 
@@ -78,20 +110,34 @@ object AdManager {
     }
 
     private suspend fun syncPlacements() {
-        val result = AdApiClient.fetchPlacements()
+        val result = AdApiClient.fetchPlacementsRaw()
         if (result.isSuccess) {
-            val list = result.getOrNull() ?: emptyList()
+            val (list, rawJson) = result.getOrNull() ?: return
             val map = list.associateBy { it.slotId }
             _slotsState.value = map
             lastSyncTimestamp = System.currentTimeMillis()
             Log.d(TAG, "Placements updated successfully. Total slots: ${map.size}")
 
-            // Pre-cache banners for instant zero-lag rendering across all slider items
-            list.forEach { slot ->
-                slot.getActiveAdsList().forEach { ad ->
-                    val bannerUrl = ad.bannerImageUrl
-                    if (!bannerUrl.isNullOrBlank()) {
-                        loadBitmap(bannerUrl)
+            // Persist raw placements JSON for instant offline / cold-start rendering
+            appContext?.let { ctx ->
+                try {
+                    val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    prefs.edit().putString(KEY_PLACEMENTS_JSON, rawJson).apply()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to save placements to cache", e)
+                }
+            }
+
+            // Pre-cache banners in PARALLEL for zero-lag instant rendering across all slider items
+            list.flatMap { it.getActiveAdsList() }.forEach { ad ->
+                val bannerUrl = ad.bannerImageUrl
+                if (!bannerUrl.isNullOrBlank()) {
+                    scope.launch(Dispatchers.IO) {
+                        if (ad.getMediaType() == AdMediaType.GIF && appContext != null) {
+                            loadGifDrawable(appContext!!, bannerUrl)
+                        } else {
+                            loadBitmap(bannerUrl)
+                        }
                     }
                 }
             }
@@ -100,36 +146,86 @@ object AdManager {
         }
     }
 
+    private fun getDiskCacheFile(imageUrl: String): java.io.File? {
+        val dir = appContext?.cacheDir ?: return null
+        val adsDir = java.io.File(dir, "glip_ads_img")
+        if (!adsDir.exists()) {
+            adsDir.mkdirs()
+        }
+        val safeName = "ad_img_" + imageUrl.hashCode().toString() + ".bin"
+        return java.io.File(adsDir, safeName)
+    }
+
     /**
-     * Retrieves cached bitmap or downloads asynchronously
+     * Synchronously checks memory cache and disk cache.
+     * Returns immediately (0-2ms) if available, eliminating blank frame delay in Compose.
+     */
+    fun getCachedBitmap(imageUrl: String): Bitmap? {
+        if (imageUrl.isBlank()) return null
+
+        // 1. Check in-memory LRU cache
+        synchronized(memoryCache) {
+            val memoryHit = memoryCache.get(imageUrl)
+            if (memoryHit != null) return memoryHit
+        }
+
+        // 2. Check disk cache
+        try {
+            val file = getDiskCacheFile(imageUrl)
+            if (file != null && file.exists() && file.length() > 0) {
+                val bitmap = BitmapFactory.decodeFile(file.absolutePath)
+                if (bitmap != null) {
+                    synchronized(memoryCache) {
+                        memoryCache.put(imageUrl, bitmap)
+                    }
+                    return bitmap
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to decode disk-cached bitmap", e)
+        }
+
+        return null
+    }
+
+    /**
+     * Retrieves cached bitmap (memory -> disk) or downloads asynchronously
      */
     suspend fun loadBitmap(imageUrl: String): Bitmap? = withContext(Dispatchers.IO) {
         if (imageUrl.isBlank()) return@withContext null
 
-        synchronized(memoryCache) {
-            val cached = memoryCache.get(imageUrl)
-            if (cached != null) return@withContext cached
-        }
+        // Fast return if already cached in memory or on disk
+        getCachedBitmap(imageUrl)?.let { return@withContext it }
 
         try {
             val url = URL(imageUrl)
             val connection = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 7000
-                readTimeout = 7000
+                connectTimeout = 4000
+                readTimeout = 4000
                 doInput = true
                 setRequestProperty("User-Agent", "GlipGo-Android-App/1.0")
             }
             connection.connect()
-            val stream = connection.inputStream
-            val bitmap = BitmapFactory.decodeStream(stream)
-            stream.close()
+            val bytes = connection.inputStream.use { it.readBytes() }
 
-            if (bitmap != null) {
-                synchronized(memoryCache) {
-                    memoryCache.put(imageUrl, bitmap)
+            if (bytes.isNotEmpty()) {
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                if (bitmap != null) {
+                    synchronized(memoryCache) {
+                        memoryCache.put(imageUrl, bitmap)
+                    }
+                    // Save to disk cache for instant offline / next-launch display
+                    try {
+                        val file = getDiskCacheFile(imageUrl)
+                        file?.writeBytes(bytes)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "Failed to write bitmap to disk cache", e)
+                    }
                 }
+                bitmap
+            } else {
+                null
             }
-            bitmap
         } catch (e: Exception) {
             Log.e(TAG, "Failed to download ad banner bitmap: $imageUrl", e)
             null
