@@ -183,11 +183,14 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        // Map Area - Full Screen width on Left and Right (edge-to-edge), Top & Bottom height unchanged
+        // Map Area - Restored to framed box with gap and rounded corners
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .padding(horizontal = 14.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
         ) {
             if (uiState.isLoading) {
                 Box(
@@ -233,7 +236,7 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // View toggle & App Version
+        // View toggle & Active vehicles counter
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -247,13 +250,6 @@ fun HomeScreen(
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "• Version 8",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF94A3B8),
-                    fontSize = 10.sp
                 )
             }
             TextButton(

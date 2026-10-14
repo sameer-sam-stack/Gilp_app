@@ -166,11 +166,6 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             ProfileOptionItem(
-                icon = Icons.Default.Notifications,
-                title = "Notifications",
-                subtitle = "Route availability & arrival alerts (Placeholder)"
-            )
-            ProfileOptionItem(
                 icon = Icons.Default.Security,
                 title = "Privacy & Data Notice",
                 subtitle = "What is stored locally on this device",

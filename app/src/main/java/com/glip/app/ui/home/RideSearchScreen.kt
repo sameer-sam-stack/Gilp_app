@@ -26,6 +26,7 @@ import com.glip.app.ads.AdBannerBox
 import com.glip.app.ads.AdConfig
 
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PinDrop
 import androidx.compose.ui.zIndex
@@ -295,13 +296,13 @@ fun RideSearchScreen(
                                     }
                                 }
 
-                                // Map Icon Button for Pickup
+                                // Location Pin Icon Button for Pickup
                                 IconButton(
                                     onClick = { selectingLocationMode = "pickup" },
                                     modifier = Modifier.size(30.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Map,
+                                        imageVector = Icons.Default.LocationOn,
                                         contentDescription = "Pick Pickup on Map",
                                         tint = Color(0xFF2563EB),
                                         modifier = Modifier.size(18.dp)
@@ -378,13 +379,13 @@ fun RideSearchScreen(
                                     }
                                 }
 
-                                // Map Icon Button for Drop
+                                // Location Pin Icon Button for Drop
                                 IconButton(
                                     onClick = { selectingLocationMode = "drop" },
                                     modifier = Modifier.size(30.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Map,
+                                        imageVector = Icons.Default.LocationOn,
                                         contentDescription = "Pick Drop on Map",
                                         tint = Color(0xFFEF4444),
                                         modifier = Modifier.size(18.dp)

@@ -135,10 +135,14 @@ fun InteractiveDemoMap(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .clip(RoundedCornerShape(16.dp))
             .background(Color(0xFFE2E8F0))
     ) {
         AndroidView(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(16.dp))
+                .clipToBounds(),
             factory = { ctx ->
                 try {
                     Configuration.getInstance().userAgentValue = ctx.packageName

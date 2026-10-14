@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -57,10 +58,10 @@ fun ServicesScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // 1. Parcel on Bike
+            // 1. Parcel
             ServiceTile(
-                title = "Parcel on Bike",
-                icon = Icons.Default.TwoWheeler,
+                title = "Parcel",
+                icon = Icons.Default.Inventory2,
                 iconColor = GlipOrangeAccent,
                 backgroundColor = Color(0xFFFFF7ED),
                 onClick = { },

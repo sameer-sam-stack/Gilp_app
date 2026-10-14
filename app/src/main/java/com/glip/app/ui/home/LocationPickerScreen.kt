@@ -1,17 +1,24 @@
 package com.glip.app.ui.home
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.drawable.BitmapDrawable
+import android.content.Context
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,14 +27,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.util.LocationTracker
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.DelayedMapListener
 import org.osmdroid.events.MapListener
@@ -36,13 +49,29 @@ import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+import java.util.Locale
+
+/**
+ * Model representing a geocoded address suggestion.
+ */
+data class SearchPlace(
+    val title: String,
+    val subtitle: String,
+    val lat: Double,
+    val lng: Double
+)
 
 /**
  * LocationPickerScreen:
- * Opens a full-screen interactive OSM map with a fixed center pin.
- * The user drags and zooms the map under the fixed pin.
- * Live center coordinates are reverse-geocoded to show the address preview.
- * Tapping "Confirm Location" returns exact latitude, longitude, and readable address.
+ * Opens a full-screen interactive OSM map with a fixed center pin and search hero section.
+ * - Top hero section features a real-time Search Bar with autocomplete suggestions (Android Geocoder + OSM Nominatim fallback).
+ * - Tapping a search suggestion or submitting pans the map directly to that location.
+ * - The user drags and zooms the map under the fixed center pin.
+ * - Live center coordinates are reverse-geocoded to show the address preview.
+ * - Elevated Confirm Location Box with border and increased bottom padding.
  */
 @Composable
 fun LocationPickerScreen(
@@ -54,6 +83,8 @@ fun LocationPickerScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
 
     val startLat = initialLat ?: LocationTracker.currentCoordinates.value?.first ?: 28.6139
@@ -64,7 +95,13 @@ fun LocationPickerScreen(
     var addressPreview by remember { mutableStateOf("Locating...") }
     var isGeocoding by remember { mutableStateOf(false) }
 
-    // Reverse-geocode whenever map center stabilizes
+    // Search state
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearching by remember { mutableStateOf(false) }
+    var suggestions by remember { mutableStateOf<List<SearchPlace>>(emptyList()) }
+    var showSuggestions by remember { mutableStateOf(false) }
+
+    // Live Reverse-geocode whenever map center stabilizes
     LaunchedEffect(centerLat, centerLng) {
         isGeocoding = true
         val resolved = withContext(Dispatchers.IO) {
@@ -72,6 +109,36 @@ fun LocationPickerScreen(
         }
         addressPreview = resolved
         isGeocoding = false
+    }
+
+    // Debounced search for place suggestions
+    LaunchedEffect(searchQuery) {
+        val q = searchQuery.trim()
+        if (q.length < 3) {
+            suggestions = emptyList()
+            showSuggestions = false
+            return@LaunchedEffect
+        }
+        delay(350)
+        isSearching = true
+        val results = withContext(Dispatchers.IO) {
+            fetchAddressSuggestions(context, q)
+        }
+        suggestions = results
+        showSuggestions = results.isNotEmpty()
+        isSearching = false
+    }
+
+    // Smoothly fly map to selected search place
+    fun selectPlace(place: SearchPlace) {
+        searchQuery = place.title
+        showSuggestions = false
+        keyboardController?.hide()
+        focusManager.clearFocus()
+        centerLat = place.lat
+        centerLng = place.lng
+        mapViewRef?.controller?.animateTo(GeoPoint(place.lat, place.lng))
+        mapViewRef?.controller?.setZoom(17.0)
     }
 
     DisposableEffect(Unit) {
@@ -169,75 +236,233 @@ fun LocationPickerScreen(
             }
         }
 
-        // 3. Top Bar (Back button, Title, and GPS Recenter button)
-        Row(
+        // 3. Top Hero Section (Navigation Bar + Search Input Bar + Live Suggestions Card)
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 20.dp)
-                .align(Alignment.TopCenter),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 14.dp, vertical = 14.dp)
+                .align(Alignment.TopCenter)
         ) {
-            Surface(
-                shape = CircleShape,
-                color = Color.White,
-                shadowElevation = 4.dp,
-                modifier = Modifier.size(42.dp)
+            // Row 1: Back Button, Title Pill, My Location GPS Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onDismiss) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color(0xFF18181B)
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier.size(42.dp)
+                ) {
+                    IconButton(onClick = onDismiss) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF18181B)
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color.White,
+                    shadowElevation = 4.dp
+                ) {
+                    Text(
+                        text = title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = Color(0xFF18181B),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     )
+                }
+
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White,
+                    shadowElevation = 4.dp,
+                    modifier = Modifier.size(42.dp)
+                ) {
+                    IconButton(onClick = {
+                        val myCoords = LocationTracker.currentCoordinates.value
+                        if (myCoords != null) {
+                            mapViewRef?.controller?.animateTo(GeoPoint(myCoords.first, myCoords.second))
+                            centerLat = myCoords.first
+                            centerLng = myCoords.second
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.MyLocation,
+                            contentDescription = "My Location",
+                            tint = Color(0xFF2563EB)
+                        )
+                    }
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Search Bar Input Box
             Surface(
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = Color.White,
-                shadowElevation = 4.dp
+                shadowElevation = 6.dp,
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
             ) {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    color = Color(0xFF18181B),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = Color(0xFF64748B),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        BasicTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                color = Color(0xFF0F172A),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                imeAction = ImeAction.Search
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onSearch = {
+                                    keyboardController?.hide()
+                                    focusManager.clearFocus()
+                                    if (suggestions.isNotEmpty()) {
+                                        selectPlace(suggestions.first())
+                                    }
+                                }
+                            ),
+                            decorationBox = { innerTextField ->
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = "Search landmark, bus stand, address...",
+                                        color = Color(0xFF94A3B8),
+                                        fontSize = 13.sp
+                                    )
+                                }
+                                innerTextField()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF2563EB)
+                        )
+                    } else if (searchQuery.isNotEmpty()) {
+                        IconButton(
+                            onClick = {
+                                searchQuery = ""
+                                suggestions = emptyList()
+                                showSuggestions = false
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear search",
+                                tint = Color(0xFF94A3B8),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
             }
 
-            Surface(
-                shape = CircleShape,
-                color = Color.White,
-                shadowElevation = 4.dp,
-                modifier = Modifier.size(42.dp)
-            ) {
-                IconButton(onClick = {
-                    val myCoords = LocationTracker.currentCoordinates.value
-                    if (myCoords != null) {
-                        mapViewRef?.controller?.animateTo(GeoPoint(myCoords.first, myCoords.second))
-                        centerLat = myCoords.first
-                        centerLng = myCoords.second
+            // Suggestions Dropdown Card
+            if (showSuggestions && suggestions.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 240.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(8.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(suggestions) { item ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectPlace(item) }
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFEFF6FF)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.LocationOn,
+                                        contentDescription = null,
+                                        tint = Color(0xFF2563EB),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = item.title,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF0F172A),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text(
+                                        text = item.subtitle,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 0.8.dp)
+                        }
                     }
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.MyLocation,
-                        contentDescription = "My Location",
-                        tint = Color(0xFF2563EB)
-                    )
                 }
             }
         }
 
         // 4. Bottom Floating Card with Address Preview & "Confirm Location" Button
+        val themeBorderColor = if (title.contains("Drop", ignoreCase = true)) Color(0xFFEF4444) else Color(0xFF2563EB)
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 20.dp)
+                .padding(start = 14.dp, end = 14.dp, bottom = 42.dp)
                 .align(Alignment.BottomCenter),
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.5.dp, themeBorderColor),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
@@ -298,4 +523,65 @@ fun LocationPickerScreen(
             }
         }
     }
+}
+
+/**
+ * Searches places/landmarks via Android Geocoder with OSM Nominatim fallback for Indian locations.
+ */
+private fun fetchAddressSuggestions(context: Context, query: String): List<SearchPlace> {
+    val results = mutableListOf<SearchPlace>()
+
+    // 1. Android Native Geocoder
+    try {
+        val geocoder = android.location.Geocoder(context, Locale.getDefault())
+        val addresses = geocoder.getFromLocationName(query, 5)
+        addresses?.forEach { addr ->
+            val title = addr.featureName ?: addr.subLocality ?: addr.locality ?: query
+            val fullLine = addr.getAddressLine(0) ?: listOfNotNull(addr.subLocality, addr.locality, addr.adminArea).joinToString(", ")
+            results.add(
+                SearchPlace(
+                    title = title,
+                    subtitle = fullLine,
+                    lat = addr.latitude,
+                    lng = addr.longitude
+                )
+            )
+        }
+    } catch (_: Exception) {}
+
+    // 2. OpenStreetMap Nominatim Fallback / Augment
+    if (results.isEmpty()) {
+        try {
+            val encoded = URLEncoder.encode(query, "UTF-8")
+            val url = URL("https://nominatim.openstreetmap.org/search?format=json&q=$encoded&countrycodes=in&limit=5&addressdetails=1")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.setRequestProperty("User-Agent", "GlipGoApp/1.0 (contact@glipgo.com)")
+            conn.connectTimeout = 4000
+            conn.readTimeout = 4000
+            if (conn.responseCode == 200) {
+                val text = conn.inputStream.bufferedReader().use { it.readText() }
+                val array = JSONArray(text)
+                for (i in 0 until array.length()) {
+                    val obj = array.getJSONObject(i)
+                    val lat = obj.getDouble("lat")
+                    val lon = obj.getDouble("lon")
+                    val displayName = obj.getString("display_name")
+                    val parts = displayName.split(",")
+                    val placeTitle = parts.firstOrNull()?.trim() ?: displayName
+                    val placeSub = parts.drop(1).take(3).joinToString(", ").trim()
+                    results.add(
+                        SearchPlace(
+                            title = placeTitle,
+                            subtitle = if (placeSub.isNotEmpty()) placeSub else displayName,
+                            lat = lat,
+                            lng = lon
+                        )
+                    )
+                }
+            }
+            conn.disconnect()
+        } catch (_: Exception) {}
+    }
+
+    return results.distinctBy { "${it.lat},${it.lng}" }
 }
