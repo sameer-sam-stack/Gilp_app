@@ -155,6 +155,7 @@ fun InteractiveDemoMap(
                     Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                     MapView(ctx).apply {
                         setTileSource(MapStyles.RAPIDO_CLEAN)
+                        MapStyles.applyRapidoTone(this)
                         zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER) // Remove visible + and - zoom buttons
                         setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
                         isTilesScaledToDpi = true // Set to true to prevent tiny unreadable street text on high-density screens
@@ -257,7 +258,7 @@ fun InteractiveDemoMap(
             }
         }
 
-        // OpenStreetMap & CARTO Legal Attribution (ODbL / CC BY 3.0 Compliance)
+        // OpenStreetMap Legal Attribution (ODbL Compliance)
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -266,7 +267,7 @@ fun InteractiveDemoMap(
             color = Color.White.copy(alpha = 0.88f)
         ) {
             Text(
-                text = "© OpenStreetMap contributors, © CARTO",
+                text = "© OpenStreetMap contributors",
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFF64748B),

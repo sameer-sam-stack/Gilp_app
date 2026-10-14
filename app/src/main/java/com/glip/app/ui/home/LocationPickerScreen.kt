@@ -166,6 +166,7 @@ fun LocationPickerScreen(
                 Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                 MapView(ctx).apply {
                     setTileSource(MapStyles.RAPIDO_CLEAN)
+                    MapStyles.applyRapidoTone(this)
                     zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
                     setMultiTouchControls(true)
                     isTilesScaledToDpi = true
