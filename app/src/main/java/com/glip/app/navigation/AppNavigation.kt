@@ -81,10 +81,7 @@ fun AppNavigation(
                 hasSearchedRide = true
                 currentBottomTab = 0
             },
-            onCancel = {
-                hasSearchedRide = true
-                currentBottomTab = 0
-            },
+            onCancel = null,
             modifier = modifier.fillMaxSize()
         )
     } else {

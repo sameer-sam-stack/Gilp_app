@@ -89,7 +89,7 @@ fun RideSearchScreen(
                 .blur(radius = 24.dp)
         )
 
-        // 2. Frosted Blur Glass Scrim (Translucent, removes solid white so authentic blurred map shows through)
+        // 2. Frosted Blur Glass Scrim (Consumes touches so user cannot click or drag through to background map)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -98,8 +98,7 @@ fun RideSearchScreen(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
                 ) {
-                    // Consumes touches so user cannot click or drag through to background map, or cancels if supported
-                    onCancel?.invoke()
+                    // Strictly consumes touch events so user cannot touch the background map. Does NOT navigate!
                 }
         )
 
@@ -225,28 +224,26 @@ fun RideSearchScreen(
                             }
                         }
 
-                        // Top-Right Arrow Action Button (➡️ icon)
+                        val isHeaderRideEnabled = pickup.isNotBlank() && drop.isNotBlank()
+
+                        // Top-Right Arrow Action Button (➡️ icon: clickable ONLY when both pickup & drop are entered)
                         IconButton(
                             onClick = {
-                                if (onCancel != null) {
-                                    onCancel()
-                                } else {
-                                    pickup = ""
-                                    drop = ""
-                                    pickupCoordinates = null
-                                    dropCoordinates = null
+                                if (isHeaderRideEnabled) {
+                                    onConfirmRideSearch(pickup.trim(), drop.trim())
                                 }
                             },
+                            enabled = isHeaderRideEnabled,
                             modifier = Modifier
                                 .size(30.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFF1F5F9))
+                                .background(if (isHeaderRideEnabled) Color(0xFF18181B) else Color(0xFFF1F5F9))
                                 .border(1.dp, Color(0xFFE2E8F0), CircleShape)
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Next / Navigate",
-                                tint = Color(0xFF0F172A),
+                                contentDescription = "Next / Ride",
+                                tint = if (isHeaderRideEnabled) Color.White else Color(0xFF94A3B8),
                                 modifier = Modifier.size(15.dp)
                             )
                         }
