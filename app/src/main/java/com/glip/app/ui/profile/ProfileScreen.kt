@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -172,7 +173,7 @@ fun ProfileScreen(
                 onClick = { viewModel.showPrivacyDialog(true) }
             )
             ProfileOptionItem(
-                icon = Icons.Default.Help,
+                icon = Icons.AutoMirrored.Filled.Help,
                 title = "Help & Support",
                 subtitle = "FAQs and solo founder assistance placeholder"
             )
@@ -202,7 +203,7 @@ fun ProfileScreen(
                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
                 Icon(
-                    imageVector = Icons.Default.ExitToApp,
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
                     tint = Color(0xFF18181B)

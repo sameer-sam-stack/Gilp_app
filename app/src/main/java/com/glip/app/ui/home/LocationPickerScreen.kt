@@ -13,7 +13,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
@@ -162,7 +162,7 @@ fun LocationPickerScreen(
                 Configuration.getInstance().userAgentValue = ctx.packageName
                 MapView(ctx).apply {
                     setTileSource(TileSourceFactory.MAPNIK)
-                    setBuiltInZoomControls(false)
+                    zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
                     setMultiTouchControls(true)
                     isTilesScaledToDpi = true
                     isHorizontalMapRepetitionEnabled = false
@@ -257,7 +257,7 @@ fun LocationPickerScreen(
                 ) {
                     IconButton(onClick = onDismiss) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = Color(0xFF18181B)
                         )

@@ -148,7 +148,7 @@ fun InteractiveDemoMap(
                     Configuration.getInstance().userAgentValue = ctx.packageName
                     MapView(ctx).apply {
                         setTileSource(TileSourceFactory.MAPNIK)
-                        setBuiltInZoomControls(false) // Remove visible + and - zoom buttons
+                        zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER) // Remove visible + and - zoom buttons
                         setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
                         isTilesScaledToDpi = true // Set to true to prevent tiny unreadable street text on high-density screens
                         setDestroyMode(false)

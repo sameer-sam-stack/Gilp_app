@@ -1,7 +1,11 @@
 package com.glip.app
 
 import com.glip.app.data.demo.DemoDataStore
+import com.glip.app.domain.model.DriverProfile
+import com.glip.app.domain.model.RouteStatus
 import com.glip.app.domain.model.SeatAvailability
+import com.glip.app.domain.model.Vehicle
+import com.glip.app.domain.model.VehicleCategory
 import com.glip.app.domain.usecase.RouteMatcher
 import org.junit.Assert.*
 import org.junit.Test
@@ -9,6 +13,30 @@ import org.junit.Test
 class RouteMatcherAndDataTest {
 
     private val routeMatcher = RouteMatcher()
+
+    // Test vehicles fixtures to validate route matching independently
+    private val testVehicles = listOf(
+        Vehicle(
+            vehicleId = "GLIP-V-101",
+            licensePlateMasked = "DL 01 ** 4812",
+            category = VehicleCategory.SEDAN,
+            modelName = "Maruti Suzuki Dzire",
+            currentLat = 28.6250,
+            currentLng = 77.2120,
+            headingDegrees = 45f,
+            route = DemoDataStore.demoRoutes[0],
+            routeStatus = RouteStatus.EN_ROUTE,
+            seatAvailability = SeatAvailability(totalSeats = 4, occupiedSeats = 1),
+            driver = DriverProfile(
+                driverId = "DRV-001",
+                fullName = "Rajesh Sharma",
+                rating = 4.85,
+                totalRidesCompleted = 340,
+                isVerified = true
+            ),
+            farePerKmEstimate = 8.5
+        )
+    )
 
     @Test
     fun testSeatAvailabilityCalculations() {
@@ -29,7 +57,7 @@ class RouteMatcherAndDataTest {
     @Test
     fun testRouteMatcherFindsConnaughtPlaceToCyberHub() {
         val matches = routeMatcher.findCompatibleVehicles(
-            vehicles = DemoDataStore.demoVehicles,
+            vehicles = testVehicles,
             pickupQuery = "Connaught",
             dropQuery = "Cyber Hub"
         )
@@ -43,7 +71,7 @@ class RouteMatcherAndDataTest {
     fun testRouteMatcherFindsIntermediateStops() {
         // Stop "Dhaula Kuan" is on Route 001
         val matches = routeMatcher.findCompatibleVehicles(
-            vehicles = DemoDataStore.demoVehicles,
+            vehicles = testVehicles,
             pickupQuery = "Dhaula Kuan",
             dropQuery = "Cyber Hub"
         )
@@ -55,7 +83,7 @@ class RouteMatcherAndDataTest {
     @Test
     fun testRouteMatcherReturnsEmptyForIncompatibleRoute() {
         val matches = routeMatcher.findCompatibleVehicles(
-            vehicles = DemoDataStore.demoVehicles,
+            vehicles = testVehicles,
             pickupQuery = "NonExistentPlace",
             dropQuery = "UnknownDestination"
         )
@@ -64,9 +92,14 @@ class RouteMatcherAndDataTest {
     }
 
     @Test
-    fun testDemoVehiclesDataIntegrity() {
-        assertTrue(DemoDataStore.demoVehicles.isNotEmpty())
-        DemoDataStore.demoVehicles.forEach { vehicle ->
+    fun testDemoVehiclesReadyForLiveDriverConnection() {
+        // demoVehicles is intentionally empty in preparation for live driver app integration
+        assertTrue(DemoDataStore.demoVehicles.isEmpty())
+    }
+
+    @Test
+    fun testVehicleDataIntegrity() {
+        testVehicles.forEach { vehicle ->
             assertNotNull(vehicle.vehicleId)
             assertTrue(vehicle.vehicleId.startsWith("GLIP-V-"))
             assertTrue(vehicle.driver.rating in 1.0..5.0)
