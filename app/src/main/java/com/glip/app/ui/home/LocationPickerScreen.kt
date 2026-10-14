@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import com.glip.app.ui.map.MapStyles
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.util.LocationTracker
 import kotlinx.coroutines.Dispatchers
@@ -160,11 +161,16 @@ fun LocationPickerScreen(
                 .clipToBounds(),
             factory = { ctx ->
                 Configuration.getInstance().userAgentValue = ctx.packageName
+                Configuration.getInstance().cacheMapTileCount = 16
+                Configuration.getInstance().tileFileSystemCacheMaxBytes = 150L * 1024 * 1024
+                Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                 MapView(ctx).apply {
-                    setTileSource(TileSourceFactory.MAPNIK)
+                    setTileSource(MapStyles.RAPIDO_CLEAN)
                     zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
                     setMultiTouchControls(true)
                     isTilesScaledToDpi = true
+                    minZoomLevel = 4.0
+                    maxZoomLevel = 20.0
                     isHorizontalMapRepetitionEnabled = false
                     isVerticalMapRepetitionEnabled = false
                     setDestroyMode(false)
@@ -195,6 +201,9 @@ fun LocationPickerScreen(
         )
 
         // 2. Fixed Center Pin (Stays stationary in dead-center while user drags map underneath)
+        val isDrop = title.contains("Drop", ignoreCase = true)
+        val pinThemeColor = if (isDrop) Color(0xFFEF4444) else Color(0xFF2563EB)
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -205,12 +214,39 @@ fun LocationPickerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                // Floating prompt pill above pin (Rapido / Uber style)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFF0F172A),
+                    shadowElevation = 6.dp,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(pinThemeColor)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isDrop) "Set drop location" else "Set pickup location",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
                 // Pin Head & Needle
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .background(if (title.contains("Drop", ignoreCase = true)) Color(0xFFEF4444) else Color(0xFF2563EB)),
+                        .background(pinThemeColor),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
@@ -223,13 +259,13 @@ fun LocationPickerScreen(
                 // Small needle stem / shadow point
                 Box(
                     modifier = Modifier
-                        .size(width = 4.dp, height = 8.dp)
+                        .size(width = 4.dp, height = 9.dp)
                         .background(Color.Black.copy(alpha = 0.7f))
                 )
                 // Small ground shadow dot
                 Box(
                     modifier = Modifier
-                        .size(width = 12.dp, height = 5.dp)
+                        .size(width = 14.dp, height = 5.dp)
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.35f))
                 )

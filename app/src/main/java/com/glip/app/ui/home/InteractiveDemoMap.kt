@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.glip.app.domain.model.Vehicle
 import com.glip.app.ui.theme.GlipGreenPrimary
+import com.glip.app.ui.map.MapStyles
+import com.glip.app.ui.map.RapidoLocationOverlay
 import com.glip.app.util.LocationTracker
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -48,6 +50,7 @@ fun InteractiveDemoMap(
 ) {
     val context = LocalContext.current
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
+    var locationOverlay by remember { mutableStateOf<RapidoLocationOverlay?>(null) }
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
     val liveAddress by LocationTracker.currentAddress.collectAsState()
 
@@ -127,6 +130,7 @@ fun InteractiveDemoMap(
 
     DisposableEffect(Unit) {
         onDispose {
+            locationOverlay?.stop()
             mapViewRef?.onPause()
             mapViewRef?.onDetach()
         }
@@ -146,11 +150,16 @@ fun InteractiveDemoMap(
             factory = { ctx ->
                 try {
                     Configuration.getInstance().userAgentValue = ctx.packageName
+                    Configuration.getInstance().cacheMapTileCount = 16
+                    Configuration.getInstance().tileFileSystemCacheMaxBytes = 150L * 1024 * 1024
+                    Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                     MapView(ctx).apply {
-                        setTileSource(TileSourceFactory.MAPNIK)
+                        setTileSource(MapStyles.RAPIDO_CLEAN)
                         zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER) // Remove visible + and - zoom buttons
                         setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
                         isTilesScaledToDpi = true // Set to true to prevent tiny unreadable street text on high-density screens
+                        minZoomLevel = 4.0
+                        maxZoomLevel = 20.0
                         setDestroyMode(false)
 
                         if (!isInteractive) {
@@ -184,25 +193,25 @@ fun InteractiveDemoMap(
                 if (view is MapView) {
                     view.overlays.clear()
 
-                    // User live location marker (small light-blue map pin)
+                    // User live location beacon (Rapido / Uber style 60 FPS animated pulsing puck)
                     userCoords?.let { (uLat, uLng) ->
-                        val userMarker = Marker(view).apply {
-                            position = GeoPoint(uLat, uLng)
-                            title = liveAddress ?: "My Current Location"
-                            subDescription = "You are here"
-                            icon = lightBlueLocationIcon
-                            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        val geoPoint = GeoPoint(uLat, uLng)
+                        val overlay = locationOverlay ?: RapidoLocationOverlay(view, geoPoint).also {
+                            locationOverlay = it
                         }
-                        view.overlays.add(userMarker)
+                        overlay.position = geoPoint
+                        view.overlays.add(overlay)
+
                         if (vehicles.isEmpty()) {
-                            view.controller.setCenter(GeoPoint(uLat, uLng))
+                            view.controller.setCenter(geoPoint)
                         }
                     }
 
-                    // Vehicles markers with distinct vehicle icon
+                    // Vehicles markers with smooth heading rotation
                     vehicles.forEach { vehicle ->
                         val marker = Marker(view).apply {
                             position = GeoPoint(vehicle.currentLat, vehicle.currentLng)
+                            rotation = vehicle.headingDegrees
                             title = "${vehicle.driver.fullName} (${vehicle.licensePlateMasked})"
                             subDescription = "${vehicle.seatAvailability.availableSeats} seats free"
                             icon = vehicleIcon
@@ -248,7 +257,7 @@ fun InteractiveDemoMap(
             }
         }
 
-        // OpenStreetMap Legal Attribution (ODbL Compliance)
+        // OpenStreetMap & CARTO Legal Attribution (ODbL / CC BY 3.0 Compliance)
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -257,7 +266,7 @@ fun InteractiveDemoMap(
             color = Color.White.copy(alpha = 0.88f)
         ) {
             Text(
-                text = "© OpenStreetMap contributors",
+                text = "© OpenStreetMap contributors, © CARTO",
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFF64748B),
