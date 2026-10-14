@@ -62,6 +62,7 @@ fun RideSearchScreen(
 
     // Map selection modal state: null = closed, "pickup" = selecting pickup, "drop" = selecting drop
     var selectingLocationMode by remember { mutableStateOf<String?>(null) }
+    var showSameLocationDialog by remember { mutableStateOf(false) }
 
     // Auto-fill pickup with live GPS location as soon as detected
     LaunchedEffect(liveAddress, liveCoords) {
@@ -76,7 +77,7 @@ fun RideSearchScreen(
             .fillMaxSize()
             .background(Color(0xFF0F172A))
     ) {
-        // 1. Real OpenStreetMap background (Native Hardware Blur + Compose Blur + Touch blocked)
+        // 1. Real OpenStreetMap background (Hardware Blur + Diffused soft tone)
         InteractiveDemoMap(
             vehicles = emptyList(),
             selectedVehicle = null,
@@ -84,16 +85,22 @@ fun RideSearchScreen(
             onRecenter = {},
             isInteractive = false,
             isBlurred = true,
-            modifier = Modifier
-                .fillMaxSize()
-                .blur(radius = 24.dp)
+            modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Frosted Blur Glass Scrim (Consumes touches so user cannot click or drag through to background map)
+        // 2. Frosted Blur Glass Scrim (Gradient acrylic glass layer over blurred map)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0F172A).copy(alpha = 0.38f))
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF0F172A).copy(alpha = 0.40f),
+                            Color(0xFF1E293B).copy(alpha = 0.50f),
+                            Color(0xFF0F172A).copy(alpha = 0.65f)
+                        )
+                    )
+                )
                 .clickable(
                     indication = null,
                     interactionSource = remember { MutableInteractionSource() }
@@ -230,7 +237,11 @@ fun RideSearchScreen(
                         IconButton(
                             onClick = {
                                 if (isHeaderRideEnabled) {
-                                    onConfirmRideSearch(pickup.trim(), drop.trim())
+                                    if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
+                                        showSameLocationDialog = true
+                                    } else {
+                                        onConfirmRideSearch(pickup.trim(), drop.trim())
+                                    }
                                 }
                             },
                             enabled = isHeaderRideEnabled,
@@ -432,7 +443,11 @@ fun RideSearchScreen(
                     Button(
                         onClick = {
                             if (isRideEnabled) {
-                                onConfirmRideSearch(pickup.trim(), drop.trim())
+                                if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
+                                    showSameLocationDialog = true
+                                } else {
+                                    onConfirmRideSearch(pickup.trim(), drop.trim())
+                                }
                             }
                         },
                         enabled = isRideEnabled,
@@ -494,6 +509,8 @@ fun RideSearchScreen(
             val title = if (isPickup) "Select Pickup on Map" else "Select Drop on Map"
             val currentLat = if (isPickup) pickupCoordinates?.first else dropCoordinates?.first
             val currentLng = if (isPickup) pickupCoordinates?.second else dropCoordinates?.second
+            val otherAddress = if (isPickup) drop else pickup
+            val otherCoords = if (isPickup) dropCoordinates else pickupCoordinates
 
             Box(
                 modifier = Modifier
@@ -504,6 +521,8 @@ fun RideSearchScreen(
                     title = title,
                     initialLat = currentLat,
                     initialLng = currentLng,
+                    otherLocationAddress = otherAddress,
+                    otherLocationCoords = otherCoords,
                     onLocationConfirmed = { detailedAddress, lat, lng ->
                         if (isPickup) {
                             pickup = detailedAddress
@@ -519,6 +538,13 @@ fun RideSearchScreen(
                     }
                 )
             }
+        }
+
+        // Same Location Alert Dialog
+        if (showSameLocationDialog) {
+            SameLocationAlertDialog(
+                onDismiss = { showSameLocationDialog = false }
+            )
         }
     }
 }

@@ -139,13 +139,17 @@ fun InteractiveDemoMap(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(16.dp))
+            .then(
+                if (isBlurred) Modifier else Modifier.clip(RoundedCornerShape(16.dp))
+            )
             .background(Color(0xFFE2E8F0))
     ) {
         AndroidView(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(RoundedCornerShape(16.dp))
+                .then(
+                    if (isBlurred) Modifier else Modifier.clip(RoundedCornerShape(16.dp))
+                )
                 .clipToBounds(),
             factory = { ctx ->
                 try {
@@ -155,7 +159,11 @@ fun InteractiveDemoMap(
                     Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                     MapView(ctx).apply {
                         setTileSource(MapStyles.RAPIDO_CLEAN)
-                        MapStyles.applyRapidoTone(this)
+                        if (isBlurred) {
+                            MapStyles.applyBlurredTone(this)
+                        } else {
+                            MapStyles.applyRapidoTone(this)
+                        }
                         zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER) // Remove visible + and - zoom buttons
                         setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
                         isTilesScaledToDpi = true // Set to true to prevent tiny unreadable street text on high-density screens
@@ -168,21 +176,35 @@ fun InteractiveDemoMap(
                         }
 
                         if (isBlurred) {
+                            setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
                             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                                val blurRadiusPx = 32f * ctx.resources.displayMetrics.density
-                                setRenderEffect(
-                                    android.graphics.RenderEffect.createBlurEffect(
-                                        blurRadiusPx,
-                                        blurRadiusPx,
-                                        android.graphics.Shader.TileMode.CLAMP
+                                val blurRadiusPx = 28f * ctx.resources.displayMetrics.density
+                                try {
+                                    setRenderEffect(
+                                        android.graphics.RenderEffect.createBlurEffect(
+                                            blurRadiusPx,
+                                            blurRadiusPx,
+                                            android.graphics.Shader.TileMode.CLAMP
+                                        )
                                     )
-                                )
+                                } catch (_: Throwable) {}
+                                post {
+                                    try {
+                                        setRenderEffect(
+                                            android.graphics.RenderEffect.createBlurEffect(
+                                                blurRadiusPx,
+                                                blurRadiusPx,
+                                                android.graphics.Shader.TileMode.CLAMP
+                                            )
+                                        )
+                                    } catch (_: Throwable) {}
+                                }
                             }
                         }
 
                         val startLat = userCoords?.first ?: 28.6139
                         val startLng = userCoords?.second ?: 77.2090
-                        controller.setZoom(if (isBlurred) 14.5 else 15.5)
+                        controller.setZoom(if (isBlurred) 13.5 else 15.5)
                         controller.setCenter(GeoPoint(startLat, startLng))
                         mapViewRef = this
                     }

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,10 +32,12 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import com.glip.app.ui.map.MapStyles
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.util.LocationTracker
@@ -72,13 +75,16 @@ data class SearchPlace(
  * - Tapping a search suggestion or submitting pans the map directly to that location.
  * - The user drags and zooms the map under the fixed center pin.
  * - Live center coordinates are reverse-geocoded to show the address preview.
- * - Elevated Confirm Location Box with border and increased bottom padding.
+ * - My Location GPS button is placed above the confirm location box on the right (Pickup only; hidden on Drop).
+ * - Validates that Pickup and Drop are not the same location; shows alert dialog if same.
  */
 @Composable
 fun LocationPickerScreen(
     title: String,
     initialLat: Double?,
     initialLng: Double?,
+    otherLocationAddress: String? = null,
+    otherLocationCoords: Pair<Double, Double>? = null,
     onLocationConfirmed: (address: String, lat: Double, lng: Double) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -101,6 +107,7 @@ fun LocationPickerScreen(
     var isSearching by remember { mutableStateOf(false) }
     var suggestions by remember { mutableStateOf<List<SearchPlace>>(emptyList()) }
     var showSuggestions by remember { mutableStateOf(false) }
+    var showSameLocationAlert by remember { mutableStateOf(false) }
 
     // Live Reverse-geocode whenever map center stabilizes
     LaunchedEffect(centerLat, centerLng) {
@@ -280,16 +287,16 @@ fun LocationPickerScreen(
                 .padding(horizontal = 14.dp, vertical = 14.dp)
                 .align(Alignment.TopCenter)
         ) {
-            // Row 1: Back Button, Title Pill, My Location GPS Button
+            // Row 1: Back Button & Title Pill
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
                     shape = CircleShape,
                     color = Color.White,
                     shadowElevation = 4.dp,
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                     modifier = Modifier.size(42.dp)
                 ) {
                     IconButton(onClick = onDismiss) {
@@ -301,38 +308,30 @@ fun LocationPickerScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.width(12.dp))
+
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = Color.White,
-                    shadowElevation = 4.dp
-                ) {
-                    Text(
-                        text = title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = Color(0xFF18181B),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White,
                     shadowElevation = 4.dp,
-                    modifier = Modifier.size(42.dp)
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                 ) {
-                    IconButton(onClick = {
-                        val myCoords = LocationTracker.currentCoordinates.value
-                        if (myCoords != null) {
-                            mapViewRef?.controller?.animateTo(GeoPoint(myCoords.first, myCoords.second))
-                            centerLat = myCoords.first
-                            centerLng = myCoords.second
-                        }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.MyLocation,
-                            contentDescription = "My Location",
-                            tint = Color(0xFF2563EB)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(if (isDrop) Color(0xFFEF4444) else Color(0xFF22C55E))
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = title,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = Color(0xFF18181B)
                         )
                     }
                 }
@@ -490,75 +489,140 @@ fun LocationPickerScreen(
             }
         }
 
-        // 4. Bottom Floating Card with Address Preview & "Confirm Location" Button
+        // 4. Bottom Section: Floating My Location FAB (Pickup only) + Floating Confirmation Card
         val themeBorderColor = if (title.contains("Drop", ignoreCase = true)) Color(0xFFEF4444) else Color(0xFF2563EB)
-        Card(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(start = 14.dp, end = 14.dp, bottom = 64.dp)
                 .align(Alignment.BottomCenter),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.5.dp, themeBorderColor),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            horizontalAlignment = Alignment.End
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = if (title.contains("Drop", ignoreCase = true)) "Selected Drop Location" else "Selected Pickup Location",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF64748B),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = addressPreview,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F172A),
-                    fontSize = 14.sp,
-                    maxLines = 2
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Button(
-                    onClick = {
-                        onLocationConfirmed(addressPreview, centerLat, centerLng)
-                    },
+            // My Location FAB - ONLY visible for Pickup, placed ABOVE the confirm card on the right
+            if (!isDrop) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White,
+                    shadowElevation = 6.dp,
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF18181B))
+                        .padding(bottom = 12.dp)
+                        .size(46.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
+                    IconButton(onClick = {
+                        val myCoords = LocationTracker.currentCoordinates.value
+                        if (myCoords != null) {
+                            mapViewRef?.controller?.animateTo(GeoPoint(myCoords.first, myCoords.second))
+                            centerLat = myCoords.first
+                            centerLng = myCoords.second
+                        }
+                    }) {
                         Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = GlipGreenPrimary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Confirm Location",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            imageVector = Icons.Default.MyLocation,
+                            contentDescription = "My Live Location",
+                            tint = Color(0xFF2563EB),
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
             }
+
+            // Bottom Floating Card with Address Preview & "Confirm Location" Button
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.5.dp, themeBorderColor),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (isDrop) Color(0xFFFEE2E2) else Color(0xFFDCFCE7),
+                            border = BorderStroke(0.8.dp, if (isDrop) Color(0xFFFCA5A5) else Color(0xFF86EFAC))
+                        ) {
+                            Text(
+                                text = if (isDrop) "DROP LOCATION" else "PICKUP LOCATION",
+                                color = if (isDrop) Color(0xFFB91C1C) else Color(0xFF15803D),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+
+                        Text(
+                            text = "Drag map to adjust pin",
+                            fontSize = 11.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = if (isGeocoding && addressPreview == "Locating...") "Locating address..." else addressPreview,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A),
+                        fontSize = 14.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Button(
+                        onClick = {
+                            if (!otherLocationAddress.isNullOrBlank() && isSameLocation(addressPreview, otherLocationAddress, Pair(centerLat, centerLng), otherLocationCoords)) {
+                                showSameLocationAlert = true
+                            } else {
+                                onLocationConfirmed(addressPreview, centerLat, centerLng)
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF18181B))
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = GlipGreenPrimary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isDrop) "Confirm Drop Location" else "Confirm Pickup Location",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 5. Same Location Alert Dialog
+        if (showSameLocationAlert) {
+            SameLocationAlertDialog(
+                onDismiss = { showSameLocationAlert = false }
+            )
         }
     }
 }
@@ -622,4 +686,115 @@ private fun fetchAddressSuggestions(context: Context, query: String): List<Searc
     }
 
     return results.distinctBy { "${it.lat},${it.lng}" }
+}
+
+/**
+ * Compares two locations by normalized text and GPS distance to verify distinct Pickup and Drop.
+ */
+fun isSameLocation(
+    addr1: String,
+    addr2: String,
+    coords1: Pair<Double, Double>?,
+    coords2: Pair<Double, Double>?
+): Boolean {
+    val a1 = addr1.trim()
+    val a2 = addr2.trim()
+    if (a1.isNotBlank() && a2.isNotBlank()) {
+        if (a1.equals(a2, ignoreCase = true)) return true
+        val norm1 = a1.replace(Regex("[^a-zA-Z0-9]"), "").lowercase()
+        val norm2 = a2.replace(Regex("[^a-zA-Z0-9]"), "").lowercase()
+        if (norm1.isNotEmpty() && norm1 == norm2) return true
+    }
+    if (coords1 != null && coords2 != null && coords1.first != 0.0 && coords2.first != 0.0) {
+        val results = FloatArray(1)
+        android.location.Location.distanceBetween(
+            coords1.first, coords1.second,
+            coords2.first, coords2.second,
+            results
+        )
+        if (results[0] < 60f) {
+            return true
+        }
+    }
+    return false
+}
+
+/**
+ * Reusable modal alert dialog shown when Pickup and Drop locations are identical.
+ */
+@Composable
+fun SameLocationAlertDialog(
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.5.dp, Color(0xFFEF4444)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFEE2E2)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = Color(0xFFDC2626),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Text(
+                    text = "Invalid Location",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Pickup And Drop location is same\nChoose different location",
+                    fontSize = 14.sp,
+                    color = Color(0xFF475569),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(46.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF18181B))
+                ) {
+                    Text(
+                        text = "OK, Change Location",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+    }
 }

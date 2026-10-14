@@ -32,4 +32,20 @@ object MapStyles {
             mapView.overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(matrix))
         } catch (_: Exception) {}
     }
+
+    /**
+     * Applies a diffused, soft-focus pastel tone filter for background blurred maps.
+     * Softens harsh roads and text details so the background acts as a true frosted glass layer.
+     */
+    fun applyBlurredTone(mapView: MapView) {
+        try {
+            val matrix = ColorMatrix(floatArrayOf(
+                0.60f, 0.20f, 0.20f, 0f, 20f,
+                0.20f, 0.60f, 0.20f, 0f, 20f,
+                0.20f, 0.20f, 0.60f, 0f, 25f,
+                0f,    0f,    0f,    1f, 0f
+            ))
+            mapView.overlayManager.tilesOverlay.setColorFilter(ColorMatrixColorFilter(matrix))
+        } catch (_: Exception) {}
+    }
 }
