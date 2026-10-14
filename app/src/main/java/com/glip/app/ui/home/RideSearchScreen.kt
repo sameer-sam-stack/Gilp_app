@@ -44,7 +44,7 @@ import kotlinx.coroutines.delay
  * RideSearchScreen:
  * Landing screen when app opens.
  * 1. Top: Empty Ad Container Box (72dp) + Top Ad Hero Banner (180dp)
- * 2. Center: Pickup and Drop address inputs (with real-time Rapido-style autocomplete + map picker) + "Ride ->" button
+ * 2. Center: Pickup and Drop address inputs (with real-time autocomplete + map picker) + "Ride ->" button
  * 3. Bottom: Empty Ad Container Box (72dp) placed at the very bottom
  * 4. Background: Real OSM street map (Non-interactive, touch blocked)
  * 5. GPS auto-detects user location and pre-fills into Pickup box

@@ -25,7 +25,7 @@ import com.glip.app.data.places.AutocompletePlace
 import com.glip.app.ui.theme.GlipGreenPrimary
 
 /**
- * Rapido-style real-time dropdown showing nearby location suggestions with distances.
+ * Real-time dropdown showing nearby location suggestions with distances.
  */
 @Composable
 fun PlaceAutocompleteDropdown(

@@ -15,7 +15,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 
 /**
- * Service providing Rapido-style real-time nearby location autocomplete.
+ * Service providing real-time nearby location autocomplete.
  * Biases search results based on user's current GPS location coordinates.
  */
 object PlacesSearchService {

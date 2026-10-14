@@ -3,7 +3,7 @@ package com.glip.app.data.places
 import java.util.UUID
 
 /**
- * Autocomplete place suggestion model for Rapido-style location search.
+ * Autocomplete place suggestion model for nearby location search.
  */
 data class AutocompletePlace(
     val id: String = UUID.randomUUID().toString(),

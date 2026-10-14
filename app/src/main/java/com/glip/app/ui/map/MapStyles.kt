@@ -15,15 +15,15 @@ object MapStyles {
     /**
      * Official OpenStreetMap tile source (100% Free, no API key required, no watermarks).
      */
-    val RAPIDO_CLEAN: ITileSource = TileSourceFactory.MAPNIK
+    val GLIP_CLEAN: ITileSource = TileSourceFactory.MAPNIK
 
     /**
-     * Applies a modern Rapido / Uber style pastel tone filter to standard OSM tiles:
+     * Applies a modern clean pastel tone filter to standard OSM tiles:
      * - Calms harsh raw greens and bright saturation down to soft, elegant pastel roads.
      * - Maintains crisp street name readability.
      * - Completely local GPU filter, zero network cost and no API keys required.
      */
-    fun applyRapidoTone(mapView: MapView) {
+    fun applyGlipTone(mapView: MapView) {
         try {
             val matrix = ColorMatrix().apply {
                 // Subtle desaturation (0.78f) turns harsh mapnik colors into soft modern pastel tones
