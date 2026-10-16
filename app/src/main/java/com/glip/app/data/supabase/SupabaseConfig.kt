@@ -6,17 +6,23 @@ package com.glip.app.data.supabase
  */
 object SupabaseConfig {
     /**
-     * Supabase Project URL
+     * Shared Driver & Ride Requests Supabase Project URL (Connects Passenger App directly to Glip Driver App)
      */
-    var SUPABASE_URL: String = "https://yrvustyzhhiciyrawwxr.supabase.co"
+    var SUPABASE_URL: String = "https://prolxgzzgsnznhvatnye.supabase.co"
 
     /**
-     * Supabase Public Anonymous API Key (Safe for client-side queries with RLS)
+     * Shared Driver & Ride Requests Supabase Public Anonymous API Key
      */
-    var SUPABASE_ANON_KEY: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlydnVzdHl6aGhpY2l5cmF3d3hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3NDc1ODcsImV4cCI6MjEwNzMyMzU4N30.TrQEX8ANq4ogMhh-IiWGUYjU2l8NuHFjqn8UPBY91Ik"
+    var SUPABASE_ANON_KEY: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb2x4Z3p6Z3Nuem5odmF0bnllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwOTcwMDAsImV4cCI6MjEwNzY3MzAwMH0.P5LwxLaB7W7yOwll-4Sp53n79NaX2FnnrXWsnH3cpyY"
 
     /**
-     * Supabase REST endpoint for ride requests
+     * Passenger User Database URL (Used for User account restore)
      */
+    const val USER_SUPABASE_URL: String = "https://yrvustyzhhiciyrawwxr.supabase.co"
+    const val USER_SUPABASE_ANON_KEY: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlydnVzdHl6aGhpY2l5cmF3d3hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE3NDc1ODcsImV4cCI6MjEwNzMyMzU4N30.TrQEX8ANq4ogMhh-IiWGUYjU2l8NuHFjqn8UPBY91Ik"
+
     const val TABLE_RIDE_REQUESTS: String = "ride_requests"
+    const val TABLE_DRIVERS: String = "drivers"
+    const val TABLE_DRIVER_ROUTES: String = "driver_routes"
+    const val TABLE_USERS: String = "users"
 }

@@ -1,14 +1,24 @@
 package com.glip.app.ui.home
 
+import android.location.Location
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.glip.app.domain.model.Vehicle
+import com.glip.app.data.supabase.RemoteDriver
+import com.glip.app.data.supabase.RemoteDriverRoute
+import com.glip.app.data.supabase.RideRequestClient
+import com.glip.app.data.supabase.RideStatusResult
+import com.glip.app.domain.model.*
 import com.glip.app.domain.repository.MobilityRepository
+import com.glip.app.util.OsrmRoutingHelper
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.osmdroid.util.GeoPoint
 
 data class HomeUiState(
     val vehicles: List<Vehicle> = emptyList(),
@@ -16,45 +26,81 @@ data class HomeUiState(
     val selectedVehicle: Vehicle? = null,
     val pickupQuery: String = "",
     val dropQuery: String = "",
+    val pickupLat: Double = 0.0,
+    val pickupLng: Double = 0.0,
+    val dropLat: Double = 0.0,
+    val dropLng: Double = 0.0,
     val isLoading: Boolean = false,
     val isMapInitialized: Boolean = true,
-    val isFallbackListVisible: Boolean = false
+    val isFallbackListVisible: Boolean = false,
+    val activeRequestId: String? = null,
+    val rideBookingStatus: String = "NONE", // NONE, REQUESTED, ACCEPTED, CANCELLED
+    val acceptedVehicle: Vehicle? = null,
+    val passengerRoutePoints: List<GeoPoint> = emptyList(),
+    val bookingError: String? = null
 )
 
 class HomeViewModel(
     private val mobilityRepository: MobilityRepository
 ) : ViewModel() {
 
+    private val TAG = "HomeViewModel"
+
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    // Distinct soft light colors for individual vehicle routes matching user requirement
+    private val LIGHT_COLORS = listOf(
+        "#10B981", // Light Emerald Green
+        "#0EA5E9", // Sky Blue
+        "#F59E0B", // Light Amber / Orange
+        "#8B5CF6", // Light Violet
+        "#EC4899", // Light Pink
+        "#14B8A6"  // Light Teal
+    )
+
+    private var pollJob: Job? = null
+    private var driverTrackingJob: Job? = null
 
     init {
         loadVehicles()
     }
 
+    fun setTripCoordinates(
+        pickup: String,
+        drop: String,
+        pLat: Double,
+        pLng: Double,
+        dLat: Double,
+        dLng: Double
+    ) {
+        _uiState.update {
+            it.copy(
+                pickupQuery = pickup,
+                dropQuery = drop,
+                pickupLat = pLat,
+                pickupLng = pLng,
+                dropLat = dLat,
+                dropLng = dLng
+            )
+        }
+        applyRealDriverSearch()
+    }
+
     private fun loadVehicles() {
         viewModelScope.launch {
-            mobilityRepository.getSimulatedVehicles().collect { list ->
-                _uiState.update {
-                    it.copy(
-                        vehicles = list,
-                        filteredVehicles = list,
-                        isLoading = false,
-                        selectedVehicle = list.firstOrNull()
-                    )
-                }
-            }
+            applyRealDriverSearch()
         }
     }
 
     fun onPickupQueryChange(query: String) {
         _uiState.update { it.copy(pickupQuery = query) }
-        applySearch()
+        applyRealDriverSearch()
     }
 
     fun onDropQueryChange(query: String) {
         _uiState.update { it.copy(dropQuery = query) }
-        applySearch()
+        applyRealDriverSearch()
     }
 
     fun selectVehicle(vehicle: Vehicle?) {
@@ -66,29 +112,393 @@ class HomeViewModel(
     }
 
     fun recenterDemoArea() {
-        // Reset search and pick primary vehicle
         _uiState.update {
             it.copy(
-                pickupQuery = "",
-                dropQuery = "",
                 filteredVehicles = it.vehicles,
                 selectedVehicle = it.vehicles.firstOrNull()
             )
         }
     }
 
-    private fun applySearch() {
+    /**
+     * Connects with Supabase backend to find real active online drivers
+     * and constructs their road polylines using free OpenStreetMap OSRM routing.
+     */
+    fun applyRealDriverSearch() {
         viewModelScope.launch {
-            val results = mobilityRepository.searchCompatibleVehicles(
-                pickupQuery = _uiState.value.pickupQuery,
-                dropQuery = _uiState.value.dropQuery
-            )
+            _uiState.update { it.copy(isLoading = it.vehicles.isEmpty()) }
+
+            val pLat = _uiState.value.pickupLat
+            val pLng = _uiState.value.pickupLng
+            val dLat = _uiState.value.dropLat
+            val dLng = _uiState.value.dropLng
+
+            val matchedVehicles = mutableListOf<Vehicle>()
+
+            try {
+                // 1. Fetch real online drivers & their active destination routes from Supabase
+                val remoteDrivers = RideRequestClient.fetchActiveDrivers()
+                val remoteRoutes = RideRequestClient.fetchActiveDriverRoutes()
+
+                var colorIdx = 0
+                for (drv in remoteDrivers) {
+                    if (drv.currentLat == 0.0 || drv.currentLng == 0.0) continue
+                    if (drv.availableSeats <= 0) continue
+
+                    val routeInfo = remoteRoutes[drv.mobileNumber]
+                    val destName = routeInfo?.destinationName ?: "City Route Corridor"
+                    val destLat = if (routeInfo != null && routeInfo.destLat != 0.0) routeInfo.destLat else (if (dLat != 0.0) dLat else drv.currentLat + 0.015)
+                    val destLng = if (routeInfo != null && routeInfo.destLng != 0.0) routeInfo.destLng else (if (dLng != 0.0) dLng else drv.currentLng + 0.015)
+
+                    // Calculate realistic distance to passenger pickup
+                    val distToPickupMeters = if (pLat != 0.0 && pLng != 0.0) {
+                        val results = FloatArray(1)
+                        Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
+                        results[0].toDouble()
+                    } else {
+                        1200.0
+                    }
+
+                    // ETA = distance in meters / ~380 meters per minute (approx 23 km/h urban speed)
+                    val etaMins = (distToPickupMeters / 380.0).toInt().coerceAtLeast(1)
+
+                    val colorHex = LIGHT_COLORS[colorIdx % LIGHT_COLORS.size]
+                    colorIdx++
+
+                    // Fetch turn-by-turn road polyline from driver location to driver destination
+                    val roadResult = OsrmRoutingHelper.fetchRoadRoute(
+                        originLat = drv.currentLat,
+                        originLng = drv.currentLng,
+                        destLat = destLat,
+                        destLng = destLng
+                    )
+                    val polylinePoints = roadResult?.points?.map { Pair(it.latitude, it.longitude) } ?: listOf(
+                        Pair(drv.currentLat, drv.currentLng),
+                        Pair(destLat, destLng)
+                    )
+
+                    val category = when (drv.vehicleType.uppercase()) {
+                        "E_RICKSHAW" -> VehicleCategory.E_RICKSHAW
+                        "AUTO" -> VehicleCategory.AUTO_RICKSHAW
+                        "MINI_CAR" -> VehicleCategory.MINI_CAR
+                        "SEDAN" -> VehicleCategory.SEDAN
+                        else -> VehicleCategory.AUTO_RICKSHAW
+                    }
+
+                    val v = Vehicle(
+                        vehicleId = drv.id.ifBlank { "drv_${drv.mobileNumber}" },
+                        licensePlateMasked = drv.vehicleNumber.ifBlank { "DL 01 ** 4812" },
+                        category = category,
+                        modelName = drv.vehicleModel.ifBlank { "Auto Rickshaw (5 Seater)" },
+                        currentLat = drv.currentLat,
+                        currentLng = drv.currentLng,
+                        headingDegrees = drv.bearing,
+                        route = Route(
+                            routeId = "rte_${drv.id}",
+                            originName = "Current Location",
+                            destinationName = destName,
+                            originLat = drv.currentLat,
+                            originLng = drv.currentLng,
+                            destinationLat = destLat,
+                            destinationLng = destLng,
+                            polylinePoints = polylinePoints,
+                            totalDistanceKm = (roadResult?.distanceMeters ?: 4000.0) / 1000.0,
+                            estimatedDurationMinutes = etaMins
+                        ),
+                        routeStatus = RouteStatus.EN_ROUTE,
+                        seatAvailability = SeatAvailability(
+                            totalSeats = drv.totalSeats.coerceAtLeast(1),
+                            occupiedSeats = (drv.totalSeats - drv.availableSeats).coerceAtLeast(0)
+                        ),
+                        driver = DriverProfile(
+                            driverId = drv.id,
+                            fullName = drv.fullName.ifBlank { "Driver Partner" },
+                            rating = 4.8,
+                            totalRidesCompleted = 120,
+                            isVerified = true
+                        ),
+                        farePerKmEstimate = 12.0,
+                        isDemoSimulated = false,
+                        routeColorHex = colorHex,
+                        etaMinutes = etaMins,
+                        driverPhone = drv.mobileNumber,
+                        roadPolylinePoints = polylinePoints
+                    )
+                    matchedVehicles.add(v)
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error querying real drivers from Supabase: ${e.message}")
+            }
+
+            // Fallback: If no online driver is found in testing, provide simulated vehicles along corridor
+            if (matchedVehicles.isEmpty()) {
+                val baseLat = if (pLat != 0.0) pLat else 21.1067
+                val baseLng = if (pLng != 0.0) pLng else 81.0195
+                val targetLat = if (dLat != 0.0) dLat else baseLat - 0.018
+                val targetLng = if (dLng != 0.0) dLng else baseLng + 0.015
+
+                val offsets = listOf(
+                    Triple(0.003, -0.002, 1),
+                    Triple(-0.004, 0.003, 3),
+                    Triple(0.005, 0.004, 2)
+                )
+
+                offsets.forEachIndexed { idx, (oLat, oLng, freeSeats) ->
+                    val curLat = baseLat + oLat
+                    val curLng = baseLng + oLng
+                    val colorHex = LIGHT_COLORS[idx % LIGHT_COLORS.size]
+                    val dist = 500.0 + (idx * 450)
+                    val eta = (dist / 380.0).toInt().coerceAtLeast(idx + 2)
+
+                    val roadResult = OsrmRoutingHelper.fetchRoadRoute(
+                        originLat = curLat,
+                        originLng = curLng,
+                        destLat = targetLat + (idx * 0.001),
+                        destLng = targetLng + (idx * 0.001)
+                    )
+                    val points = roadResult?.points?.map { Pair(it.latitude, it.longitude) } ?: listOf(
+                        Pair(curLat, curLng),
+                        Pair(targetLat, targetLng)
+                    )
+
+                    val demoNames = listOf("Ramesh Kumar", "Vikram Patel", "Suresh Sharma")
+                    val demoPlates = listOf("DL 01 ** 4812", "CG 04 ** 9210", "HR 26 ** 5531")
+
+                    matchedVehicles.add(
+                        Vehicle(
+                            vehicleId = "sim_v_$idx",
+                            licensePlateMasked = demoPlates[idx % demoPlates.size],
+                            category = if (idx == 0) VehicleCategory.AUTO_RICKSHAW else VehicleCategory.E_RICKSHAW,
+                            modelName = if (idx == 0) "Auto Rickshaw" else "E-Rickshaw (Pooling)",
+                            currentLat = curLat,
+                            currentLng = curLng,
+                            headingDegrees = 45f * idx,
+                            route = Route(
+                                routeId = "sim_r_$idx",
+                                originName = "Current Location",
+                                destinationName = _uiState.value.dropQuery.ifBlank { "Destination Corridor" },
+                                originLat = curLat,
+                                originLng = curLng,
+                                destinationLat = targetLat,
+                                destinationLng = targetLng,
+                                polylinePoints = points,
+                                totalDistanceKm = 4.5,
+                                estimatedDurationMinutes = eta
+                            ),
+                            routeStatus = RouteStatus.EN_ROUTE,
+                            seatAvailability = SeatAvailability(totalSeats = 5, occupiedSeats = 5 - freeSeats),
+                            driver = DriverProfile(
+                                driverId = "sim_d_$idx",
+                                fullName = demoNames[idx % demoNames.size],
+                                rating = 4.8,
+                                totalRidesCompleted = 85,
+                                isVerified = true
+                            ),
+                            farePerKmEstimate = 10.0,
+                            isDemoSimulated = true,
+                            routeColorHex = colorHex,
+                            etaMinutes = eta,
+                            driverPhone = "9874561239",
+                            roadPolylinePoints = points
+                        )
+                    )
+                }
+            }
+
             _uiState.update {
                 it.copy(
-                    filteredVehicles = results,
-                    selectedVehicle = results.firstOrNull()
+                    vehicles = matchedVehicles,
+                    filteredVehicles = matchedVehicles,
+                    isLoading = false,
+                    selectedVehicle = it.selectedVehicle ?: matchedVehicles.firstOrNull()
                 )
             }
         }
+    }
+
+    /**
+     * Confirms / requests a specific vehicle.
+     * Writes to Supabase so target driver app receives the popup alert.
+     */
+    fun bookSelectedVehicle(
+        targetVehicle: Vehicle,
+        userName: String,
+        userPhone: String
+    ) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    selectedVehicle = targetVehicle,
+                    rideBookingStatus = "REQUESTED",
+                    bookingError = null
+                )
+            }
+
+            val pLat = _uiState.value.pickupLat.takeIf { it != 0.0 } ?: targetVehicle.currentLat
+            val pLng = _uiState.value.pickupLng.takeIf { it != 0.0 } ?: targetVehicle.currentLng
+            val dLat = _uiState.value.dropLat.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLat
+            val dLng = _uiState.value.dropLng.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLng
+
+            val result = RideRequestClient.createRideRequest(
+                passengerName = userName,
+                passengerMobile = userPhone,
+                pickupAddress = _uiState.value.pickupQuery.ifBlank { "Pickup Location" },
+                pickupLat = pLat,
+                pickupLng = pLng,
+                dropAddress = _uiState.value.dropQuery.ifBlank { "Dropoff Location" },
+                dropLat = dLat,
+                dropLng = dLng,
+                targetDriverMobile = targetVehicle.driverPhone.ifBlank { null },
+                requestedSeats = 1,
+                fare = 35.0
+            )
+
+            if (result.isSuccess) {
+                val reqId = result.getOrNull() ?: ""
+                _uiState.update { it.copy(activeRequestId = reqId) }
+                startRideStatusPolling(reqId, targetVehicle)
+            } else {
+                _uiState.update {
+                    it.copy(
+                        rideBookingStatus = "REQUESTED",
+                        activeRequestId = "local_${System.currentTimeMillis()}"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun startRideStatusPolling(requestId: String, targetVehicle: Vehicle) {
+        pollJob?.cancel()
+        pollJob = viewModelScope.launch {
+            while (true) {
+                delay(2000L) // Poll every 2 seconds
+                val statusResult = RideRequestClient.pollRideStatus(requestId)
+                if (statusResult != null) {
+                    if (statusResult.status.equals("ACCEPTED", ignoreCase = true)) {
+                        // Driver accepted the request!
+                        onRideAccepted(statusResult, targetVehicle)
+                        break
+                    } else if (statusResult.status.equals("DECLINED", ignoreCase = true) ||
+                        statusResult.status.equals("CANCELLED", ignoreCase = true)
+                    ) {
+                        _uiState.update {
+                            it.copy(
+                                rideBookingStatus = "CANCELLED",
+                                bookingError = "Driver was unavailable. Please pick another vehicle."
+                            )
+                        }
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+    private fun onRideAccepted(statusResult: RideStatusResult, targetVehicle: Vehicle) {
+        viewModelScope.launch {
+            val dLat = if (statusResult.driverLat != 0.0) statusResult.driverLat else targetVehicle.currentLat
+            val dLng = if (statusResult.driverLng != 0.0) statusResult.driverLng else targetVehicle.currentLng
+
+            val accepted = targetVehicle.copy(
+                currentLat = dLat,
+                currentLng = dLng,
+                headingDegrees = statusResult.driverBearing,
+                driverPhone = statusResult.driverPhone ?: targetVehicle.driverPhone,
+                licensePlateMasked = statusResult.vehicleNumber ?: targetVehicle.licensePlateMasked,
+                driver = targetVehicle.driver.copy(
+                    fullName = statusResult.driverName ?: targetVehicle.driver.fullName
+                )
+            )
+
+            // Fetch passenger's destination polyline from driver position to destination
+            val pLat = _uiState.value.pickupLat.takeIf { it != 0.0 } ?: dLat
+            val pLng = _uiState.value.pickupLng.takeIf { it != 0.0 } ?: dLng
+            val dropLat = _uiState.value.dropLat.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLat
+            val dropLng = _uiState.value.dropLng.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLng
+
+            val roadResult = OsrmRoutingHelper.fetchRoadRoute(
+                originLat = dLat,
+                originLng = dLng,
+                destLat = dropLat,
+                destLng = dropLng
+            )
+
+            val passengerGeoPoints = roadResult?.points ?: listOf(
+                GeoPoint(dLat, dLng),
+                GeoPoint(pLat, pLng),
+                GeoPoint(dropLat, dropLng)
+            )
+
+            _uiState.update {
+                it.copy(
+                    rideBookingStatus = "ACCEPTED",
+                    acceptedVehicle = accepted,
+                    selectedVehicle = accepted,
+                    // Per user requirement: Remove other vehicles' polylines, only keep accepted vehicle!
+                    filteredVehicles = listOf(accepted),
+                    passengerRoutePoints = passengerGeoPoints
+                )
+            }
+
+            // Start live GPS tracking of accepted driver
+            startDriverLiveTracking(statusResult.driverPhone ?: targetVehicle.driverPhone)
+        }
+    }
+
+    private fun startDriverLiveTracking(driverPhone: String) {
+        driverTrackingJob?.cancel()
+        driverTrackingJob = viewModelScope.launch {
+            while (true) {
+                delay(3000L)
+                if (_uiState.value.rideBookingStatus != "ACCEPTED") break
+                try {
+                    val reqId = _uiState.value.activeRequestId ?: ""
+                    val updatedStatus = RideRequestClient.pollRideStatus(reqId)
+                    if (updatedStatus != null && updatedStatus.driverLat != 0.0) {
+                        _uiState.update { current ->
+                            val currentAcc = current.acceptedVehicle ?: return@update current
+                            val updatedAcc = currentAcc.copy(
+                                currentLat = updatedStatus.driverLat,
+                                currentLng = updatedStatus.driverLng,
+                                headingDegrees = updatedStatus.driverBearing
+                            )
+                            current.copy(
+                                acceptedVehicle = updatedAcc,
+                                selectedVehicle = updatedAcc,
+                                filteredVehicles = listOf(updatedAcc)
+                            )
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+    }
+
+    fun cancelCurrentRide() {
+        viewModelScope.launch {
+            pollJob?.cancel()
+            driverTrackingJob?.cancel()
+            val reqId = _uiState.value.activeRequestId
+            if (!reqId.isNullOrBlank()) {
+                RideRequestClient.cancelRideRequest(reqId)
+            }
+            _uiState.update {
+                it.copy(
+                    rideBookingStatus = "NONE",
+                    activeRequestId = null,
+                    acceptedVehicle = null,
+                    passengerRoutePoints = emptyList(),
+                    bookingError = null
+                )
+            }
+            applyRealDriverSearch()
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        pollJob?.cancel()
+        driverTrackingJob?.cancel()
     }
 }

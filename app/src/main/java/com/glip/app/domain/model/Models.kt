@@ -75,7 +75,11 @@ data class Vehicle(
     val seatAvailability: SeatAvailability,
     val driver: DriverProfile,
     val farePerKmEstimate: Double,
-    val isDemoSimulated: Boolean = true
+    val isDemoSimulated: Boolean = true,
+    val routeColorHex: String = "#10B981",
+    val etaMinutes: Int = 0,
+    val driverPhone: String = "",
+    val roadPolylinePoints: List<Pair<Double, Double>> = emptyList()
 )
 
 data class UserProfile(

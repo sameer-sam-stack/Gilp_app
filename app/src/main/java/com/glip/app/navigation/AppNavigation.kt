@@ -57,6 +57,12 @@ fun AppNavigation(
     var hasSearchedRide by remember { mutableStateOf(false) }
     var selectedPickup by remember { mutableStateOf("") }
     var selectedDrop by remember { mutableStateOf("") }
+    var selectedPickupLat by remember { mutableDoubleStateOf(0.0) }
+    var selectedPickupLng by remember { mutableDoubleStateOf(0.0) }
+    var selectedDropLat by remember { mutableDoubleStateOf(0.0) }
+    var selectedDropLng by remember { mutableDoubleStateOf(0.0) }
+
+    val homeViewModel = remember { HomeViewModel(mobilityRepository) }
 
     // Bottom Navigation Tab: 0 = Ride, 1 = All Services, 2 = Profile
     var currentBottomTab by remember { mutableIntStateOf(0) }
@@ -82,36 +88,22 @@ fun AppNavigation(
             modifier = modifier.fillMaxSize()
         )
     } else if (!hasSearchedRide) {
-        // App opens directly to Pickup & Drop page. No other tabs (Ride, All Services, Profile)
-        // are accessible until Pickup and Drop locations are entered and Ride is clicked!
+        // App opens directly to Pickup & Drop page.
         RideSearchScreen(
             initialPickup = selectedPickup,
             initialDrop = selectedDrop,
             onConfirmRideSearch = { pickup, drop, pLat, pLng, dLat, dLng ->
                 selectedPickup = pickup
                 selectedDrop = drop
+                selectedPickupLat = pLat
+                selectedPickupLng = pLng
+                selectedDropLat = dLat
+                selectedDropLng = dLng
                 hasSearchedRide = true
                 currentBottomTab = 0
 
-                // Store in Supabase database so Driver app receives the live ride request
-                coroutineScope.launch {
-                    val profile = userProfile ?: preferences.getUserProfile()
-                    val uId = profile?.userId ?: "user-${System.currentTimeMillis()}"
-                    val uName = profile?.fullName?.ifBlank { "Glip Passenger" } ?: "Glip Passenger"
-                    val uPhone = profile?.phoneNumber?.ifBlank { "+91 9876543210" } ?: "+91 9876543210"
-
-                    RideRequestClient.createRideRequest(
-                        userId = uId,
-                        userName = uName,
-                        userPhone = uPhone,
-                        pickupAddress = pickup,
-                        pickupLat = pLat,
-                        pickupLng = pLng,
-                        dropAddress = drop,
-                        dropLat = dLat,
-                        dropLng = dLng
-                    )
-                }
+                // Pass selected route corridor coordinates to HomeViewModel so matching vehicles appear
+                homeViewModel.setTripCoordinates(pickup, drop, pLat, pLng, dLat, dLng)
             },
             onCancel = {
                 hasSearchedRide = true
@@ -132,7 +124,6 @@ fun AppNavigation(
             val contentModifier = Modifier.padding(innerPadding)
             when (currentBottomTab) {
                 0 -> {
-                    val homeViewModel = remember { HomeViewModel(mobilityRepository) }
                     val profile = userProfile ?: preferences.getUserProfile()
                     HomeScreen(
                         viewModel = homeViewModel,

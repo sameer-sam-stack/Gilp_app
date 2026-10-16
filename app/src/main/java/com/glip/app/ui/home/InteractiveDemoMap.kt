@@ -1,9 +1,12 @@
 package com.glip.app.ui.home
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -28,15 +31,15 @@ import com.glip.app.ui.map.MapStyles
 import com.glip.app.ui.map.GlipLocationOverlay
 import com.glip.app.util.LocationTracker
 import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 
 /**
  * Real OpenStreetMap (OSM) Map component via osmdroid.
  * 100% Royalty-Free and Open-Source under ODbL license.
- * Loads real geographic street tiles (street-level zoom 15.0) without proprietary billing.
+ * Supports multi-vehicle light-color route polylines and smooth real-time tracking.
  */
 @Composable
 fun InteractiveDemoMap(
@@ -44,6 +47,10 @@ fun InteractiveDemoMap(
     selectedVehicle: Vehicle?,
     onVehicleSelect: (Vehicle) -> Unit,
     onRecenter: () -> Unit,
+    passengerRoutePoints: List<GeoPoint> = emptyList(),
+    isRideAccepted: Boolean = false,
+    pickupGeoPoint: GeoPoint? = null,
+    dropGeoPoint: GeoPoint? = null,
     isInteractive: Boolean = true,
     isBlurred: Boolean = false,
     modifier: Modifier = Modifier
@@ -52,81 +59,6 @@ fun InteractiveDemoMap(
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
     var locationOverlay by remember { mutableStateOf<GlipLocationOverlay?>(null) }
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
-    val liveAddress by LocationTracker.currentAddress.collectAsState()
-
-    // Helper to generate a small light-blue map style location pin
-    val lightBlueLocationIcon = remember(context) {
-        val density = context.resources.displayMetrics.density
-        val widthPx = (20 * density).toInt()
-        val heightPx = (28 * density).toInt()
-        val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        val centerX = widthPx / 2f
-        val headRadius = widthPx / 2f - (1.5f * density)
-
-        // Draw pin head & needle path
-        val path = android.graphics.Path().apply {
-            moveTo(centerX, heightPx.toFloat())
-            // Left curve to head
-            quadTo(centerX - headRadius, heightPx * 0.55f, centerX - headRadius, headRadius + 1.5f * density)
-            // Head circle top
-            arcTo(
-                android.graphics.RectF(
-                    centerX - headRadius,
-                    1.5f * density,
-                    centerX + headRadius,
-                    headRadius * 2 + 1.5f * density
-                ),
-                180f,
-                180f,
-                false
-            )
-            // Right curve to needle tip
-            quadTo(centerX + headRadius, heightPx * 0.55f, centerX, heightPx.toFloat())
-            close()
-        }
-
-        // Drop shadow / stroke
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 2f * density
-        paint.color = android.graphics.Color.WHITE
-        canvas.drawPath(path, paint)
-
-        // Light blue fill (#38BDF8 / sky blue)
-        paint.style = Paint.Style.FILL
-        paint.color = android.graphics.Color.parseColor("#38BDF8")
-        canvas.drawPath(path, paint)
-
-        // Small white dot inside the head
-        paint.color = android.graphics.Color.WHITE
-        canvas.drawCircle(centerX, headRadius + 1.5f * density, headRadius * 0.38f, paint)
-
-        BitmapDrawable(context.resources, bitmap)
-    }
-
-    // Custom vehicle icon (small green circular pin with dark border)
-    val vehicleIcon = remember(context) {
-        val density = context.resources.displayMetrics.density
-        val sizePx = (16 * density).toInt()
-        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-
-        val center = sizePx / 2f
-        // White border
-        paint.color = android.graphics.Color.WHITE
-        canvas.drawCircle(center, center, center, paint)
-        // Green inner circle
-        paint.color = android.graphics.Color.parseColor("#10B981")
-        canvas.drawCircle(center, center, center - 1.5f * density, paint)
-        // Dark center dot
-        paint.color = android.graphics.Color.parseColor("#065F46")
-        canvas.drawCircle(center, center, center * 0.4f, paint)
-
-        BitmapDrawable(context.resources, bitmap)
-    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -154,7 +86,7 @@ fun InteractiveDemoMap(
             factory = { ctx ->
                 try {
                     Configuration.getInstance().userAgentValue = ctx.packageName
-                    Configuration.getInstance().cacheMapTileCount = 16
+                    Configuration.getInstance().cacheMapTileCount = 32
                     Configuration.getInstance().tileFileSystemCacheMaxBytes = 150L * 1024 * 1024
                     Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                     MapView(ctx).apply {
@@ -164,42 +96,15 @@ fun InteractiveDemoMap(
                         } else {
                             MapStyles.applyGlipTone(this)
                         }
-                        zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER) // Remove visible + and - zoom buttons
-                        setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
-                        isTilesScaledToDpi = true // Set to true to prevent tiny unreadable street text on high-density screens
+                        zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
+                        setMultiTouchControls(isInteractive)
+                        isTilesScaledToDpi = true
                         minZoomLevel = 4.0
                         maxZoomLevel = 20.0
                         setDestroyMode(false)
 
                         if (!isInteractive) {
-                            setOnTouchListener { _, _ -> true } // Block map touch when on search screen
-                        }
-
-                        if (isBlurred) {
-                            setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null)
-                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                                val blurRadiusPx = 28f * ctx.resources.displayMetrics.density
-                                try {
-                                    setRenderEffect(
-                                        android.graphics.RenderEffect.createBlurEffect(
-                                            blurRadiusPx,
-                                            blurRadiusPx,
-                                            android.graphics.Shader.TileMode.CLAMP
-                                        )
-                                    )
-                                } catch (_: Throwable) {}
-                                post {
-                                    try {
-                                        setRenderEffect(
-                                            android.graphics.RenderEffect.createBlurEffect(
-                                                blurRadiusPx,
-                                                blurRadiusPx,
-                                                android.graphics.Shader.TileMode.CLAMP
-                                            )
-                                        )
-                                    } catch (_: Throwable) {}
-                                }
-                            }
+                            setOnTouchListener { _, _ -> true }
                         }
 
                         val startLat = userCoords?.first ?: 28.6139
@@ -216,7 +121,7 @@ fun InteractiveDemoMap(
                 if (view is MapView) {
                     view.overlays.clear()
 
-                    // User live location beacon (60 FPS animated pulsing puck)
+                    // 1. User live location beacon
                     userCoords?.let { (uLat, uLng) ->
                         val geoPoint = GeoPoint(uLat, uLng)
                         val overlay = locationOverlay ?: GlipLocationOverlay(view, geoPoint).also {
@@ -225,19 +130,106 @@ fun InteractiveDemoMap(
                         overlay.position = geoPoint
                         view.overlays.add(overlay)
 
-                        if (vehicles.isEmpty()) {
+                        if (vehicles.isEmpty() && !isRideAccepted) {
                             view.controller.setCenter(geoPoint)
                         }
                     }
 
-                    // Vehicles markers with smooth heading rotation
-                    vehicles.forEach { vehicle ->
+                    // 2. Render Polylines
+                    if (isRideAccepted && passengerRoutePoints.isNotEmpty()) {
+                        // Accepted Ride: Dark casing line + Vibrant Emerald Core Line
+                        val casingLine = Polyline(view).apply {
+                            outlinePaint.color = android.graphics.Color.parseColor("#0F172A")
+                            outlinePaint.strokeWidth = 12f
+                            outlinePaint.strokeCap = Paint.Cap.ROUND
+                            outlinePaint.strokeJoin = Paint.Join.ROUND
+                            outlinePaint.isAntiAlias = true
+                            setPoints(passengerRoutePoints)
+                        }
+                        view.overlays.add(casingLine)
+
+                        val coreLine = Polyline(view).apply {
+                            outlinePaint.color = android.graphics.Color.parseColor("#10B981")
+                            outlinePaint.strokeWidth = 8f
+                            outlinePaint.strokeCap = Paint.Cap.ROUND
+                            outlinePaint.strokeJoin = Paint.Join.ROUND
+                            outlinePaint.isAntiAlias = true
+                            setPoints(passengerRoutePoints)
+                        }
+                        view.overlays.add(coreLine)
+
+                        // Pickup Pin 'A' (Green)
+                        pickupGeoPoint?.let { pt ->
+                            val pMarker = Marker(view).apply {
+                                position = pt
+                                icon = createPinDrawable(context, "A", "#10B981")
+                                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                title = "Your Pickup Point"
+                            }
+                            view.overlays.add(pMarker)
+                        }
+
+                        // Dropoff Pin 'B' (Red)
+                        dropGeoPoint?.let { pt ->
+                            val dMarker = Marker(view).apply {
+                                position = pt
+                                icon = createPinDrawable(context, "B", "#EF4444")
+                                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                                title = "Your Destination"
+                            }
+                            view.overlays.add(dMarker)
+                        }
+                    } else {
+                        // Pre-booking: Render each vehicle's corridor polyline in its distinct light color
+                        vehicles.forEach { vehicle ->
+                            val linePoints = if (vehicle.roadPolylinePoints.isNotEmpty()) {
+                                vehicle.roadPolylinePoints.map { GeoPoint(it.first, it.second) }
+                            } else if (vehicle.route.destinationLat != 0.0) {
+                                listOf(
+                                    GeoPoint(vehicle.currentLat, vehicle.currentLng),
+                                    GeoPoint(vehicle.route.destinationLat, vehicle.route.destinationLng)
+                                )
+                            } else {
+                                emptyList()
+                            }
+
+                            if (linePoints.isNotEmpty()) {
+                                val colorInt = try {
+                                    android.graphics.Color.parseColor(vehicle.routeColorHex)
+                                } catch (_: Exception) {
+                                    android.graphics.Color.parseColor("#10B981")
+                                }
+
+                                val isSel = vehicle.vehicleId == (selectedVehicle?.vehicleId ?: vehicles.firstOrNull()?.vehicleId)
+
+                                val polyline = Polyline(view).apply {
+                                    outlinePaint.color = colorInt
+                                    outlinePaint.alpha = if (isSel) 240 else 185
+                                    outlinePaint.strokeWidth = if (isSel) 9f else 6.5f
+                                    outlinePaint.strokeCap = Paint.Cap.ROUND
+                                    outlinePaint.strokeJoin = Paint.Join.ROUND
+                                    outlinePaint.isAntiAlias = true
+                                    setPoints(linePoints)
+                                }
+                                view.overlays.add(polyline)
+                            }
+                        }
+                    }
+
+                    // 3. Render Vehicle Markers
+                    val visibleVehicles = if (isRideAccepted) {
+                        listOfNotNull(selectedVehicle ?: vehicles.firstOrNull())
+                    } else {
+                        vehicles
+                    }
+
+                    visibleVehicles.forEach { vehicle ->
                         val marker = Marker(view).apply {
                             position = GeoPoint(vehicle.currentLat, vehicle.currentLng)
                             rotation = vehicle.headingDegrees
                             title = "${vehicle.driver.fullName} (${vehicle.licensePlateMasked})"
-                            subDescription = "${vehicle.seatAvailability.availableSeats} seats free"
-                            icon = vehicleIcon
+                            snippet = "${vehicle.seatAvailability.availableSeats}/${vehicle.seatAvailability.totalSeats} seats free • ${vehicle.etaMinutes} min away"
+                            icon = createVehicleMarkerDrawable(context, vehicle.routeColorHex)
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                             if (isInteractive) {
                                 setOnMarkerClickListener { _, _ ->
@@ -248,13 +240,13 @@ fun InteractiveDemoMap(
                         }
                         view.overlays.add(marker)
                     }
+
                     view.invalidate()
                 }
             }
         )
 
         if (isInteractive) {
-            // Small circular current location button on top-right to recenter without reloading
             SmallFloatingActionButton(
                 onClick = {
                     val targetLat = userCoords?.first ?: 28.6139
@@ -297,4 +289,102 @@ fun InteractiveDemoMap(
             )
         }
     }
+}
+
+/**
+ * Programmatic sharp vehicle marker with color-coded pulsing radar halo and forward heading indicator.
+ */
+fun createVehicleMarkerDrawable(context: Context, colorHex: String): Drawable {
+    val density = context.resources.displayMetrics.density
+    val sizePx = (36 * density).toInt()
+    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val cx = sizePx / 2f
+    val cy = sizePx / 2f
+
+    val colorInt = try {
+        android.graphics.Color.parseColor(colorHex)
+    } catch (_: Exception) {
+        android.graphics.Color.parseColor("#10B981")
+    }
+
+    // 1. Soft pulsing radar aura in vehicle color
+    val haloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = colorInt
+        alpha = 65
+        style = Paint.Style.FILL
+    }
+    canvas.drawCircle(cx, cy, 16 * density, haloPaint)
+
+    // 2. White outer circle
+    val whitePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        style = Paint.Style.FILL
+    }
+    canvas.drawCircle(cx, cy, 12 * density, whitePaint)
+
+    // 3. Core circle in vehicle color
+    val corePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = colorInt
+        style = Paint.Style.FILL
+    }
+    canvas.drawCircle(cx, cy, 9.5f * density, corePaint)
+
+    // 4. White forward directional arrow
+    val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        style = Paint.Style.FILL
+    }
+    val path = android.graphics.Path().apply {
+        moveTo(cx, cy - (5.5f * density))
+        lineTo(cx + (4f * density), cy + (4f * density))
+        lineTo(cx, cy + (2.5f * density))
+        lineTo(cx - (4f * density), cy + (4f * density))
+        close()
+    }
+    canvas.drawPath(path, arrowPaint)
+
+    return BitmapDrawable(context.resources, bitmap)
+}
+
+/**
+ * Origin ('A' - Green) or Destination ('B' - Red) Pin.
+ */
+fun createPinDrawable(context: Context, label: String, pinColorHex: String): Drawable {
+    val density = context.resources.displayMetrics.density
+    val w = (30 * density).toInt()
+    val h = (40 * density).toInt()
+    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val cx = w / 2f
+    val headRadius = 11 * density
+
+    val colorInt = android.graphics.Color.parseColor(pinColorHex)
+    val pinPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = colorInt
+        style = Paint.Style.FILL
+    }
+    val path = android.graphics.Path().apply {
+        arcTo(cx - headRadius, 2 * density, cx + headRadius, 2 * density + (headRadius * 2), 180f, 180f, true)
+        lineTo(cx, h - (2 * density))
+        close()
+    }
+    canvas.drawPath(path, pinPaint)
+
+    val whitePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        style = Paint.Style.FILL
+    }
+    canvas.drawCircle(cx, 2 * density + headRadius, 8 * density, whitePaint)
+
+    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = colorInt
+        textSize = 10 * density
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        textAlign = Paint.Align.CENTER
+    }
+    val textY = 2 * density + headRadius - ((textPaint.descent() + textPaint.ascent()) / 2)
+    canvas.drawText(label, cx, textY, textPaint)
+
+    return BitmapDrawable(context.resources, bitmap)
 }
