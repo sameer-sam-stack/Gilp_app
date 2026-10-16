@@ -32,6 +32,7 @@ fun ServicesScreen(
     viewModel: ServicesViewModel,
     onNavigateToHomePooling: () -> Unit,
     onNavigateToParcelBooking: () -> Unit = {},
+    onNavigateToSchoolVehicle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -75,7 +76,7 @@ fun ServicesScreen(
                 icon = Icons.Default.DirectionsBus,
                 iconColor = Color(0xFFEAB308),
                 backgroundColor = Color(0xFFFEFCE8),
-                onClick = { },
+                onClick = onNavigateToSchoolVehicle,
                 modifier = Modifier.weight(1f)
             )
 
