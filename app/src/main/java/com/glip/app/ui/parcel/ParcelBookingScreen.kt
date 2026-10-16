@@ -36,7 +36,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.glip.app.data.model.UserProfile
+import com.glip.app.domain.model.UserProfile
 import com.glip.app.data.places.AutocompletePlace
 import com.glip.app.data.places.PlacesSearchService
 import com.glip.app.data.supabase.RideRequestClient
