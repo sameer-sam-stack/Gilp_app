@@ -65,6 +65,16 @@ object RideRequestClient {
         return conn
     }
 
+    fun isValidUuid(str: String?): Boolean {
+        if (str.isNullOrBlank()) return false
+        return try {
+            java.util.UUID.fromString(str)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     /**
      * Sends a new ride booking request to Supabase so target driver receives live alert.
      */
@@ -77,7 +87,7 @@ object RideRequestClient {
         dropAddress: String,
         dropLat: Double,
         dropLng: Double,
-        targetDriverMobile: String? = null,
+        targetDriverId: String? = null,
         requestedSeats: Int = 1,
         fare: Double = 40.0
     ): Result<String> = withContext(Dispatchers.IO) {
@@ -91,8 +101,8 @@ object RideRequestClient {
             val payload = JSONObject().apply {
                 put("passenger_name", passengerName.ifBlank { "Glip Rider" })
                 put("passenger_mobile", passengerMobile.ifBlank { "9876543210" })
-                if (!targetDriverMobile.isNullOrBlank()) {
-                    put("driver_id", targetDriverMobile)
+                if (!targetDriverId.isNullOrBlank() && isValidUuid(targetDriverId)) {
+                    put("driver_id", targetDriverId)
                 }
                 put("pickup_name", pickupAddress)
                 put("pickup_lat", pickupLat)
@@ -157,7 +167,7 @@ object RideRequestClient {
 
                     // If accepted and driverId is present, fetch live driver location & details
                     if (status.equals("ACCEPTED", ignoreCase = true) && driverId != null) {
-                        val driverDetails = fetchDriverByMobile(driverId)
+                        val driverDetails = fetchDriverByIdOrMobile(driverId)
                         if (driverDetails != null) {
                             dName = driverDetails.fullName
                             dPhone = driverDetails.mobileNumber
@@ -281,12 +291,17 @@ object RideRequestClient {
                 val arr = JSONArray(body)
                 for (i in 0 until arr.length()) {
                     val obj = arr.getJSONObject(i)
+                    val drvId = obj.optString("driver_id", "")
                     val mob = obj.optString("driver_mobile", "")
                     val destName = obj.optString("destination_name", "")
                     val destLat = obj.optDouble("dest_lat", 0.0)
                     val destLng = obj.optDouble("dest_lng", 0.0)
+                    val route = RemoteDriverRoute(drvId.ifBlank { mob }, destName, destLat, destLng)
+                    if (drvId.isNotBlank()) {
+                        map[drvId] = route
+                    }
                     if (mob.isNotBlank()) {
-                        map[mob] = RemoteDriverRoute(mob, destName, destLat, destLng)
+                        map[mob] = route
                     }
                 }
             }
@@ -298,10 +313,11 @@ object RideRequestClient {
         map
     }
 
-    private suspend fun fetchDriverByMobile(mobileNumber: String): RemoteDriver? = withContext(Dispatchers.IO) {
+    private suspend fun fetchDriverByIdOrMobile(identifier: String): RemoteDriver? = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
-            connection = openConnection("/${SupabaseConfig.TABLE_DRIVERS}?mobile_number=eq.$mobileNumber&select=*", "GET")
+            val filter = if (isValidUuid(identifier)) "id=eq.$identifier" else "mobile_number=eq.$identifier"
+            connection = openConnection("/${SupabaseConfig.TABLE_DRIVERS}?$filter&select=*", "GET")
             val code = connection.responseCode
             if (code in 200..299) {
                 val body = BufferedReader(InputStreamReader(connection.inputStream)).use { it.readText() }
@@ -311,7 +327,7 @@ object RideRequestClient {
                     return@withContext RemoteDriver(
                         id = obj.optString("id"),
                         fullName = obj.optString("full_name", "Driver"),
-                        mobileNumber = obj.optString("mobile_number", mobileNumber),
+                        mobileNumber = obj.optString("mobile_number", ""),
                         vehicleNumber = obj.optString("vehicle_number", "Auto"),
                         vehicleModel = obj.optString("vehicle_model", ""),
                         vehicleType = obj.optString("vehicle_type", "AUTO"),

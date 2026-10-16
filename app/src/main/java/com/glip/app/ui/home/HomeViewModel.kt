@@ -145,7 +145,7 @@ class HomeViewModel(
                     if (drv.currentLat == 0.0 || drv.currentLng == 0.0) continue
                     if (drv.availableSeats <= 0) continue
 
-                    val routeInfo = remoteRoutes[drv.mobileNumber]
+                    val routeInfo = remoteRoutes[drv.id] ?: remoteRoutes[drv.mobileNumber]
                     val destName = routeInfo?.destinationName ?: "City Route Corridor"
                     val destLat = if (routeInfo != null && routeInfo.destLat != 0.0) routeInfo.destLat else (if (dLat != 0.0) dLat else drv.currentLat + 0.015)
                     val destLng = if (routeInfo != null && routeInfo.destLng != 0.0) routeInfo.destLng else (if (dLng != 0.0) dLng else drv.currentLng + 0.015)
@@ -348,7 +348,7 @@ class HomeViewModel(
                 dropAddress = _uiState.value.dropQuery.ifBlank { "Dropoff Location" },
                 dropLat = dLat,
                 dropLng = dLng,
-                targetDriverMobile = targetVehicle.driverPhone.ifBlank { null },
+                targetDriverId = targetVehicle.driver.driverId.ifBlank { null },
                 requestedSeats = 1,
                 fare = 35.0
             )
