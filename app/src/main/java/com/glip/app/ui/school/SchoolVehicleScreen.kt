@@ -35,7 +35,11 @@ import com.glip.app.data.places.PlacesSearchService
 import com.glip.app.data.supabase.RideRequestClient
 import com.glip.app.domain.model.UserProfile
 import com.glip.app.ui.home.PlaceAutocompleteDropdown
+import com.glip.app.ui.home.LocationPickerScreen
 import com.glip.app.util.LocationTracker
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.material.icons.filled.Map
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -91,6 +95,23 @@ fun SchoolVehicleScreen(
     var dropSuggestions by remember { mutableStateOf<List<AutocompletePlace>>(emptyList()) }
     var isSearchingDrop by remember { mutableStateOf(false) }
     var dropJob by remember { mutableStateOf<Job?>(null) }
+
+    // Map selection mode: "pickup" or "drop"
+    var selectingLocationMode by remember { mutableStateOf<String?>(null) }
+
+    fun getRajnandgaonSchoolSuggestions(query: String): List<AutocompletePlace> {
+        return RajnandgaonSchoolsCatalog.searchSchools(query).map { school ->
+            AutocompletePlace(
+                id = "rj_school_${school.name.hashCode()}",
+                primaryText = school.name,
+                secondaryText = "${school.area}, Rajnandgaon",
+                fullAddress = "${school.name}, ${school.address}",
+                latitude = school.latitude,
+                longitude = school.longitude,
+                distanceFormatted = school.area
+            )
+        }
+    }
 
     // Time Picker Bottom Sheet states (Image 3)
     var showTimePickerSheet by remember { mutableStateOf(false) }
@@ -327,7 +348,13 @@ fun SchoolVehicleScreen(
                                                     isSearchingPickup = false
                                                 }
                                             },
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .onFocusChanged { focusState ->
+                                                    if (focusState.isFocused) {
+                                                        isEditingPickup = true
+                                                    }
+                                                },
                                             textStyle = TextStyle(
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Medium,
@@ -346,24 +373,43 @@ fun SchoolVehicleScreen(
                                             }
                                         )
 
-                                        // GPS Target Icon (Auto-detect location)
-                                        IconButton(
-                                            onClick = {
-                                                liveAddress?.let { pickupLocation = it }
-                                                liveCoords?.let {
-                                                    pickupLat = it.first
-                                                    pickupLng = it.second
-                                                }
-                                                isEditingPickup = false
-                                            },
-                                            modifier = Modifier.size(32.dp)
+                                        // Actions inside Pickup Red Box: GPS Current Location + Map Picker
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(2.dp)
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Default.MyLocation,
-                                                contentDescription = "Current Location",
-                                                tint = Color(0xFF10B981),
-                                                modifier = Modifier.size(20.dp)
-                                            )
+                                            IconButton(
+                                                onClick = {
+                                                    liveAddress?.let { pickupLocation = it }
+                                                    liveCoords?.let {
+                                                        pickupLat = it.first
+                                                        pickupLng = it.second
+                                                    }
+                                                    isEditingPickup = false
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.MyLocation,
+                                                    contentDescription = "Current Location",
+                                                    tint = Color(0xFF10B981),
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+
+                                            IconButton(
+                                                onClick = {
+                                                    selectingLocationMode = "pickup"
+                                                },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Map,
+                                                    contentDescription = "Select Pickup on Map",
+                                                    tint = Color(0xFF0284C7),
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
                                         }
                                     }
 
@@ -385,25 +431,36 @@ fun SchoolVehicleScreen(
                                             onValueChange = { query ->
                                                 dropLocation = query
                                                 dropJob?.cancel()
+                                                isEditingDrop = true
+                                                isSearchingDrop = true
+                                                val localMatches = getRajnandgaonSchoolSuggestions(query)
+                                                dropSuggestions = localMatches
+
                                                 if (query.trim().length >= 2) {
-                                                    isSearchingDrop = true
-                                                    isEditingDrop = true
                                                     dropJob = coroutineScope.launch {
                                                         delay(250)
-                                                        dropSuggestions = PlacesSearchService.searchNearbyPlaces(
+                                                        val remotePlaces = PlacesSearchService.searchNearbyPlaces(
                                                             context = context,
-                                                            query = query,
-                                                            userLat = pickupLat,
-                                                            userLng = pickupLng
+                                                            query = "$query school Rajnandgaon",
+                                                            userLat = if (pickupLat != 0.0) pickupLat else 21.0970,
+                                                            userLng = if (pickupLng != 0.0) pickupLng else 81.0315
                                                         )
+                                                        val combined = (localMatches + remotePlaces).distinctBy { it.primaryText.lowercase().trim() }
+                                                        dropSuggestions = combined
                                                         isSearchingDrop = false
                                                     }
                                                 } else {
-                                                    dropSuggestions = emptyList()
                                                     isSearchingDrop = false
                                                 }
                                             },
-                                            modifier = Modifier.weight(1f),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .onFocusChanged { focusState ->
+                                                    if (focusState.isFocused) {
+                                                        isEditingDrop = true
+                                                        dropSuggestions = getRajnandgaonSchoolSuggestions(dropLocation)
+                                                    }
+                                                },
                                             textStyle = TextStyle(
                                                 fontSize = 14.sp,
                                                 fontWeight = FontWeight.Medium,
@@ -421,6 +478,21 @@ fun SchoolVehicleScreen(
                                                 innerTextField()
                                             }
                                         )
+
+                                        // Map Picker Button inside Dropoff Red Box
+                                        IconButton(
+                                            onClick = {
+                                                selectingLocationMode = "drop"
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Map,
+                                                contentDescription = "Select School Dropoff on Map",
+                                                tint = Color(0xFF0284C7),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -450,7 +522,7 @@ fun SchoolVehicleScreen(
                                     searchQuery = dropLocation,
                                     activeField = "drop",
                                     onPlaceSelected = { place ->
-                                        dropLocation = place.fullAddress
+                                        dropLocation = place.primaryText
                                         dropLat = place.latitude
                                         dropLng = place.longitude
                                         isEditingDrop = false
@@ -1095,6 +1167,61 @@ fun SchoolVehicleScreen(
             containerColor = Color.White,
             shape = RoundedCornerShape(20.dp)
         )
+    }
+
+    // Interactive Map Picker Screen Overlay (Select on Map)
+    if (selectingLocationMode != null) {
+        val isPickup = selectingLocationMode == "pickup"
+        val title = if (isPickup) "Select Pickup on Map" else "Select School Dropoff on Map"
+        val currentLat = if (isPickup) {
+            if (pickupLat != 0.0) pickupLat else 21.0970
+        } else {
+            if (dropLat != 0.0) dropLat else 21.0970
+        }
+        val currentLng = if (isPickup) {
+            if (pickupLng != 0.0) pickupLng else 81.0315
+        } else {
+            if (dropLng != 0.0) dropLng else 81.0315
+        }
+        val otherAddress = if (isPickup) dropLocation else pickupLocation
+        val otherCoords = if (isPickup) {
+            if (dropLat != 0.0 && dropLng != 0.0) Pair(dropLat, dropLng) else null
+        } else {
+            if (pickupLat != 0.0 && pickupLng != 0.0) Pair(pickupLat, pickupLng) else null
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(100f)
+        ) {
+            LocationPickerScreen(
+                title = title,
+                initialLat = currentLat,
+                initialLng = currentLng,
+                otherLocationAddress = otherAddress.ifBlank { null },
+                otherLocationCoords = otherCoords,
+                onLocationConfirmed = { detailedAddress, lat, lng ->
+                    if (isPickup) {
+                        pickupLocation = detailedAddress
+                        pickupLat = lat
+                        pickupLng = lng
+                        isEditingPickup = false
+                        pickupSuggestions = emptyList()
+                    } else {
+                        dropLocation = detailedAddress
+                        dropLat = lat
+                        dropLng = lng
+                        isEditingDrop = false
+                        dropSuggestions = emptyList()
+                    }
+                    selectingLocationMode = null
+                },
+                onDismiss = {
+                    selectingLocationMode = null
+                }
+            )
+        }
     }
 }
 
