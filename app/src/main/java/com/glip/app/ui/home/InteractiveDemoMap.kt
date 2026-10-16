@@ -51,6 +51,7 @@ fun InteractiveDemoMap(
     onRecenter: () -> Unit,
     passengerRoutePoints: List<GeoPoint> = emptyList(),
     isRideAccepted: Boolean = false,
+    rideBookingStatus: String = "NONE",
     pickupGeoPoint: GeoPoint? = null,
     dropGeoPoint: GeoPoint? = null,
     isInteractive: Boolean = true,
@@ -61,6 +62,42 @@ fun InteractiveDemoMap(
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
     var locationOverlay by remember { mutableStateOf<GlipLocationOverlay?>(null) }
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
+    var lastZoomedBookingStatus by remember { mutableStateOf("NONE") }
+
+    // Smooth camera zoom and focus when ride is booked or accepted
+    LaunchedEffect(rideBookingStatus, isRideAccepted, mapViewRef, selectedVehicle) {
+        val map = mapViewRef ?: return@LaunchedEffect
+        val isBookedOrAccepted = rideBookingStatus == "REQUESTED" || rideBookingStatus == "ACCEPTED"
+
+        if (isBookedOrAccepted && lastZoomedBookingStatus != rideBookingStatus) {
+            lastZoomedBookingStatus = rideBookingStatus
+            val targetVehicle = selectedVehicle ?: vehicles.firstOrNull()
+            val pGeo = pickupGeoPoint
+            val vGeo = targetVehicle?.let { GeoPoint(it.currentLat, it.currentLng) }
+
+            if (pGeo != null && vGeo != null) {
+                // Focus on mid-point between pickup and incoming vehicle
+                val midLat = (pGeo.latitude + vGeo.latitude) / 2.0
+                val midLng = (pGeo.longitude + vGeo.longitude) / 2.0
+                map.controller.setZoom(16.8)
+                map.controller.animateTo(GeoPoint(midLat, midLng))
+            } else if (pGeo != null) {
+                map.controller.setZoom(17.0)
+                map.controller.animateTo(pGeo)
+            } else if (vGeo != null) {
+                map.controller.setZoom(17.0)
+                map.controller.animateTo(vGeo)
+            } else {
+                map.controller.setZoom(16.5)
+            }
+        } else if (!isBookedOrAccepted && lastZoomedBookingStatus != "NONE") {
+            lastZoomedBookingStatus = "NONE"
+            map.controller.setZoom(15.0)
+            userCoords?.let { (uLat, uLng) ->
+                map.controller.animateTo(GeoPoint(uLat, uLng))
+            }
+        }
+    }
 
     DisposableEffect(Unit) {
         onDispose {
@@ -253,7 +290,8 @@ fun InteractiveDemoMap(
                 onClick = {
                     val targetLat = userCoords?.first ?: 28.6139
                     val targetLng = userCoords?.second ?: 77.2090
-                    mapViewRef?.controller?.setZoom(15.0)
+                    val isBookedOrAccepted = rideBookingStatus == "REQUESTED" || rideBookingStatus == "ACCEPTED"
+                    mapViewRef?.controller?.setZoom(if (isBookedOrAccepted) 16.8 else 15.0)
                     mapViewRef?.controller?.setCenter(GeoPoint(targetLat, targetLng))
                     onRecenter()
                 },

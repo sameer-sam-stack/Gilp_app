@@ -251,6 +251,7 @@ fun HomeScreen(
                     onRecenter = { viewModel.recenterDemoArea() },
                     passengerRoutePoints = uiState.passengerRoutePoints,
                     isRideAccepted = uiState.rideBookingStatus == "ACCEPTED",
+                    rideBookingStatus = uiState.rideBookingStatus,
                     pickupGeoPoint = if (uiState.pickupLat != 0.0) GeoPoint(uiState.pickupLat, uiState.pickupLng) else null,
                     dropGeoPoint = if (uiState.dropLat != 0.0) GeoPoint(uiState.dropLat, uiState.dropLng) else null
                 )
