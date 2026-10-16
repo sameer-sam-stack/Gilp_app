@@ -958,9 +958,8 @@ fun ParcelBookingScreen(
                             }
 
                             RideRequestClient.createRideRequest(
-                                userId = uId,
-                                userName = "$senderName -> $finalReceiverName",
-                                userPhone = "$senderPhone / $finalReceiverPhone",
+                                passengerName = "$senderName -> $finalReceiverName",
+                                passengerMobile = "$senderPhone / $finalReceiverPhone",
                                 pickupAddress = pickupAddress,
                                 pickupLat = pickupLat,
                                 pickupLng = pickupLng,
