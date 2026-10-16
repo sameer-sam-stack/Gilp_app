@@ -89,30 +89,25 @@ class RegistrationViewModel(
 
         if (hasError) return
 
-        // Generate a random 6-digit OTP
+        // Generate a random 6-digit OTP and auto-fill immediately
         val randomOtp = (100000..999999).random().toString()
+        val autoFilledDigits = randomOtp.map { it.toString() }
 
         _uiState.update {
             it.copy(
                 currentStep = RegistrationStep.OTP_VERIFY,
                 generatedOtp = randomOtp,
-                otpDigits = List(6) { "" },
-                otpInput = "",
+                otpDigits = autoFilledDigits,
+                otpInput = randomOtp,
                 showOtpPopup = false,
                 otpError = null
             )
         }
-
-        // Start 6-second timer to show the OTP popup as requested by the user
-        startOtpPopupTimer()
     }
 
     private fun startOtpPopupTimer() {
+        // Demo popup timer removed - OTP auto-fills directly
         otpPopupJob?.cancel()
-        otpPopupJob = viewModelScope.launch {
-            delay(6000) // Wait 6 seconds
-            _uiState.update { it.copy(showOtpPopup = true) }
-        }
     }
 
     fun updateOtpDigit(index: Int, value: String) {
@@ -170,16 +165,16 @@ class RegistrationViewModel(
 
     fun resendOtp() {
         val randomOtp = (100000..999999).random().toString()
+        val autoFilledDigits = randomOtp.map { it.toString() }
         _uiState.update {
             it.copy(
                 generatedOtp = randomOtp,
-                otpDigits = List(6) { "" },
-                otpInput = "",
+                otpDigits = autoFilledDigits,
+                otpInput = randomOtp,
                 showOtpPopup = false,
                 otpError = null
             )
         }
-        startOtpPopupTimer()
     }
 
     fun verifyOtpAndContinue() {
