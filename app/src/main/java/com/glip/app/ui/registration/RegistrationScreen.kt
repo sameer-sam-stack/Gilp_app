@@ -1,34 +1,52 @@
 package com.glip.app.ui.registration
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.glip.app.R
+import androidx.compose.ui.window.Dialog
 import com.glip.app.ui.components.GlipBrandHeader
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.theme.GlipOrangeAccent
@@ -42,6 +60,7 @@ fun RegistrationScreen(
     val uiState by viewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
     val focusManager = LocalFocusManager.current
+    val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(uiState.isRegistrationSuccess) {
         if (uiState.isRegistrationSuccess) {
@@ -53,43 +72,164 @@ fun RegistrationScreen(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp)
-                .verticalScroll(scrollState)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-            GlipBrandHeader()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(scrollState)
+            ) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Spacer(modifier = Modifier.height(16.dp))
+                if (uiState.currentStep == RegistrationStep.INPUT) {
+                    RegistrationInputStep(
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        focusManager = focusManager
+                    )
+                } else {
+                    RegistrationOtpStep(
+                        uiState = uiState,
+                        viewModel = viewModel,
+                        focusManager = focusManager
+                    )
+                }
 
-            Text(
-                text = stringResource(id = R.string.register_title),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
+                Spacer(modifier = Modifier.height(32.dp))
+            }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            // 6-Second Demo OTP Popup Dialog
+            if (uiState.showOtpPopup) {
+                DemoOtpPopupDialog(
+                    otp = uiState.generatedOtp,
+                    onDismiss = { viewModel.dismissOtpPopup() },
+                    onCopyAndFill = {
+                        clipboardManager.setText(AnnotatedString(uiState.generatedOtp))
+                        viewModel.copyAndFillOtp()
+                    }
+                )
+            }
+        }
+    }
+}
 
-            Text(
-                text = stringResource(id = R.string.register_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+/**
+ * Step 1: Input Page (Glip Logo, Name + Phone OR Phone Only if already an account)
+ */
+@Composable
+private fun RegistrationInputStep(
+    uiState: RegistrationUiState,
+    viewModel: RegistrationViewModel,
+    focusManager: androidx.compose.ui.focus.FocusManager
+) {
+    // App Logo & Brand Header at top
+    GlipBrandHeader()
 
-            Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = Modifier.height(20.dp))
 
-            // Full Name Input
+    // Toggle Tab between "New Account" and "I have already an account"
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // New User Tab
+            Surface(
+                shape = RoundedCornerShape(9.dp),
+                color = if (!uiState.isExistingUserMode) MaterialTheme.colorScheme.surface else Color.Transparent,
+                tonalElevation = if (!uiState.isExistingUserMode) 2.dp else 0.dp,
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { viewModel.toggleExistingUserMode(false) }
+            ) {
+                Text(
+                    text = "New User",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (!uiState.isExistingUserMode) FontWeight.Bold else FontWeight.Medium,
+                    color = if (!uiState.isExistingUserMode) GlipGreenPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 10.dp)
+                )
+            }
+
+            // Existing User Tab
+            Surface(
+                shape = RoundedCornerShape(9.dp),
+                color = if (uiState.isExistingUserMode) MaterialTheme.colorScheme.surface else Color.Transparent,
+                tonalElevation = if (uiState.isExistingUserMode) 2.dp else 0.dp,
+                modifier = Modifier
+                    .weight(1.3f)
+                    .clickable { viewModel.toggleExistingUserMode(true) }
+            ) {
+                Text(
+                    text = "I have an account",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (uiState.isExistingUserMode) FontWeight.Bold else FontWeight.Medium,
+                    color = if (uiState.isExistingUserMode) GlipGreenPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 10.dp)
+                )
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(20.dp))
+
+    // Heading Texts
+    if (uiState.isExistingUserMode) {
+        Text(
+            text = "Welcome Back",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = "Enter your registered phone number to restore your account.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    } else {
+        Text(
+            text = "Create Account",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = "Enter your details to share empty seats and travel affordably.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
+    Spacer(modifier = Modifier.height(24.dp))
+
+    // Full Name Input (ONLY shown in New User mode)
+    AnimatedVisibility(
+        visible = !uiState.isExistingUserMode,
+        enter = fadeIn() + slideInVertically(),
+        exit = fadeOut() + slideOutVertically()
+    ) {
+        Column {
             OutlinedTextField(
                 value = uiState.fullName,
                 onValueChange = { viewModel.onFullNameChange(it) },
-                label = { Text(stringResource(id = R.string.full_name_label)) },
-                placeholder = { Text(stringResource(id = R.string.full_name_hint)) },
+                label = { Text("Full Name") },
+                placeholder = { Text("e.g. Ramesh Kumar") },
                 leadingIcon = {
-                    Icon(imageVector = Icons.Default.Person, contentDescription = null)
+                    Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = GlipGreenPrimary)
                 },
                 isError = uiState.fullNameError != null,
                 supportingText = {
@@ -102,171 +242,515 @@ fun RegistrationScreen(
                     keyboardType = KeyboardType.Text,
                     imeAction = ImeAction.Next
                 ),
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                ),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(14.dp))
+        }
+    }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Mobile Number Input
-            OutlinedTextField(
-                value = uiState.phoneNumber,
-                onValueChange = { viewModel.onPhoneNumberChange(it) },
-                label = { Text(stringResource(id = R.string.mobile_number_label)) },
-                placeholder = { Text(stringResource(id = R.string.mobile_number_hint)) },
-                prefix = { Text("+91 ") },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Phone, contentDescription = null)
-                },
-                isError = uiState.phoneError != null,
-                supportingText = {
-                    uiState.phoneError?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Phone,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = { focusManager.clearFocus() }
-                ),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+    // Mobile Number Input
+    OutlinedTextField(
+        value = uiState.phoneNumber,
+        onValueChange = { viewModel.onPhoneNumberChange(it) },
+        label = { Text("Mobile Number") },
+        placeholder = { Text("10-digit number") },
+        prefix = {
+            Text(
+                text = "+91 ",
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Get OTP Button
-            if (!uiState.isOtpRequested) {
-                Button(
-                    onClick = {
-                        focusManager.clearFocus()
-                        viewModel.requestOtp()
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Text(
-                        text = stringResource(id = R.string.get_otp_button),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                }
+        },
+        leadingIcon = {
+            Icon(imageVector = Icons.Default.Phone, contentDescription = null, tint = GlipGreenPrimary)
+        },
+        isError = uiState.phoneError != null,
+        supportingText = {
+            uiState.phoneError?.let {
+                Text(text = it, color = MaterialTheme.colorScheme.error)
             }
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Phone,
+            imeAction = ImeAction.Done
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                focusManager.clearFocus()
+                viewModel.proceedToOtp()
+            }
+        ),
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    )
 
-            // OTP Section
-            if (uiState.isOtpRequested) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Enter 6-digit OTP sent to +91 ${uiState.phoneNumber}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    uiState.demoGeneratedOtp?.let { code ->
-                        TextButton(
-                            onClick = { viewModel.fillDemoOtp() },
-                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text("Auto Fill ($code)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+    Spacer(modifier = Modifier.height(24.dp))
+
+    // Continue / Get OTP Button
+    Button(
+        onClick = {
+            focusManager.clearFocus()
+            viewModel.proceedToOtp()
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = GlipGreenPrimary
+        )
+    ) {
+        Text(
+            text = "Continue to OTP ➡️",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Bottom Toggle Link
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = if (uiState.isExistingUserMode) "Need a new account? " else "Already have an account? ",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = if (uiState.isExistingUserMode) "Register" else "Log In",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = GlipOrangeAccent,
+            modifier = Modifier.clickable {
+                viewModel.toggleExistingUserMode(!uiState.isExistingUserMode)
+            }
+        )
+    }
+}
+
+/**
+ * Step 2: Dedicated OTP Verification Page with 6 distinct boxes
+ */
+@Composable
+private fun RegistrationOtpStep(
+    uiState: RegistrationUiState,
+    viewModel: RegistrationViewModel,
+    focusManager: androidx.compose.ui.focus.FocusManager
+) {
+    val focusRequesters = remember { List(6) { FocusRequester() } }
+
+    // Top Navigation Bar with Back Arrow
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = { viewModel.goBackToPhoneInput() },
+            modifier = Modifier
+                .size(40.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), CircleShape)
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = MaterialTheme.colorScheme.onSurface
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = "OTP Verification",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Verification Info & Phone Number with Edit icon
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Verification code sent to",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "+91 ${uiState.phoneNumber}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            IconButton(
+                onClick = { viewModel.goBackToPhoneInput() },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = "Edit Number",
+                    tint = GlipGreenPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(28.dp))
+
+    Text(
+        text = "Enter 6-Digit OTP",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // 6-BOX OTP Input Row
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        for (i in 0 until 6) {
+            val digit = uiState.otpDigits.getOrElse(i) { "" }
+
+            OtpSingleDigitBox(
+                digit = digit,
+                isError = uiState.otpError != null,
+                focusRequester = focusRequesters[i],
+                onValueChange = { newVal ->
+                    viewModel.updateOtpDigit(i, newVal)
+                    if (newVal.isNotEmpty()) {
+                        if (newVal.length > 1) {
+                            // User pasted full OTP
+                            focusManager.clearFocus()
+                        } else if (i < 5) {
+                            focusRequesters[i + 1].requestFocus()
+                        } else {
+                            focusManager.clearFocus()
                         }
                     }
+                },
+                onBackspaceOnEmpty = {
+                    if (i > 0) {
+                        focusRequesters[i - 1].requestFocus()
+                    }
+                }
+            )
+        }
+    }
+
+    // OTP Error Message
+    uiState.otpError?.let { err ->
+        Spacer(modifier = Modifier.height(10.dp))
+        Text(
+            text = err,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+    }
+
+    Spacer(modifier = Modifier.height(28.dp))
+
+    // Verify & Continue Button
+    Button(
+        onClick = {
+            focusManager.clearFocus()
+            viewModel.verifyOtpAndContinue()
+        },
+        enabled = !uiState.isLoading,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = GlipGreenPrimary
+        )
+    ) {
+        if (uiState.isLoading) {
+            CircularProgressIndicator(
+                color = Color.White,
+                modifier = Modifier.size(24.dp),
+                strokeWidth = 2.5.dp
+            )
+        } else {
+            Text(
+                text = "Verify & Continue",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Resend OTP Section
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Didn't receive code? ",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = "Resend OTP",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = GlipOrangeAccent,
+            modifier = Modifier.clickable {
+                viewModel.resendOtp()
+            }
+        )
+    }
+
+    // Notice about demo timer
+    Spacer(modifier = Modifier.height(24.dp))
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = GlipGreenPrimary.copy(alpha = 0.08f),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Lock,
+                contentDescription = null,
+                tint = GlipGreenPrimary,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "Demo Mode: A popup with your OTP will automatically appear in 6 seconds.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * Individual Single Digit OTP Box
+ */
+@Composable
+private fun OtpSingleDigitBox(
+    digit: String,
+    isError: Boolean,
+    focusRequester: FocusRequester,
+    onValueChange: (String) -> Unit,
+    onBackspaceOnEmpty: () -> Unit
+) {
+    val borderColor = when {
+        isError -> MaterialTheme.colorScheme.error
+        digit.isNotEmpty() -> GlipGreenPrimary
+        else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    }
+
+    val backgroundColor = if (digit.isNotEmpty()) {
+        GlipGreenPrimary.copy(alpha = 0.06f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
+
+    Box(
+        modifier = Modifier
+            .size(width = 46.dp, height = 56.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(backgroundColor)
+            .border(
+                width = if (digit.isNotEmpty() || isError) 1.5.dp else 1.dp,
+                color = borderColor,
+                shape = RoundedCornerShape(10.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        BasicTextField(
+            value = digit,
+            onValueChange = { input ->
+                onValueChange(input)
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .focusRequester(focusRequester)
+                .onKeyEvent { keyEvent ->
+                    if (keyEvent.key == Key.Backspace && digit.isEmpty()) {
+                        onBackspaceOnEmpty()
+                        true
+                    } else {
+                        false
+                    }
+                }
+                .wrapContentSize(Alignment.Center),
+            textStyle = TextStyle(
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
+            ),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Next
+            ),
+            singleLine = true
+        )
+    }
+}
+
+/**
+ * 6-Second Demo OTP Popup Dialog with "Copy & Auto-fill OTP"
+ */
+@Composable
+private fun DemoOtpPopupDialog(
+    otp: String,
+    onDismiss: () -> Unit,
+    onCopyAndFill: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Icon Header
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(GlipGreenPrimary.copy(alpha = 0.12f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = GlipGreenPrimary,
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // OTP Field
-                OutlinedTextField(
-                    value = uiState.otpInput,
-                    onValueChange = { viewModel.onOtpInputChange(it) },
-                    label = { Text(stringResource(id = R.string.otp_label)) },
-                    placeholder = { Text("6 digits code") },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Default.Lock, contentDescription = null)
-                    },
-                    isError = uiState.otpError != null,
-                    supportingText = {
-                        uiState.otpError?.let {
-                            Text(text = it, color = MaterialTheme.colorScheme.error)
-                        }
-                    },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            focusManager.clearFocus()
-                            viewModel.verifyOtpAndRegister()
-                        }
-                    ),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Text(
+                    text = "Demo Verification Code",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
+                Text(
+                    text = "Here is your 6-digit test OTP code:",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Highlighting OTP Digits in a stylish box
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, GlipGreenPrimary.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = otp.chunked(1).joinToString("  "),
+                        style = TextStyle(
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 4.sp,
+                            textAlign = TextAlign.Center,
+                            color = GlipGreenPrimary
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 14.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(22.dp))
+
+                // Copy & Auto Fill Button
                 Button(
-                    onClick = {
-                        focusManager.clearFocus()
-                        viewModel.verifyOtpAndRegister()
-                    },
-                    enabled = !uiState.isLoading,
+                    onClick = onCopyAndFill,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(48.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = GlipGreenPrimary
                     )
                 ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(id = R.string.verify_and_continue),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Copy",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Copy & Auto-fill OTP",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
+                // Dismiss / Close
                 TextButton(
-                    onClick = { viewModel.requestOtp() },
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = stringResource(id = R.string.resend_otp),
-                        color = GlipOrangeAccent,
-                        fontWeight = FontWeight.Medium
+                        text = "Dismiss",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(28.dp))
         }
     }
 }

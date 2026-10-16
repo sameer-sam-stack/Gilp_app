@@ -46,7 +46,14 @@ import androidx.compose.ui.zIndex
 fun RideSearchScreen(
     initialPickup: String = "",
     initialDrop: String = "",
-    onConfirmRideSearch: (pickup: String, drop: String) -> Unit,
+    onConfirmRideSearch: (
+        pickup: String,
+        drop: String,
+        pickupLat: Double,
+        pickupLng: Double,
+        dropLat: Double,
+        dropLng: Double
+    ) -> Unit,
     onCancel: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -240,7 +247,11 @@ fun RideSearchScreen(
                                     if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
                                         showSameLocationDialog = true
                                     } else {
-                                        onConfirmRideSearch(pickup.trim(), drop.trim())
+                                        val pLat = pickupCoordinates?.first ?: 28.6139
+                                        val pLng = pickupCoordinates?.second ?: 77.2090
+                                        val dLat = dropCoordinates?.first ?: 28.5355
+                                        val dLng = dropCoordinates?.second ?: 77.3910
+                                        onConfirmRideSearch(pickup.trim(), drop.trim(), pLat, pLng, dLat, dLng)
                                     }
                                 }
                             },
@@ -446,7 +457,11 @@ fun RideSearchScreen(
                                 if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
                                     showSameLocationDialog = true
                                 } else {
-                                    onConfirmRideSearch(pickup.trim(), drop.trim())
+                                    val pLat = pickupCoordinates?.first ?: 28.6139
+                                    val pLng = pickupCoordinates?.second ?: 77.2090
+                                    val dLat = dropCoordinates?.first ?: 28.5355
+                                    val dLng = dropCoordinates?.second ?: 77.3910
+                                    onConfirmRideSearch(pickup.trim(), drop.trim(), pLat, pLng, dLat, dLng)
                                 }
                             }
                         },

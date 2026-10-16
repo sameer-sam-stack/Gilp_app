@@ -27,7 +27,9 @@ import com.glip.app.ui.services.ServicesViewModel
 import androidx.compose.ui.text.font.FontWeight
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.components.AppLoadingSplashScreen
+import com.glip.app.data.supabase.RideRequestClient
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavigation(
@@ -36,6 +38,8 @@ fun AppNavigation(
 ) {
     val userRepository = remember { UserRepositoryImpl(preferences) }
     val mobilityRepository = remember { DemoMobilityRepositoryImpl() }
+    val coroutineScope = rememberCoroutineScope()
+    val userProfile by userRepository.observeUserProfile().collectAsState(initial = preferences.getUserProfile())
 
     var isRegistered by remember { mutableStateOf(preferences.getUserProfile() != null) }
 
@@ -75,11 +79,31 @@ fun AppNavigation(
         RideSearchScreen(
             initialPickup = selectedPickup,
             initialDrop = selectedDrop,
-            onConfirmRideSearch = { pickup, drop ->
+            onConfirmRideSearch = { pickup, drop, pLat, pLng, dLat, dLng ->
                 selectedPickup = pickup
                 selectedDrop = drop
                 hasSearchedRide = true
                 currentBottomTab = 0
+
+                // Store in Supabase database so Driver app receives the live ride request
+                coroutineScope.launch {
+                    val profile = userProfile ?: preferences.getUserProfile()
+                    val uId = profile?.userId ?: "user-${System.currentTimeMillis()}"
+                    val uName = profile?.fullName?.ifBlank { "Glip Passenger" } ?: "Glip Passenger"
+                    val uPhone = profile?.phoneNumber?.ifBlank { "+91 9876543210" } ?: "+91 9876543210"
+
+                    RideRequestClient.createRideRequest(
+                        userId = uId,
+                        userName = uName,
+                        userPhone = uPhone,
+                        pickupAddress = pickup,
+                        pickupLat = pLat,
+                        pickupLng = pLng,
+                        dropAddress = drop,
+                        dropLat = dLat,
+                        dropLng = dLng
+                    )
+                }
             },
             onCancel = null,
             modifier = modifier.fillMaxSize()
@@ -98,10 +122,13 @@ fun AppNavigation(
             when (currentBottomTab) {
                 0 -> {
                     val homeViewModel = remember { HomeViewModel(mobilityRepository) }
+                    val profile = userProfile ?: preferences.getUserProfile()
                     HomeScreen(
                         viewModel = homeViewModel,
                         pickupLocation = selectedPickup,
                         dropLocation = selectedDrop,
+                        userName = profile?.fullName ?: "",
+                        userPhone = profile?.phoneNumber ?: "",
                         onChangeLocation = { hasSearchedRide = false },
                         modifier = contentModifier
                     )

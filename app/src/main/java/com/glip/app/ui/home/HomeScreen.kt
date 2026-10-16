@@ -38,6 +38,8 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     pickupLocation: String = "",
     dropLocation: String = "",
+    userName: String = "",
+    userPhone: String = "",
     onChangeLocation: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -134,6 +136,48 @@ fun HomeScreen(
                         modifier = Modifier
                             .clickable { onChangeLocation() }
                             .padding(start = 8.dp, top = 2.dp, bottom = 2.dp)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Driver Notification Sent Banner
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp)
+                    .padding(bottom = 6.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = Color(0xFFF0FDF4),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(GlipGreenPrimary)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Driver Alert Sent" + if (userName.isNotBlank()) " for $userName" else "",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF15803D)
+                        )
+                    }
+                    Text(
+                        text = if (userPhone.isNotBlank()) userPhone else "Searching Driver...",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF166534)
                     )
                 }
             }

@@ -2,10 +2,13 @@ package com.glip.app.ui.registration
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.glip.app.data.supabase.UserSupabaseClient
 import com.glip.app.domain.model.UserProfile
 import com.glip.app.domain.repository.UserRepository
 import com.glip.app.domain.usecase.OtpVerificationManager
 import com.glip.app.domain.usecase.PhoneValidator
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,12 +16,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 
+enum class RegistrationStep {
+    INPUT,          // Page 1: Name and Phone (or only Phone for existing accounts)
+    OTP_VERIFY      // Page 2: 6-Box OTP Verification Screen
+}
+
 data class RegistrationUiState(
+    val currentStep: RegistrationStep = RegistrationStep.INPUT,
+    val isExistingUserMode: Boolean = false, // True if user selects "I have already an account"
     val fullName: String = "",
     val phoneNumber: String = "",
+    val otpDigits: List<String> = List(6) { "" },
     val otpInput: String = "",
-    val isOtpRequested: Boolean = false,
-    val demoGeneratedOtp: String? = null,
+    val generatedOtp: String = "",
+    val showOtpPopup: Boolean = false,
     val attemptsRemaining: Int = 3,
     val cooldownSeconds: Long = 0,
     val isLoading: Boolean = false,
@@ -26,7 +37,8 @@ data class RegistrationUiState(
     val phoneError: String? = null,
     val otpError: String? = null,
     val isRegistrationSuccess: Boolean = false,
-    val generalMessage: String? = null
+    val generalMessage: String? = null,
+    val restoredUserName: String? = null
 )
 
 class RegistrationViewModel(
@@ -37,116 +49,211 @@ class RegistrationViewModel(
     private val _uiState = MutableStateFlow(RegistrationUiState())
     val uiState: StateFlow<RegistrationUiState> = _uiState.asStateFlow()
 
+    private var otpPopupJob: Job? = null
+
+    fun toggleExistingUserMode(isExisting: Boolean) {
+        _uiState.update {
+            it.copy(
+                isExistingUserMode = isExisting,
+                fullNameError = null,
+                phoneError = null,
+                generalMessage = null
+            )
+        }
+    }
+
     fun onFullNameChange(name: String) {
         _uiState.update { it.copy(fullName = name, fullNameError = null) }
     }
 
     fun onPhoneNumberChange(phone: String) {
-        _uiState.update { it.copy(phoneNumber = phone, phoneError = null) }
+        val digits = phone.filter { it.isDigit() }.take(10)
+        _uiState.update { it.copy(phoneNumber = digits, phoneError = null) }
     }
 
-    fun onOtpInputChange(otp: String) {
-        if (otp.length <= 6 && otp.all { it.isDigit() }) {
-            _uiState.update { it.copy(otpInput = otp, otpError = null) }
-        }
-    }
-
-    fun requestOtp() {
+    fun proceedToOtp() {
         val state = _uiState.value
         var hasError = false
 
-        if (state.fullName.trim().isEmpty()) {
+        // In new user mode, Name is required
+        if (!state.isExistingUserMode && state.fullName.trim().isEmpty()) {
             _uiState.update { it.copy(fullNameError = "Please enter your full name") }
             hasError = true
         }
 
+        // 10-digit phone number is required in both modes
         if (!PhoneValidator.isValidIndianMobile(state.phoneNumber)) {
-            _uiState.update { it.copy(phoneError = "Please enter a valid 10-digit Indian mobile number") }
+            _uiState.update { it.copy(phoneError = "Please enter a valid 10-digit mobile number") }
             hasError = true
         }
 
         if (hasError) return
 
-        if (!otpManager.canRequestNewOtp()) {
-            val remaining = otpManager.getRemainingCooldownSeconds()
-            _uiState.update {
-                it.copy(
-                    cooldownSeconds = remaining,
-                    generalMessage = "Please wait $remaining seconds before requesting a new OTP"
-                )
-            }
-            return
-        }
+        // Generate a random 6-digit OTP
+        val randomOtp = (100000..999999).random().toString()
 
-        val code = otpManager.generateOtp()
         _uiState.update {
             it.copy(
-                isOtpRequested = true,
-                demoGeneratedOtp = code,
-                attemptsRemaining = 3,
-                cooldownSeconds = 30,
-                otpError = null,
-                generalMessage = "Demo OTP generated for local device testing."
+                currentStep = RegistrationStep.OTP_VERIFY,
+                generatedOtp = randomOtp,
+                otpDigits = List(6) { "" },
+                otpInput = "",
+                showOtpPopup = false,
+                otpError = null
+            )
+        }
+
+        // Start 6-second timer to show the OTP popup as requested by the user
+        startOtpPopupTimer()
+    }
+
+    private fun startOtpPopupTimer() {
+        otpPopupJob?.cancel()
+        otpPopupJob = viewModelScope.launch {
+            delay(6000) // Wait 6 seconds
+            _uiState.update { it.copy(showOtpPopup = true) }
+        }
+    }
+
+    fun updateOtpDigit(index: Int, value: String) {
+        val currentDigits = _uiState.value.otpDigits.toMutableList()
+
+        if (value.length > 1) {
+            // User pasted a multi-digit code
+            val pastedDigits = value.filter { it.isDigit() }.take(6)
+            for (i in 0 until 6) {
+                currentDigits[i] = if (i < pastedDigits.length) pastedDigits[i].toString() else ""
+            }
+        } else {
+            currentDigits[index] = value.filter { it.isDigit() }
+        }
+
+        val combined = currentDigits.joinToString("")
+        _uiState.update {
+            it.copy(
+                otpDigits = currentDigits,
+                otpInput = combined,
+                otpError = null
             )
         }
     }
 
-    fun verifyOtpAndRegister() {
-        val state = _uiState.value
-        if (state.otpInput.length != 6) {
-            _uiState.update { it.copy(otpError = "Please enter the complete 6-digit OTP") }
-            return
-        }
+    fun copyAndFillOtp() {
+        val code = _uiState.value.generatedOtp.ifBlank { "123456" }
+        val digits = code.take(6).map { it.toString() }
+        val fullList = digits + List(6 - digits.size) { "" }
 
-        when (val result = otpManager.verifyOtp(state.otpInput)) {
-            is OtpVerificationManager.OtpResult.Success -> {
-                viewModelScope.launch {
-                    _uiState.update { it.copy(isLoading = true, otpError = null) }
-                    val cleanPhone = PhoneValidator.sanitizeIndianMobile(state.phoneNumber)
-                    val profile = UserProfile(
-                        userId = "USR-${UUID.randomUUID().toString().take(8).uppercase()}",
-                        fullName = state.fullName.trim(),
-                        phoneNumber = cleanPhone,
-                        email = null
-                    )
-                    val saveResult = userRepository.saveUserProfile(profile)
-                    if (saveResult.isSuccess) {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                isRegistrationSuccess = true
-                            )
-                        }
-                    } else {
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                generalMessage = "Failed to save profile: ${saveResult.exceptionOrNull()?.message}"
-                            )
-                        }
-                    }
-                }
-            }
-            is OtpVerificationManager.OtpResult.Invalid -> {
-                _uiState.update { it.copy(otpError = result.message) }
-            }
-            is OtpVerificationManager.OtpResult.AttemptsExhausted -> {
-                _uiState.update {
-                    it.copy(
-                        otpError = result.message,
-                        demoGeneratedOtp = null
-                    )
-                }
-            }
-            is OtpVerificationManager.OtpResult.Error -> {
-                _uiState.update { it.copy(otpError = result.message) }
-            }
+        _uiState.update {
+            it.copy(
+                otpDigits = fullList,
+                otpInput = code,
+                showOtpPopup = false,
+                otpError = null
+            )
         }
     }
 
-    fun fillDemoOtp() {
-        _uiState.value.demoGeneratedOtp?.let { code ->
-            _uiState.update { it.copy(otpInput = code, otpError = null) }
+    fun dismissOtpPopup() {
+        _uiState.update { it.copy(showOtpPopup = false) }
+    }
+
+    fun goBackToPhoneInput() {
+        otpPopupJob?.cancel()
+        _uiState.update {
+            it.copy(
+                currentStep = RegistrationStep.INPUT,
+                showOtpPopup = false,
+                otpError = null
+            )
+        }
+    }
+
+    fun resendOtp() {
+        val randomOtp = (100000..999999).random().toString()
+        _uiState.update {
+            it.copy(
+                generatedOtp = randomOtp,
+                otpDigits = List(6) { "" },
+                otpInput = "",
+                showOtpPopup = false,
+                otpError = null
+            )
+        }
+        startOtpPopupTimer()
+    }
+
+    fun verifyOtpAndContinue() {
+        val state = _uiState.value
+        val enteredOtp = state.otpDigits.joinToString("")
+
+        if (enteredOtp.length != 6) {
+            _uiState.update { it.copy(otpError = "Please enter all 6 digits of the OTP") }
+            return
+        }
+
+        // Verify against generated OTP or universal testing code 123456
+        val isValidOtp = enteredOtp == state.generatedOtp || enteredOtp == "123456"
+        if (!isValidOtp) {
+            _uiState.update { it.copy(otpError = "Invalid verification code. Please check and try again.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, otpError = null) }
+            val cleanPhone = PhoneValidator.sanitizeIndianMobile(state.phoneNumber)
+
+            if (state.isExistingUserMode) {
+                // Look up existing account in Supabase
+                val searchResult = UserSupabaseClient.findUserByPhone(cleanPhone)
+                val existingProfile = searchResult.getOrNull()
+
+                if (existingProfile != null) {
+                    // Restore existing account into local profile preferences
+                    userRepository.saveUserProfile(existingProfile)
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isRegistrationSuccess = true,
+                            restoredUserName = existingProfile.fullName,
+                            generalMessage = "Welcome back, ${existingProfile.fullName}!"
+                        )
+                    }
+                } else {
+                    // Account not found in Supabase: Create a fresh profile with this phone number
+                    val newProfile = UserProfile(
+                        userId = "USR-${UUID.randomUUID().toString().take(8).uppercase()}",
+                        fullName = "Glip Rider",
+                        phoneNumber = cleanPhone,
+                        email = null
+                    )
+                    UserSupabaseClient.saveUserToSupabase(newProfile)
+                    userRepository.saveUserProfile(newProfile)
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isRegistrationSuccess = true
+                        )
+                    }
+                }
+            } else {
+                // New User Registration: create profile with entered Name & Phone and sync to Supabase
+                val newProfile = UserProfile(
+                    userId = "USR-${UUID.randomUUID().toString().take(8).uppercase()}",
+                    fullName = state.fullName.trim(),
+                    phoneNumber = cleanPhone,
+                    email = null
+                )
+                // Save locally and sync to Supabase
+                UserSupabaseClient.saveUserToSupabase(newProfile)
+                userRepository.saveUserProfile(newProfile)
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isRegistrationSuccess = true
+                    )
+                }
+            }
         }
     }
 }
