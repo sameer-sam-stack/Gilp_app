@@ -237,13 +237,16 @@ object RideRequestClient {
         val list = mutableListOf<RemoteDriver>()
         var connection: HttpURLConnection? = null
         try {
-            connection = openConnection("/${SupabaseConfig.TABLE_DRIVERS}?select=*&order=last_updated_at.desc&limit=15", "GET")
+            connection = openConnection("/${SupabaseConfig.TABLE_DRIVERS}?is_online=eq.true&select=*&order=last_updated_at.desc&limit=25", "GET")
             val code = connection.responseCode
             if (code in 200..299) {
                 val body = BufferedReader(InputStreamReader(connection.inputStream)).use { it.readText() }
                 val arr = JSONArray(body)
                 for (i in 0 until arr.length()) {
                     val obj = arr.getJSONObject(i)
+                    val isOnline = obj.optBoolean("is_online", false)
+                    if (!isOnline) continue
+
                     val id = obj.optString("id")
                     val name = obj.optString("full_name", "Driver Partner")
                     val mob = obj.optString("mobile_number", "")
@@ -255,7 +258,6 @@ object RideRequestClient {
                     val lat = obj.optDouble("current_lat", 0.0)
                     val lng = obj.optDouble("current_lng", 0.0)
                     val bearing = obj.optDouble("bearing", 0.0).toFloat()
-                    val isOnline = obj.optBoolean("is_online", true)
 
                     list.add(
                         RemoteDriver(

@@ -496,16 +496,30 @@ fun HomeScreen(
                 }
             }
         } else {
-            // Trailing AD container fallback
-            AdBannerBox(
-                slotId = AdConfig.SLOT_HOME_VEHICLE_TRAILING_CARD,
+            // Empty state when 0 active vehicles match along the corridor
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp)
-                    .height(86.dp)
-                    .padding(bottom = 6.dp),
-                shape = RoundedCornerShape(12.dp)
-            )
+                    .padding(horizontal = 14.dp, vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "No shared vehicles currently heading along this route corridor.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+                // Trailing AD container fallback - Kept 100% intact
+                AdBannerBox(
+                    slotId = AdConfig.SLOT_HOME_VEHICLE_TRAILING_CARD,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(86.dp)
+                        .padding(bottom = 4.dp),
+                    shape = RoundedCornerShape(12.dp)
+                )
+            }
         }
     }
 }

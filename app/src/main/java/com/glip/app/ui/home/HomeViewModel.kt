@@ -10,6 +10,7 @@ import com.glip.app.data.supabase.RideRequestClient
 import com.glip.app.data.supabase.RideStatusResult
 import com.glip.app.domain.model.*
 import com.glip.app.domain.repository.MobilityRepository
+import com.glip.app.util.CorridorMatchingHelper
 import com.glip.app.util.OsrmRoutingHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -61,9 +62,22 @@ class HomeViewModel(
 
     private var pollJob: Job? = null
     private var driverTrackingJob: Job? = null
+    private var driverRefreshJob: Job? = null
 
     init {
-        loadVehicles()
+        startPeriodicDriverSearch()
+    }
+
+    private fun startPeriodicDriverSearch() {
+        driverRefreshJob?.cancel()
+        driverRefreshJob = viewModelScope.launch {
+            while (true) {
+                if (_uiState.value.rideBookingStatus == "NONE") {
+                    applyRealDriverSearch()
+                }
+                delay(3500L) // Auto-refresh active matching drivers every 3.5s
+            }
+        }
     }
 
     fun setTripCoordinates(
@@ -85,12 +99,6 @@ class HomeViewModel(
             )
         }
         applyRealDriverSearch()
-    }
-
-    private fun loadVehicles() {
-        viewModelScope.launch {
-            applyRealDriverSearch()
-        }
     }
 
     fun onPickupQueryChange(query: String) {
@@ -146,24 +154,25 @@ class HomeViewModel(
                     if (drv.availableSeats <= 0) continue
 
                     val routeInfo = remoteRoutes[drv.id] ?: remoteRoutes[drv.mobileNumber]
-                    val destName = routeInfo?.destinationName ?: "City Route Corridor"
-                    val destLat = if (routeInfo != null && routeInfo.destLat != 0.0) routeInfo.destLat else (if (dLat != 0.0) dLat else drv.currentLat + 0.015)
-                    val destLng = if (routeInfo != null && routeInfo.destLng != 0.0) routeInfo.destLng else (if (dLng != 0.0) dLng else drv.currentLng + 0.015)
+                    val hasPassengerTrip = (pLat != 0.0 && pLng != 0.0 && dLat != 0.0 && dLng != 0.0)
 
-                    // Calculate realistic distance to passenger pickup
-                    val distToPickupMeters = if (pLat != 0.0 && pLng != 0.0) {
-                        val results = FloatArray(1)
-                        Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
-                        results[0].toDouble()
-                    } else {
-                        1200.0
+                    // If passenger specified a destination corridor, driver MUST have an active destination route
+                    if (hasPassengerTrip && (routeInfo == null || routeInfo.destLat == 0.0 || routeInfo.destLng == 0.0)) {
+                        continue
                     }
 
-                    // ETA = distance in meters / ~380 meters per minute (approx 23 km/h urban speed)
-                    val etaMins = (distToPickupMeters / 380.0).toInt().coerceAtLeast(1)
-
-                    val colorHex = LIGHT_COLORS[colorIdx % LIGHT_COLORS.size]
-                    colorIdx++
+                    // Preserve DRIVER'S OWN independent destination - NEVER overwrite with passenger dropoff!
+                    val destName = routeInfo?.destinationName?.ifBlank { "City Route Corridor" } ?: "City Route Corridor"
+                    val destLat = if (routeInfo != null && routeInfo.destLat != 0.0) {
+                        routeInfo.destLat
+                    } else {
+                        drv.currentLat + 0.015
+                    }
+                    val destLng = if (routeInfo != null && routeInfo.destLng != 0.0) {
+                        routeInfo.destLng
+                    } else {
+                        drv.currentLng + 0.015
+                    }
 
                     // Fetch turn-by-turn road polyline from driver location to driver destination
                     val roadResult = OsrmRoutingHelper.fetchRoadRoute(
@@ -176,6 +185,37 @@ class HomeViewModel(
                         Pair(drv.currentLat, drv.currentLng),
                         Pair(destLat, destLng)
                     )
+
+                    // Corridor matching: verify passenger's pickup and dropoff lie within driver's travel corridor
+                    if (hasPassengerTrip) {
+                        val matchesCorridor = CorridorMatchingHelper.isPassengerOnDriverCorridor(
+                            pLat = pLat,
+                            pLng = pLng,
+                            dLat = dLat,
+                            dLng = dLng,
+                            routePoints = polylinePoints,
+                            maxCorridorMeters = 2500.0
+                        )
+                        if (!matchesCorridor) {
+                            Log.d(TAG, "Driver ${drv.fullName} destination $destName does not overlap passenger corridor - excluded.")
+                            continue
+                        }
+                    }
+
+                    // Calculate realistic distance to passenger pickup
+                    val distToPickupMeters = if (pLat != 0.0 && pLng != 0.0) {
+                        val results = FloatArray(1)
+                        Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
+                        results[0].toDouble()
+                    } else {
+                        800.0
+                    }
+
+                    // ETA = distance in meters / ~380 meters per minute (approx 23 km/h urban speed)
+                    val etaMins = (distToPickupMeters / 380.0).toInt().coerceAtLeast(1)
+
+                    val colorHex = LIGHT_COLORS[colorIdx % LIGHT_COLORS.size]
+                    colorIdx++
 
                     val category = when (drv.vehicleType.uppercase()) {
                         "E_RICKSHAW" -> VehicleCategory.E_RICKSHAW
@@ -230,87 +270,13 @@ class HomeViewModel(
                 Log.w(TAG, "Error querying real drivers from Supabase: ${e.message}")
             }
 
-            // Fallback: If no online driver is found in testing, provide simulated vehicles along corridor
-            if (matchedVehicles.isEmpty()) {
-                val baseLat = if (pLat != 0.0) pLat else 21.1067
-                val baseLng = if (pLng != 0.0) pLng else 81.0195
-                val targetLat = if (dLat != 0.0) dLat else baseLat - 0.018
-                val targetLng = if (dLng != 0.0) dLng else baseLng + 0.015
-
-                val offsets = listOf(
-                    Triple(0.003, -0.002, 1),
-                    Triple(-0.004, 0.003, 3),
-                    Triple(0.005, 0.004, 2)
-                )
-
-                offsets.forEachIndexed { idx, (oLat, oLng, freeSeats) ->
-                    val curLat = baseLat + oLat
-                    val curLng = baseLng + oLng
-                    val colorHex = LIGHT_COLORS[idx % LIGHT_COLORS.size]
-                    val dist = 500.0 + (idx * 450)
-                    val eta = (dist / 380.0).toInt().coerceAtLeast(idx + 2)
-
-                    val roadResult = OsrmRoutingHelper.fetchRoadRoute(
-                        originLat = curLat,
-                        originLng = curLng,
-                        destLat = targetLat + (idx * 0.001),
-                        destLng = targetLng + (idx * 0.001)
-                    )
-                    val points = roadResult?.points?.map { Pair(it.latitude, it.longitude) } ?: listOf(
-                        Pair(curLat, curLng),
-                        Pair(targetLat, targetLng)
-                    )
-
-                    val demoNames = listOf("Ramesh Kumar", "Vikram Patel", "Suresh Sharma")
-                    val demoPlates = listOf("DL 01 ** 4812", "CG 04 ** 9210", "HR 26 ** 5531")
-
-                    matchedVehicles.add(
-                        Vehicle(
-                            vehicleId = "sim_v_$idx",
-                            licensePlateMasked = demoPlates[idx % demoPlates.size],
-                            category = if (idx == 0) VehicleCategory.AUTO_RICKSHAW else VehicleCategory.E_RICKSHAW,
-                            modelName = if (idx == 0) "Auto Rickshaw" else "E-Rickshaw (Pooling)",
-                            currentLat = curLat,
-                            currentLng = curLng,
-                            headingDegrees = 45f * idx,
-                            route = Route(
-                                routeId = "sim_r_$idx",
-                                originName = "Current Location",
-                                destinationName = _uiState.value.dropQuery.ifBlank { "Destination Corridor" },
-                                originLat = curLat,
-                                originLng = curLng,
-                                destinationLat = targetLat,
-                                destinationLng = targetLng,
-                                polylinePoints = points,
-                                totalDistanceKm = 4.5,
-                                estimatedDurationMinutes = eta
-                            ),
-                            routeStatus = RouteStatus.EN_ROUTE,
-                            seatAvailability = SeatAvailability(totalSeats = 5, occupiedSeats = 5 - freeSeats),
-                            driver = DriverProfile(
-                                driverId = "sim_d_$idx",
-                                fullName = demoNames[idx % demoNames.size],
-                                rating = 4.8,
-                                totalRidesCompleted = 85,
-                                isVerified = true
-                            ),
-                            farePerKmEstimate = 10.0,
-                            isDemoSimulated = true,
-                            routeColorHex = colorHex,
-                            etaMinutes = eta,
-                            driverPhone = "9874561239",
-                            roadPolylinePoints = points
-                        )
-                    )
-                }
-            }
-
+            // Real live vehicles only - no fake demo fallbacks
             _uiState.update {
                 it.copy(
                     vehicles = matchedVehicles,
                     filteredVehicles = matchedVehicles,
                     isLoading = false,
-                    selectedVehicle = it.selectedVehicle ?: matchedVehicles.firstOrNull()
+                    selectedVehicle = it.selectedVehicle?.takeIf { sel -> matchedVehicles.any { v -> v.vehicleId == sel.vehicleId } } ?: matchedVehicles.firstOrNull()
                 )
             }
         }
@@ -493,6 +459,7 @@ class HomeViewModel(
                 )
             }
             applyRealDriverSearch()
+            startPeriodicDriverSearch()
         }
     }
 
@@ -500,5 +467,6 @@ class HomeViewModel(
         super.onCleared()
         pollJob?.cancel()
         driverTrackingJob?.cancel()
+        driverRefreshJob?.cancel()
     }
 }
