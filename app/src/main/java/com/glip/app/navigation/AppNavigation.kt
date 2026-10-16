@@ -39,7 +39,7 @@ fun AppNavigation(
     val userRepository = remember { UserRepositoryImpl(preferences) }
     val mobilityRepository = remember { DemoMobilityRepositoryImpl() }
     val coroutineScope = rememberCoroutineScope()
-    val userProfile by userRepository.observeUserProfile().collectAsState(initial = preferences.getUserProfile())
+    val userProfile by userRepository.getUserProfile().collectAsState(initial = preferences.getUserProfile())
 
     var isRegistered by remember { mutableStateOf(preferences.getUserProfile() != null) }
 
