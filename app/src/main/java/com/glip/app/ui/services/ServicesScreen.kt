@@ -31,6 +31,7 @@ import com.glip.app.ads.AdConfig
 fun ServicesScreen(
     viewModel: ServicesViewModel,
     onNavigateToHomePooling: () -> Unit,
+    onNavigateToParcelBooking: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -64,7 +65,7 @@ fun ServicesScreen(
                 icon = Icons.Default.Inventory2,
                 iconColor = GlipOrangeAccent,
                 backgroundColor = Color(0xFFFFF7ED),
-                onClick = { },
+                onClick = onNavigateToParcelBooking,
                 modifier = Modifier.weight(1f)
             )
 
