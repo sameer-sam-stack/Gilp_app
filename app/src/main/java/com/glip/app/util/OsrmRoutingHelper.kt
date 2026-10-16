@@ -26,6 +26,18 @@ object OsrmRoutingHelper {
         "https://router.project-osrm.org/route/v1/driving/"
     )
 
+    private val routeCache = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, RoadRouteResult>>()
+    private const val CACHE_TTL_MS = 600_000L // 10 minutes cache
+
+    private fun makeCacheKey(oLat: Double, oLng: Double, dLat: Double, dLng: Double): String {
+        // Round to 3 decimal places (~110m) so GPS jitter reuses the same road geometry
+        val rOLat = (oLat * 1000).toInt()
+        val rOLng = (oLng * 1000).toInt()
+        val rDLat = (dLat * 1000).toInt()
+        val rDLng = (dLng * 1000).toInt()
+        return "${rOLat}_${rOLng}_${rDLat}_${rDLng}"
+    }
+
     suspend fun fetchRoadRoute(
         originLat: Double,
         originLng: Double,
@@ -33,6 +45,13 @@ object OsrmRoutingHelper {
         destLng: Double
     ): RoadRouteResult? = withContext(Dispatchers.IO) {
         if (originLat == 0.0 || originLng == 0.0 || destLat == 0.0 || destLng == 0.0) return@withContext null
+
+        val cacheKey = makeCacheKey(originLat, originLng, destLat, destLng)
+        val cached = routeCache[cacheKey]
+        if (cached != null && (System.currentTimeMillis() - cached.first) < CACHE_TTL_MS) {
+            return@withContext cached.second
+        }
+
         for (baseEndpoint in ENDPOINTS) {
             try {
                 val urlString = "$baseEndpoint$originLng,$originLat;$destLng,$destLat?overview=full&geometries=geojson&radiuses=1000;1000&continue_straight=true"
@@ -69,17 +88,23 @@ object OsrmRoutingHelper {
                                     geoPoints.add(GeoPoint(lat, lng))
                                 }
 
-                                return@withContext RoadRouteResult(
+                                val result = RoadRouteResult(
                                     points = geoPoints,
                                     distanceMeters = distanceMeters,
                                     durationSeconds = durationSeconds
                                 )
+                                routeCache[cacheKey] = Pair(System.currentTimeMillis(), result)
+                                return@withContext result
                             }
                         }
                     }
                 }
             } catch (_: Exception) {}
         }
-        null
+
+        // Fallback: If network timed out, reuse any cached route ending at same destination
+        val rDLat = (destLat * 1000).toInt()
+        val rDLng = (destLng * 1000).toInt()
+        routeCache.entries.firstOrNull { it.key.endsWith("_${rDLat}_${rDLng}") }?.value?.second
     }
 }

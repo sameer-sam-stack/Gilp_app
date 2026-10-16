@@ -331,6 +331,9 @@ fun InteractiveDemoMap(
     }
 }
 
+private val markerDrawableCache = java.util.concurrent.ConcurrentHashMap<String, Drawable>()
+private val pinDrawableCache = java.util.concurrent.ConcurrentHashMap<String, Drawable>()
+
 /**
  * Programmatic realistic top-down Auto Rickshaw / E-Rickshaw vehicle silhouette
  * rendered directly on Canvas. Matches vehicle route color with dual glowing radar halo,
@@ -341,6 +344,9 @@ fun createVehicleMarkerDrawable(
     colorHex: String,
     category: VehicleCategory = VehicleCategory.AUTO_RICKSHAW
 ): Drawable {
+    val cacheKey = "${colorHex}_${category.name}"
+    markerDrawableCache[cacheKey]?.let { return it }
+
     val density = context.resources.displayMetrics.density
     val sizePx = (46 * density).toInt()
     val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
@@ -484,13 +490,18 @@ fun createVehicleMarkerDrawable(
     }
     canvas.drawCircle(cx, cy - 11.0f * density, 1.3f * density, headlightPaint)
 
-    return BitmapDrawable(context.resources, bitmap)
+    val drawable = BitmapDrawable(context.resources, bitmap)
+    markerDrawableCache[cacheKey] = drawable
+    return drawable
 }
 
 /**
  * Origin ('A' - Green) or Destination ('B' - Red) Pin.
  */
 fun createPinDrawable(context: Context, label: String, pinColorHex: String): Drawable {
+    val cacheKey = "${label}_$pinColorHex"
+    pinDrawableCache[cacheKey]?.let { return it }
+
     val density = context.resources.displayMetrics.density
     val w = (30 * density).toInt()
     val h = (40 * density).toInt()
@@ -526,5 +537,7 @@ fun createPinDrawable(context: Context, label: String, pinColorHex: String): Dra
     val textY = 2 * density + headRadius - ((textPaint.descent() + textPaint.ascent()) / 2)
     canvas.drawText(label, cx, textY, textPaint)
 
-    return BitmapDrawable(context.resources, bitmap)
+    val drawable = BitmapDrawable(context.resources, bitmap)
+    pinDrawableCache[cacheKey] = drawable
+    return drawable
 }

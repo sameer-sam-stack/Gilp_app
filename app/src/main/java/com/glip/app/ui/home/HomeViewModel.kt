@@ -337,8 +337,22 @@ class HomeViewModel(
     private fun startRideStatusPolling(requestId: String, targetVehicle: Vehicle) {
         pollJob?.cancel()
         pollJob = viewModelScope.launch {
+            val startTime = System.currentTimeMillis()
             while (true) {
                 delay(2000L) // Poll every 2 seconds
+                val elapsed = System.currentTimeMillis() - startTime
+                if (elapsed > 60_000L) { // 60s TTL - Auto-expire request so it never lingers in driver app
+                    RideRequestClient.cancelRideRequest(requestId)
+                    _uiState.update {
+                        it.copy(
+                            rideBookingStatus = "NONE",
+                            bookingError = "Driver did not respond in time. Please try another vehicle."
+                        )
+                    }
+                    startPeriodicDriverSearch()
+                    break
+                }
+
                 val statusResult = RideRequestClient.pollRideStatus(requestId)
                 if (statusResult != null) {
                     if (statusResult.status.equals("ACCEPTED", ignoreCase = true)) {
@@ -346,14 +360,16 @@ class HomeViewModel(
                         onRideAccepted(statusResult, targetVehicle)
                         break
                     } else if (statusResult.status.equals("DECLINED", ignoreCase = true) ||
-                        statusResult.status.equals("CANCELLED", ignoreCase = true)
+                        statusResult.status.equals("CANCELLED", ignoreCase = true) ||
+                        statusResult.status.equals("EXPIRED", ignoreCase = true)
                     ) {
                         _uiState.update {
                             it.copy(
-                                rideBookingStatus = "CANCELLED",
+                                rideBookingStatus = "NONE",
                                 bookingError = "Driver was unavailable. Please pick another vehicle."
                             )
                         }
+                        startPeriodicDriverSearch()
                         break
                     }
                 }
