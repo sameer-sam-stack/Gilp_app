@@ -43,7 +43,7 @@ import kotlinx.coroutines.delay
 /**
  * RideSearchScreen:
  * Landing screen when app opens.
- * 1. Top: Empty Ad Container Box (72dp) + Top Ad Hero Banner (180dp)
+ * 1. Top: Top Ad Hero Banner (Enlarged)
  * 2. Center: Pickup and Drop address inputs (with real-time autocomplete + map picker) + "Ride ->" button
  * 3. Bottom: Empty Ad Container Box (72dp) placed at the very bottom
  * 4. Background: Real OSM street map (Non-interactive, touch blocked)
@@ -184,39 +184,15 @@ fun RideSearchScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TOP SECTION: Top 72dp Empty Ad Box + Top 180dp Hero Banner
-            Column(
+            // TOP SECTION: Top Hero Ad Banner (Moved up to the top and enlarged)
+            AdBannerBox(
+                slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_BANNER,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 36.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // 1. TOP AD CONTAINER BOX (Low height 72dp, white card with blue border)
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(72.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.5.dp, Color(0xFF2563EB)),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
-                ) {
-                    AdBannerBox(
-                        slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_STRIP,
-                        modifier = Modifier.fillMaxSize(),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                }
-
-                // 2. TOP HERO AD BANNER (Height 180dp - pushed further down)
-                AdBannerBox(
-                    slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_BANNER,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                    shape = RoundedCornerShape(18.dp)
-                )
-            }
+                    .padding(top = 8.dp)
+                    .height(215.dp),
+                shape = RoundedCornerShape(20.dp)
+            )
 
             // CENTER: Floating Pickup & Drop Card + Ride Button
             Card(
