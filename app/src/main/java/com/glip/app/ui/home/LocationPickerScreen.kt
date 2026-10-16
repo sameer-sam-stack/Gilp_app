@@ -172,8 +172,8 @@ fun LocationPickerScreen(
                 Configuration.getInstance().tileFileSystemCacheMaxBytes = 150L * 1024 * 1024
                 Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                 MapView(ctx).apply {
-                    setTileSource(MapStyles.RAPIDO_CLEAN)
-                    MapStyles.applyRapidoTone(this)
+                    setTileSource(MapStyles.GLIP_CLEAN)
+                    MapStyles.applyGlipTone(this)
                     zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
                     setMultiTouchControls(true)
                     isTilesScaledToDpi = true
@@ -222,7 +222,7 @@ fun LocationPickerScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Floating prompt pill above pin (Rapido / Uber style)
+                // Floating prompt pill above pin
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFF0F172A),

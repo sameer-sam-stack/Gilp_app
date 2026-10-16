@@ -10,15 +10,15 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Overlay
 
 /**
- * RapidoLocationOverlay:
- * Native 60 FPS Canvas overlay that renders a sleek Rapido / Uber style pulsing GPS beacon.
+ * GlipLocationOverlay:
+ * Native 60 FPS Canvas overlay that renders a sleek pulsing GPS location beacon.
  * 1. Pulsing expanding translucent outer halo (animates continuously at 60 FPS)
  * 2. Subtle ground shadow
  * 3. Crisp white circular border
  * 4. High-contrast electric blue / cyan core dot
  * 5. Pinpoint white center reflection dot
  */
-class RapidoLocationOverlay(
+class GlipLocationOverlay(
     private val mapView: MapView,
     var position: GeoPoint? = null
 ) : Overlay() {

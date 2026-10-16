@@ -25,7 +25,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.glip.app.domain.model.Vehicle
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.map.MapStyles
-import com.glip.app.ui.map.RapidoLocationOverlay
+import com.glip.app.ui.map.GlipLocationOverlay
 import com.glip.app.util.LocationTracker
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -36,7 +36,7 @@ import org.osmdroid.views.overlay.Marker
 /**
  * Real OpenStreetMap (OSM) Map component via osmdroid.
  * 100% Royalty-Free and Open-Source under ODbL license.
- * Loads real geographic street tiles (street-level zoom 15.0 like Ola/Uber/Rapido) without proprietary billing.
+ * Loads real geographic street tiles (street-level zoom 15.0) without proprietary billing.
  */
 @Composable
 fun InteractiveDemoMap(
@@ -50,7 +50,7 @@ fun InteractiveDemoMap(
 ) {
     val context = LocalContext.current
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
-    var locationOverlay by remember { mutableStateOf<RapidoLocationOverlay?>(null) }
+    var locationOverlay by remember { mutableStateOf<GlipLocationOverlay?>(null) }
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
     val liveAddress by LocationTracker.currentAddress.collectAsState()
 
@@ -158,11 +158,11 @@ fun InteractiveDemoMap(
                     Configuration.getInstance().tileFileSystemCacheMaxBytes = 150L * 1024 * 1024
                     Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                     MapView(ctx).apply {
-                        setTileSource(MapStyles.RAPIDO_CLEAN)
+                        setTileSource(MapStyles.GLIP_CLEAN)
                         if (isBlurred) {
                             MapStyles.applyBlurredTone(this)
                         } else {
-                            MapStyles.applyRapidoTone(this)
+                            MapStyles.applyGlipTone(this)
                         }
                         zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER) // Remove visible + and - zoom buttons
                         setMultiTouchControls(isInteractive) // Keep pinch-to-zoom enabled
@@ -216,10 +216,10 @@ fun InteractiveDemoMap(
                 if (view is MapView) {
                     view.overlays.clear()
 
-                    // User live location beacon (Rapido / Uber style 60 FPS animated pulsing puck)
+                    // User live location beacon (60 FPS animated pulsing puck)
                     userCoords?.let { (uLat, uLng) ->
                         val geoPoint = GeoPoint(uLat, uLng)
-                        val overlay = locationOverlay ?: RapidoLocationOverlay(view, geoPoint).also {
+                        val overlay = locationOverlay ?: GlipLocationOverlay(view, geoPoint).also {
                             locationOverlay = it
                         }
                         overlay.position = geoPoint

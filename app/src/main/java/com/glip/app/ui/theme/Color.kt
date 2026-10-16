@@ -2,15 +2,15 @@ package com.glip.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Rapido Brand Signature Palette (Vibrant Yellow & Deep Charcoal Black)
-val RapidoYellow = Color(0xFFFFC72C)       // Iconic Rapido Yellow
-val RapidoYellowDark = Color(0xFFE5A800)   // Dark Gold for borders & selected accents
-val RapidoYellowLight = Color(0xFFFFFBEA)  // Soft yellow tint for containers
-val RapidoBlack = Color(0xFF18181B)        // High-contrast Jet Black
-val RapidoDarkSlate = Color(0xFF27272A)
+// Glip Brand Signature Palette (Vibrant Gold Yellow & Deep Charcoal Black)
+val GlipBrandYellow = Color(0xFFFFC72C)
+val GlipBrandYellowDark = Color(0xFFE5A800)
+val GlipBrandYellowLight = Color(0xFFFFFBEA)
+val GlipBrandBlack = Color(0xFF18181B)
+val GlipBrandDarkSlate = Color(0xFF27272A)
 
-// Primary Brand tokens aligned with Rapido styling
-val GlipGreenPrimary = Color(0xFFFFC72C)   // Rapido Yellow
+// Primary Brand tokens
+val GlipGreenPrimary = Color(0xFFFFC72C)
 val GlipGreenDark = Color(0xFFD99B00)
 val GlipGreenLight = Color(0xFFFFFBEA)
 
