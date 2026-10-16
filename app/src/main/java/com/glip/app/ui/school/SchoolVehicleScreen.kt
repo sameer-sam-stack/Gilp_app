@@ -373,43 +373,24 @@ fun SchoolVehicleScreen(
                                             }
                                         )
 
-                                        // Actions inside Pickup Red Box: GPS Current Location + Map Picker
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                        // Pickup Location Action: Green Target / MyLocation Icon
+                                        IconButton(
+                                            onClick = {
+                                                liveAddress?.let { pickupLocation = it }
+                                                liveCoords?.let {
+                                                    pickupLat = it.first
+                                                    pickupLng = it.second
+                                                }
+                                                selectingLocationMode = "pickup"
+                                            },
+                                            modifier = Modifier.size(32.dp)
                                         ) {
-                                            IconButton(
-                                                onClick = {
-                                                    liveAddress?.let { pickupLocation = it }
-                                                    liveCoords?.let {
-                                                        pickupLat = it.first
-                                                        pickupLng = it.second
-                                                    }
-                                                    isEditingPickup = false
-                                                },
-                                                modifier = Modifier.size(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.MyLocation,
-                                                    contentDescription = "Current Location",
-                                                    tint = Color(0xFF10B981),
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                            }
-
-                                            IconButton(
-                                                onClick = {
-                                                    selectingLocationMode = "pickup"
-                                                },
-                                                modifier = Modifier.size(32.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Map,
-                                                    contentDescription = "Select Pickup on Map",
-                                                    tint = Color(0xFF0284C7),
-                                                    modifier = Modifier.size(20.dp)
-                                                )
-                                            }
+                                            Icon(
+                                                imageVector = Icons.Default.MyLocation,
+                                                contentDescription = "Select Pickup on Map",
+                                                tint = Color(0xFF10B981), // Green
+                                                modifier = Modifier.size(20.dp)
+                                            )
                                         }
                                     }
 
@@ -479,7 +460,7 @@ fun SchoolVehicleScreen(
                                             }
                                         )
 
-                                        // Map Picker Button inside Dropoff Red Box
+                                        // Dropoff Location Action: Red Target / MyLocation Icon
                                         IconButton(
                                             onClick = {
                                                 selectingLocationMode = "drop"
@@ -487,9 +468,9 @@ fun SchoolVehicleScreen(
                                             modifier = Modifier.size(32.dp)
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.Map,
+                                                imageVector = Icons.Default.MyLocation,
                                                 contentDescription = "Select School Dropoff on Map",
-                                                tint = Color(0xFF0284C7),
+                                                tint = Color(0xFFEF4444), // Red
                                                 modifier = Modifier.size(20.dp)
                                             )
                                         }
