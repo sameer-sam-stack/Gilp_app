@@ -184,13 +184,12 @@ fun RideSearchScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TOP SECTION: Top Hero Ad Banner (Moved up to the top and enlarged)
+            // TOP SECTION: Top Hero Ad Banner (Moved to the very top and enlarged)
             AdBannerBox(
                 slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_BANNER,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .height(215.dp),
+                    .height(245.dp),
                 shape = RoundedCornerShape(20.dp)
             )
 
