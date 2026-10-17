@@ -390,7 +390,7 @@ fun HomeScreen(
                 } else {
                     FareCalculationEngine.getPersonalOptions(effectiveKm)
                 }
-                val selectedPersonal = uiState.selectedPersonalOption ?: personalOptions.firstOrNull { it.type == PersonalVehicleType.AUTO } ?: personalOptions.firstOrNull()
+                val selectedPersonal = uiState.selectedPersonalOption ?: personalOptions.firstOrNull { it.type == PersonalVehicleType.BIKE } ?: personalOptions.firstOrNull()
 
                 PersonalRideOptionsCard(
                     pickupLocation = pickupLocation,
@@ -489,8 +489,8 @@ fun HomeScreen(
 
 /**
  * Rapido / Uber Style Personal Vehicle Selection Card.
- * Displays vehicle categories (Bike, Auto, Cab Economy, Cab Premium, Cab XL),
- * upfront calculated fares, Cash / Offers row, and Book button.
+ * Displays vehicle categories (Bike, E - Rickshaw, Auto),
+ * upfront calculated fares matching Screenshot 1, and Book button.
  */
 @Composable
 fun PersonalRideOptionsCard(
@@ -508,133 +508,45 @@ fun PersonalRideOptionsCard(
     isCorridorEmpty: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val displayTypes = listOf(
+        PersonalVehicleType.BIKE,
+        PersonalVehicleType.E_RICKSHAW,
+        PersonalVehicleType.AUTO
+    )
+    val displayOptions = displayTypes.map { type ->
+        options.find { it.type == type } ?: PersonalFareEstimate(
+            type = type,
+            fareAmount = FareCalculationEngine.calculatePersonalFare(distanceKm, type),
+            etaMinutes = 3,
+            dropTimeFormatted = "",
+            distanceKm = distanceKm,
+            isAvailable = true
+        )
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 2.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
-            // 1. Pickup and Drop Selector matching Screenshot 1
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFF8FAFC),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Left Timeline Indicator
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF10B981))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .width(1.5.dp)
-                                .height(22.dp)
-                                .background(Color(0xFFCBD5E1))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFEF4444))
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        // Top row: Pickup
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(28.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = pickupLocation.ifBlank { "Pickup" },
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF0F172A),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Icon(
-                                imageVector = Icons.Default.MyLocation,
-                                contentDescription = "Change Pickup",
-                                tint = Color(0xFF10B981),
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .clickable { onChangeLocation() }
-                            )
-                        }
-
-                        HorizontalDivider(
-                            color = Color(0xFFF1F5F9),
-                            thickness = 1.dp,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        // Bottom row: Drop
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(28.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = dropLocation.ifBlank { "Drop" },
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF0F172A),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Icon(
-                                imageVector = Icons.Default.MyLocation,
-                                contentDescription = "Change Drop",
-                                tint = Color(0xFFEF4444),
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .clickable { onChangeLocation() }
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // 2. "No shared vehicle on Your Route.." Text
+            // "No shared vehicle on Your Route.." Text
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 6.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = "No shared vehicle on Your Route..",
-                    fontSize = 11.sp,
+                    fontSize = 11.5.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color(0xFF64748B)
                 )
@@ -650,52 +562,43 @@ fun PersonalRideOptionsCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // 3. Vehicle Category Rows: Bike ₹16/km (1 Seat), E - Rickshaw ₹22/km (5 Seats), Auto ₹27/km (7 Seats), CAB ₹31/km (4 Seats)
+            // Vehicle Category Rows: Bike, Personal E Rickshaw, Auto matching Screenshot 1
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                options.forEach { opt ->
-                    val isSelected = opt.type == (selectedOption?.type ?: PersonalVehicleType.AUTO)
-                    val isAvailable = opt.isAvailable
+                displayOptions.forEach { opt ->
+                    val isSelected = opt.type == (selectedOption?.type ?: PersonalVehicleType.BIKE)
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelectOption(opt) },
-                        shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) Color(0xFFF0F7FF) else Color.White,
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) Color(0xFFF8FAFC) else Color.White,
                         border = androidx.compose.foundation.BorderStroke(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = when {
-                                isSelected -> Color(0xFF2563EB)
-                                !isAvailable -> Color(0xFFF1F5F9)
-                                else -> Color(0xFFE2E8F0)
-                            }
+                            width = if (isSelected) 1.5.dp else 1.dp,
+                            color = if (isSelected) Color(0xFF234B7D) else Color(0xFFF1F5F9)
                         )
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            // Left: Vehicle Icon + Title + Capacity + Subtitle
+                            // Left: Vehicle Icon + Title
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(42.dp)
-                                        .clip(RoundedCornerShape(10.dp))
+                                        .size(38.dp)
+                                        .clip(RoundedCornerShape(8.dp))
                                         .background(
-                                            when {
-                                                isSelected -> Color(0xFFE0EDFE)
-                                                !isAvailable -> Color(0xFFF8FAFC)
-                                                else -> Color(0xFFF1F5F9)
-                                            }
+                                            if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC)
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -704,120 +607,73 @@ fun PersonalRideOptionsCard(
                                             PersonalVehicleType.BIKE -> Icons.Default.TwoWheeler
                                             PersonalVehicleType.E_RICKSHAW -> Icons.Default.ElectricRickshaw
                                             PersonalVehicleType.AUTO -> Icons.Default.ElectricRickshaw
-                                            PersonalVehicleType.CAB -> Icons.Default.DirectionsCar
+                                            else -> Icons.Default.DirectionsCar
                                         },
                                         contentDescription = opt.type.displayName,
-                                        tint = when {
-                                            isSelected -> Color(0xFF2563EB)
-                                            !isAvailable -> Color(0xFF94A3B8)
-                                            else -> Color(0xFF0F172A)
-                                        },
+                                        tint = if (isSelected) Color(0xFF234B7D) else Color(0xFF334155),
                                         modifier = Modifier.size(24.dp)
                                     )
                                 }
 
                                 Spacer(modifier = Modifier.width(12.dp))
 
-                                Column {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(
-                                            text = opt.type.displayName,
-                                            fontSize = 15.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (isAvailable) Color(0xFF0F172A) else Color(0xFF64748B)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Icon(
-                                            imageVector = Icons.Default.Person,
-                                            contentDescription = null,
-                                            tint = if (isAvailable) Color(0xFF64748B) else Color(0xFF94A3B8),
-                                            modifier = Modifier.size(13.dp)
-                                        )
-                                        Text(
-                                            text = "${opt.type.capacity}",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (isAvailable) Color(0xFF64748B) else Color(0xFF94A3B8)
-                                        )
-                                        if (!isAvailable) {
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Surface(
-                                                shape = RoundedCornerShape(4.dp),
-                                                color = Color(0xFFFEE2E2)
-                                            ) {
-                                                Text(
-                                                    text = "No Drivers",
-                                                    fontSize = 8.5.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFFDC2626),
-                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = if (isAvailable) {
-                                            "${opt.etaMinutes} min away • Drop ${opt.dropTimeFormatted}"
-                                        } else {
-                                            "No driver online in your area"
-                                        },
-                                        fontSize = 11.sp,
-                                        color = if (isAvailable) Color(0xFF64748B) else Color(0xFFEF4444)
-                                    )
-                                }
+                                Text(
+                                    text = when (opt.type) {
+                                        PersonalVehicleType.BIKE -> "Bike"
+                                        PersonalVehicleType.E_RICKSHAW -> "Personal E Rickshaw"
+                                        PersonalVehicleType.AUTO -> "Auto"
+                                        else -> opt.type.displayName
+                                    },
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF263959)
+                                )
                             }
 
-                            // Right: Upfront Price (e.g. ₹87 Auto, ₹64 Bike) + Rate per KM
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = "₹${opt.fareAmount}",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = if (isAvailable) Color(0xFF0F172A) else Color(0xFF94A3B8)
-                                )
-                                Text(
-                                    text = "₹${opt.type.perKmRate.toInt()}/km",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF64748B)
-                                )
-                            }
+                            // Right: Upfront Fare Amount ONLY (e.g. ₹24, ₹48, ₹65)
+                            Text(
+                                text = "₹${opt.fareAmount}",
+                                fontSize = 17.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF263959)
+                            )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Primary Booking Button (Rapido warm gold yellow #F5B838)
-            val effectiveSel = selectedOption ?: options.firstOrNull()
-            val isAvailable = effectiveSel?.isAvailable == true
+            val effectiveSel = selectedOption ?: displayOptions.firstOrNull()
             Button(
                 onClick = {
-                    if (effectiveSel != null && !isRequested && isAvailable) {
+                    if (effectiveSel != null && !isRequested) {
                         onBookClick(effectiveSel)
                     }
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(46.dp),
-                shape = RoundedCornerShape(12.dp),
+                    .height(42.dp),
+                shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isAvailable) Color(0xFFF5B838) else Color(0xFFE2E8F0),
-                    disabledContainerColor = Color(0xFFE2E8F0)
+                    containerColor = Color(0xFFF5B838)
                 ),
-                enabled = !isRequested && isAvailable
+                enabled = !isRequested
             ) {
                 Text(
                     text = when {
-                        isRequested -> "Requesting Nearest Driver..."
-                        !isAvailable -> "No ${effectiveSel?.type?.displayName ?: "Vehicle"} Available Nearby"
-                        else -> "Book ${effectiveSel?.type?.displayName ?: "Vehicle"} • ₹${effectiveSel?.fareAmount}"
+                        isRequested -> "Requesting Driver..."
+                        else -> "Book ${when (effectiveSel?.type) {
+                            PersonalVehicleType.BIKE -> "Bike"
+                            PersonalVehicleType.E_RICKSHAW -> "Personal E Rickshaw"
+                            PersonalVehicleType.AUTO -> "Auto"
+                            else -> effectiveSel?.type?.displayName ?: "Vehicle"
+                        }} • ₹${effectiveSel?.fareAmount}"
                     },
                     fontSize = 13.5.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = if (isAvailable && !isRequested) Color.Black else Color(0xFF94A3B8)
+                    color = Color.Black
                 )
             }
         }
