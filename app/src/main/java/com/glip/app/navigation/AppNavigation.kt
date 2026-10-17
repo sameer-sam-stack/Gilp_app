@@ -25,6 +25,7 @@ import com.glip.app.ui.services.ServicesScreen
 import com.glip.app.ui.services.ServicesViewModel
 import com.glip.app.ui.parcel.ParcelBookingScreen
 import com.glip.app.ui.school.SchoolVehicleScreen
+import com.glip.app.ui.personal.PersonalVehicleScreen
 
 import androidx.compose.ui.text.font.FontWeight
 import com.glip.app.ui.theme.GlipGreenPrimary
@@ -69,6 +70,7 @@ fun AppNavigation(
     var currentBottomTab by remember { mutableIntStateOf(0) }
     var isParcelBookingOpen by remember { mutableStateOf(false) }
     var isSchoolVehicleOpen by remember { mutableStateOf(false) }
+    var isPersonalVehicleOpen by remember { mutableStateOf(false) }
 
     if (isAppLoading) {
         AppLoadingSplashScreen(modifier = modifier)
@@ -93,6 +95,12 @@ fun AppNavigation(
         SchoolVehicleScreen(
             userProfile = userProfile ?: preferences.getUserProfile(),
             onNavigateBack = { isSchoolVehicleOpen = false },
+            modifier = modifier.fillMaxSize()
+        )
+    } else if (isPersonalVehicleOpen) {
+        PersonalVehicleScreen(
+            userProfile = userProfile ?: preferences.getUserProfile(),
+            onNavigateBack = { isPersonalVehicleOpen = false },
             modifier = modifier.fillMaxSize()
         )
     } else if (!hasSearchedRide) {
@@ -163,6 +171,9 @@ fun AppNavigation(
                         },
                         onNavigateToSchoolVehicle = {
                             isSchoolVehicleOpen = true
+                        },
+                        onNavigateToPersonalVehicle = {
+                            isPersonalVehicleOpen = true
                         },
                         modifier = contentModifier
                     )

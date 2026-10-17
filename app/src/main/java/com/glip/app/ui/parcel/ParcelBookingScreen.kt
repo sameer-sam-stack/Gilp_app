@@ -41,6 +41,8 @@ import com.glip.app.data.places.AutocompletePlace
 import com.glip.app.data.places.PlacesSearchService
 import com.glip.app.data.supabase.RideRequestClient
 import com.glip.app.ui.home.PlaceAutocompleteDropdown
+import com.glip.app.ui.home.LocationPickerScreen
+import androidx.compose.ui.zIndex
 import com.glip.app.ui.theme.GlipBrandYellow
 import com.glip.app.util.LocationTracker
 import kotlinx.coroutines.Job
@@ -97,6 +99,9 @@ fun ParcelBookingScreen(
     var pickupSuggestions by remember { mutableStateOf<List<AutocompletePlace>>(emptyList()) }
     var isSearchingPickup by remember { mutableStateOf(false) }
     var pickupSearchJob by remember { mutableStateOf<Job?>(null) }
+
+    // Map selection mode: "pickup" or "drop"
+    var selectingLocationMode by remember { mutableStateOf<String?>(null) }
 
     // Bottom sheet & modal states
     var showContactSheet by remember { mutableStateOf(false) }
@@ -257,21 +262,40 @@ fun ParcelBookingScreen(
                             )
                         }
 
-                        IconButton(
-                            onClick = {
-                                isEditingPickup = !isEditingPickup
-                                if (isEditingPickup) {
-                                    pickupSearchQuery = ""
-                                }
-                            },
-                            modifier = Modifier.size(32.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Edit Pickup",
-                                tint = Color(0xFF334155),
-                                modifier = Modifier.size(18.dp)
-                            )
+                            IconButton(
+                                onClick = {
+                                    selectingLocationMode = "pickup"
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.MyLocation,
+                                    contentDescription = "Select Pickup on Map",
+                                    tint = Color(0xFF15803D), // Emerald green
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = {
+                                    isEditingPickup = !isEditingPickup
+                                    if (isEditingPickup) {
+                                        pickupSearchQuery = ""
+                                    }
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit Pickup",
+                                    tint = Color(0xFF334155),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     }
 
@@ -287,7 +311,7 @@ fun ParcelBookingScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                                    .padding(horizontal = 14.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
@@ -353,6 +377,20 @@ fun ParcelBookingScreen(
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        selectingLocationMode = "pickup"
+                                    },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MyLocation,
+                                        contentDescription = "Select on Map",
+                                        tint = Color(0xFF15803D),
+                                        modifier = Modifier.size(19.dp)
+                                    )
                                 }
                             }
                         }
@@ -501,21 +539,40 @@ fun ParcelBookingScreen(
                             modifier = Modifier.weight(1f)
                         )
 
-                        // If drop is selected, show edit button on header
-                        if (dropAddress.isNotBlank()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
                             IconButton(
                                 onClick = {
-                                    dropAddress = ""
-                                    dropSearchQuery = ""
+                                    selectingLocationMode = "drop"
                                 },
                                 modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit Drop",
-                                    tint = Color(0xFF334155),
-                                    modifier = Modifier.size(18.dp)
+                                    imageVector = Icons.Default.MyLocation,
+                                    contentDescription = "Select Drop on Map",
+                                    tint = Color(0xFFDC2626), // Red
+                                    modifier = Modifier.size(20.dp)
                                 )
+                            }
+
+                            // If drop is selected, show edit button on header
+                            if (dropAddress.isNotBlank()) {
+                                IconButton(
+                                    onClick = {
+                                        dropAddress = ""
+                                        dropSearchQuery = ""
+                                    },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Edit Drop",
+                                        tint = Color(0xFF334155),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -533,7 +590,7 @@ fun ParcelBookingScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
@@ -599,6 +656,20 @@ fun ParcelBookingScreen(
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        selectingLocationMode = "drop"
+                                    },
+                                    modifier = Modifier.size(28.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.MyLocation,
+                                        contentDescription = "Select on Map",
+                                        tint = Color(0xFFDC2626), // Red
+                                        modifier = Modifier.size(20.dp)
+                                    )
                                 }
                             }
                         }
@@ -1094,5 +1165,59 @@ fun ParcelBookingScreen(
             containerColor = Color.White,
             shape = RoundedCornerShape(20.dp)
         )
+    }
+
+    // Interactive Map Picker Screen Overlay (Select on Map)
+    if (selectingLocationMode != null) {
+        val isPickup = selectingLocationMode == "pickup"
+        val title = if (isPickup) "Select Pickup on Map" else "Select Drop on Map"
+        val currentLat = if (isPickup) {
+            if (pickupLat != 0.0) pickupLat else 21.0970
+        } else {
+            if (dropLat != 0.0) dropLat else 21.0970
+        }
+        val currentLng = if (isPickup) {
+            if (pickupLng != 0.0) pickupLng else 81.0315
+        } else {
+            if (dropLng != 0.0) dropLng else 81.0315
+        }
+        val otherAddress = if (isPickup) dropAddress else pickupAddress
+        val otherCoords = if (isPickup) {
+            if (dropLat != 0.0 && dropLng != 0.0) Pair(dropLat, dropLng) else null
+        } else {
+            if (pickupLat != 0.0 && pickupLng != 0.0) Pair(pickupLat, pickupLng) else null
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .zIndex(100f)
+        ) {
+            LocationPickerScreen(
+                title = title,
+                initialLat = currentLat,
+                initialLng = currentLng,
+                otherLocationAddress = otherAddress.ifBlank { null },
+                otherLocationCoords = otherCoords,
+                onLocationConfirmed = { detailedAddress, lat, lng ->
+                    if (isPickup) {
+                        pickupAddress = detailedAddress
+                        pickupLat = lat
+                        pickupLng = lng
+                        isEditingPickup = false
+                        pickupSuggestions = emptyList()
+                    } else {
+                        dropAddress = detailedAddress
+                        dropLat = lat
+                        dropLng = lng
+                        dropSuggestions = emptyList()
+                    }
+                    selectingLocationMode = null
+                },
+                onDismiss = {
+                    selectingLocationMode = null
+                }
+            )
+        }
     }
 }

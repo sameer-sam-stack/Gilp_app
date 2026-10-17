@@ -89,7 +89,48 @@ class RegistrationViewModel(
 
         if (hasError) return
 
-        // Generate a random 6-digit OTP and auto-fill immediately
+        if (state.isExistingUserMode) {
+            // Check if account exists first - direct login without existing account is prohibited
+            viewModelScope.launch {
+                _uiState.update { it.copy(isLoading = true, phoneError = null, generalMessage = null) }
+                val cleanPhone = PhoneValidator.sanitizeIndianMobile(state.phoneNumber)
+                val searchResult = UserSupabaseClient.findUserByPhone(cleanPhone)
+                val existingProfile = searchResult.getOrNull()
+
+                val localProfile = userRepository.getUserProfile()
+                val hasLocal = localProfile != null && (localProfile.phoneNumber == cleanPhone || localProfile.phoneNumber.endsWith(state.phoneNumber))
+
+                if (existingProfile == null && !hasLocal) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            phoneError = "Account not found for this number. Please register first."
+                        )
+                    }
+                    return@launch
+                }
+
+                // Account exists! Proceed to OTP
+                val randomOtp = (100000..999999).random().toString()
+                val autoFilledDigits = randomOtp.map { it.toString() }
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        currentStep = RegistrationStep.OTP_VERIFY,
+                        generatedOtp = randomOtp,
+                        otpDigits = autoFilledDigits,
+                        otpInput = randomOtp,
+                        showOtpPopup = false,
+                        otpError = null,
+                        phoneError = null
+                    )
+                }
+            }
+            return
+        }
+
+        // New User mode: proceed to OTP
         val randomOtp = (100000..999999).random().toString()
         val autoFilledDigits = randomOtp.map { it.toString() }
 
@@ -100,7 +141,8 @@ class RegistrationViewModel(
                 otpDigits = autoFilledDigits,
                 otpInput = randomOtp,
                 showOtpPopup = false,
-                otpError = null
+                otpError = null,
+                phoneError = null
             )
         }
     }
@@ -201,32 +243,30 @@ class RegistrationViewModel(
                 // Look up existing account in Supabase
                 val searchResult = UserSupabaseClient.findUserByPhone(cleanPhone)
                 val existingProfile = searchResult.getOrNull()
+                val localProfile = userRepository.getUserProfile()
+                val resolvedProfile = existingProfile ?: if (localProfile != null && (localProfile.phoneNumber == cleanPhone || localProfile.phoneNumber.endsWith(state.phoneNumber))) localProfile else null
 
-                if (existingProfile != null) {
+                if (resolvedProfile != null) {
                     // Restore existing account into local profile preferences
-                    userRepository.saveUserProfile(existingProfile)
+                    userRepository.saveUserProfile(resolvedProfile)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
                             isRegistrationSuccess = true,
-                            restoredUserName = existingProfile.fullName,
-                            generalMessage = "Welcome back, ${existingProfile.fullName}!"
+                            restoredUserName = resolvedProfile.fullName,
+                            generalMessage = "Welcome back, ${resolvedProfile.fullName}!"
                         )
                     }
                 } else {
-                    // Account not found in Supabase: Create a fresh profile with this phone number
-                    val newProfile = UserProfile(
-                        userId = "USR-${UUID.randomUUID().toString().take(8).uppercase()}",
-                        fullName = "Glip Rider",
-                        phoneNumber = cleanPhone,
-                        email = null
-                    )
-                    UserSupabaseClient.saveUserToSupabase(newProfile)
-                    userRepository.saveUserProfile(newProfile)
+                    // Account not found: Do NOT log in directly! Prompt user to register!
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            isRegistrationSuccess = true
+                            currentStep = RegistrationStep.INPUT,
+                            isExistingUserMode = false, // Switch to register mode
+                            fullName = "",
+                            phoneError = "No account found with this number. Please register your name to continue.",
+                            otpError = null
                         )
                     }
                 }

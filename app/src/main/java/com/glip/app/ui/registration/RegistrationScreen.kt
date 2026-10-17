@@ -221,7 +221,53 @@ private fun RegistrationInputStep(
         modifier = Modifier.fillMaxWidth()
     )
 
-    Spacer(modifier = Modifier.height(24.dp))
+    // Account Not Found alert banner in existing user mode
+    if (uiState.isExistingUserMode && uiState.phoneError != null && uiState.phoneError.contains("register", ignoreCase = true)) {
+        Spacer(modifier = Modifier.height(14.dp))
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFFEF2F2),
+            border = BorderStroke(1.dp, Color(0xFFFCA5A5))
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    tint = Color(0xFFDC2626),
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "No Account Found",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF991B1B)
+                    )
+                    Text(
+                        text = "Mobile number not registered. Please create a new account.",
+                        fontSize = 12.sp,
+                        color = Color(0xFFB91C1C)
+                    )
+                }
+                TextButton(
+                    onClick = { viewModel.toggleExistingUserMode(false) }
+                ) {
+                    Text(
+                        text = "Register",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFDC2626)
+                    )
+                }
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(20.dp))
 
     // Continue / Get OTP Button
     Button(
@@ -229,6 +275,7 @@ private fun RegistrationInputStep(
             focusManager.clearFocus()
             viewModel.proceedToOtp()
         },
+        enabled = !uiState.isLoading,
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp),
@@ -237,12 +284,20 @@ private fun RegistrationInputStep(
             containerColor = GlipGreenPrimary
         )
     ) {
-        Text(
-            text = "Continue",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-        )
+        if (uiState.isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(22.dp),
+                color = Color.White,
+                strokeWidth = 2.5.dp
+            )
+        } else {
+            Text(
+                text = "Continue",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        }
     }
 
     Spacer(modifier = Modifier.height(16.dp))

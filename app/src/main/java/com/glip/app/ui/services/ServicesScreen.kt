@@ -33,6 +33,7 @@ fun ServicesScreen(
     onNavigateToHomePooling: () -> Unit,
     onNavigateToParcelBooking: () -> Unit = {},
     onNavigateToSchoolVehicle: () -> Unit = {},
+    onNavigateToPersonalVehicle: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -53,7 +54,7 @@ fun ServicesScreen(
             fontSize = 24.sp
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Row of 3 Service Cards (Parcel on Bike, School Vehicle, Personal Vehicle)
         Row(
@@ -86,7 +87,7 @@ fun ServicesScreen(
                 icon = Icons.Default.DirectionsCar,
                 iconColor = GlipGreenPrimary,
                 backgroundColor = Color(0xFFF0FDF4),
-                onClick = onNavigateToHomePooling,
+                onClick = onNavigateToPersonalVehicle,
                 modifier = Modifier.weight(1f)
             )
         }
