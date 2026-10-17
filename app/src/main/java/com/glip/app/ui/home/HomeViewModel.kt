@@ -188,10 +188,11 @@ class HomeViewModel(
             val dLng = _uiState.value.dropLng
 
             val matchedVehicles = mutableListOf<Vehicle>()
+            var remoteDrivers: List<RemoteDriver> = emptyList()
 
             try {
                 // 1. Fetch real online drivers & their active destination routes from Supabase
-                val remoteDrivers = RideRequestClient.fetchActiveDrivers()
+                remoteDrivers = RideRequestClient.fetchActiveDrivers()
                 val remoteRoutes = RideRequestClient.fetchActiveDriverRoutes()
 
                 var colorIdx = 0
@@ -271,38 +272,6 @@ class HomeViewModel(
                         else -> VehicleCategory.AUTO_RICKSHAW
                     }
 
-                    val v = Vehicle(
-                        vehicleId = drv.id.ifBlank { "drv_${drv.mobileNumber}" },
-                        licensePlateMasked = drv.vehicleNumber.ifBlank { "DL 01 ** 4812" },
-                        category = category,
-                        modelName = drv.vehicleModel.ifBlank { "Auto Rickshaw (5 Seater)" },
-                        currentLat = drv.currentLat,
-                        currentLng = drv.currentLng,
-                        headingDegrees = drv.bearing,
-                        route = Route(
-                            routeId = "rte_${drv.id}",
-                            originName = "Current Location",
-                            destinationName = destName,
-                            originLat = drv.currentLat,
-                            originLng = drv.currentLng,
-                            destinationLat = destLat,
-                            destinationLng = destLng,
-                            polylinePoints = polylinePoints,
-                            totalDistanceKm = (roadResult?.distanceMeters ?: 4000.0) / 1000.0,
-                            estimatedDurationMinutes = etaMins
-                        ),
-                        routeStatus = RouteStatus.EN_ROUTE,
-                        seatAvailability = SeatAvailability(
-                            totalSeats = drv.totalSeats.coerceAtLeast(1),
-                            occupiedSeats = (drv.totalSeats - drv.availableSeats).coerceAtLeast(0)
-                        ),
-                        driver = DriverProfile(
-                            driverId = drv.id,
-                            fullName = drv.fullName.ifBlank { "Driver Partner" },
-                            rating = 4.8,
-                            totalRidesCompleted = 120,
-                            isVerified = true
-                        ),
                     val tripKm = if (_uiState.value.tripDistanceKm > 0.0) _uiState.value.tripDistanceKm else ((roadResult?.distanceMeters ?: 4000.0) / 1000.0)
                     val poolEst = FareCalculationEngine.calculatePoolingFare(tripKm, (drv.totalSeats - drv.availableSeats).coerceAtLeast(0))
 
