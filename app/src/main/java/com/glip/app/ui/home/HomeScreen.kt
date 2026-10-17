@@ -64,91 +64,17 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 1. Top AD Banner Box: Kept 100% Intact as specified by user
+        // 1. Top AD Banner Box: Minimized left/right gap per user requirement
         AdBannerBox(
             slotId = AdConfig.SLOT_HOME_TOP_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp)
-                .height(80.dp),
+                .padding(start = 6.dp, end = 6.dp, bottom = 10.dp)
+                .height(96.dp),
             shape = RoundedCornerShape(14.dp)
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // 2. Selected Route Badge showing current pickup -> drop with ONLY Change clickable
-        if (pickupLocation.isNotBlank() || dropLocation.isNotBlank()) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp)
-                    .height(34.dp),
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(GlipGreenPrimary)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = pickupLocation.ifBlank { "Pickup" },
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "➔", fontSize = 10.sp, color = Color(0xFF94A3B8))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFEF4444))
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = dropLocation.ifBlank { "Drop" },
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                    }
-                    Text(
-                        text = "Change",
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = GlipGreenPrimary,
-                        modifier = Modifier
-                            .clickable { onChangeLocation() }
-                            .padding(start = 6.dp, top = 2.dp, bottom = 2.dp)
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-        }
-
-        // Map Area
+        // Map Area (Directly under Top AD per user requirement)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -157,18 +83,7 @@ fun HomeScreen(
                 .clip(RoundedCornerShape(16.dp))
                 .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
         ) {
-            if (uiState.isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFE2E8F0)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    RouteLoader(
-                        modifier = Modifier.size(width = 240.dp, height = 136.dp)
-                    )
-                }
-            } else if (!uiState.isFallbackListVisible) {
+            if (!uiState.isFallbackListVisible) {
                 InteractiveDemoMap(
                     vehicles = if (uiState.rideBookingStatus == "ACCEPTED") listOfNotNull(uiState.acceptedVehicle) else uiState.filteredVehicles,
                     selectedVehicle = uiState.selectedVehicle,
@@ -370,6 +285,9 @@ fun HomeScreen(
                 // 60-Second Route Vehicle Search Radar Card (Auto-switches to Personal if no route driver joins)
                 val effectiveKm = if (uiState.tripDistanceKm > 0.0) uiState.tripDistanceKm else 5.4
                 RouteVehicleSearchingCard(
+                    pickupLocation = pickupLocation,
+                    dropLocation = dropLocation,
+                    onChangeLocation = onChangeLocation,
                     secondsRemaining = uiState.routeSearchSecondsRemaining,
                     distanceKm = effectiveKm,
                     onSkipToPersonal = { viewModel.skipRouteSearchAndOpenPersonal() }
@@ -475,6 +393,9 @@ fun HomeScreen(
                 val selectedPersonal = uiState.selectedPersonalOption ?: personalOptions.firstOrNull { it.type == PersonalVehicleType.AUTO } ?: personalOptions.firstOrNull()
 
                 PersonalRideOptionsCard(
+                    pickupLocation = pickupLocation,
+                    dropLocation = dropLocation,
+                    onChangeLocation = onChangeLocation,
                     options = personalOptions,
                     selectedOption = selectedPersonal,
                     onSelectOption = { viewModel.selectPersonalOption(it) },
@@ -573,6 +494,9 @@ fun HomeScreen(
  */
 @Composable
 fun PersonalRideOptionsCard(
+    pickupLocation: String = "",
+    dropLocation: String = "",
+    onChangeLocation: () -> Unit = {},
     options: List<PersonalFareEstimate>,
     selectedOption: PersonalFareEstimate?,
     onSelectOption: (PersonalFareEstimate) -> Unit,
@@ -596,33 +520,93 @@ fun PersonalRideOptionsCard(
         Column(
             modifier = Modifier.padding(12.dp)
         ) {
-            // Header Info Row
+            // 1. Pickup and Drop and Change Bar (Replaces old Personal Ride header per user requirement)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(34.dp),
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFFF8FAFC),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(GlipGreenPrimary)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = pickupLocation.ifBlank { "Pickup" },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "➔", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFEF4444))
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = dropLocation.ifBlank { "Drop" },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+                    Text(
+                        text = "Change",
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GlipGreenPrimary,
+                        modifier = Modifier
+                            .clickable { onChangeLocation() }
+                            .padding(start = 6.dp, top = 2.dp, bottom = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // 2. "No shared vehicle on Your Route.." Text
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFF59E0B))
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "PERSONAL RIDE (${String.format(Locale.getDefault(), "%.1f", distanceKm)} KM)",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFFB45309),
-                        letterSpacing = 0.5.sp
-                    )
-                }
+                Text(
+                    text = "No shared vehicle on Your Route..",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF64748B)
+                )
 
                 if (canSwitchToPooling) {
                     Text(
                         text = "Switch to Pooling",
-                        fontSize = 11.sp,
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = GlipGreenPrimary,
                         modifier = Modifier.clickable { onSwitchToPooling() }
@@ -630,21 +614,11 @@ fun PersonalRideOptionsCard(
                 }
             }
 
-            if (isCorridorEmpty) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "No Shared vehicle On Your Route..",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF64748B)
-                )
-            }
-
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Vehicle Category Rows (Bike ₹22/km, E-Rickshaw ₹27/km, Auto ₹30/km, Cab ₹40/km)
+            // 3. Vehicle Category Rows (Bike ₹22/km, E-Rickshaw ₹27/km, Auto ₹30/km, Cab ₹40/km) matching Screenshot 1
             Column(
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 options.forEach { opt ->
                     val isSelected = opt.type == (selectedOption?.type ?: PersonalVehicleType.AUTO)
@@ -653,10 +627,10 @@ fun PersonalRideOptionsCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelectOption(opt) },
-                        shape = RoundedCornerShape(12.dp),
-                        color = if (isSelected) Color(0xFFF8FAFC) else Color.White,
+                        shape = RoundedCornerShape(14.dp),
+                        color = if (isSelected) Color(0xFFF0F7FF) else Color.White,
                         border = androidx.compose.foundation.BorderStroke(
-                            width = if (isSelected) 1.8.dp else 1.dp,
+                            width = if (isSelected) 2.dp else 1.dp,
                             color = when {
                                 isSelected -> Color(0xFF2563EB)
                                 !isAvailable -> Color(0xFFF1F5F9)
@@ -667,7 +641,7 @@ fun PersonalRideOptionsCard(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 10.dp, vertical = 7.dp),
+                                .padding(horizontal = 12.dp, vertical = 9.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
@@ -678,11 +652,11 @@ fun PersonalRideOptionsCard(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(RoundedCornerShape(8.dp))
+                                        .size(42.dp)
+                                        .clip(RoundedCornerShape(10.dp))
                                         .background(
                                             when {
-                                                isSelected -> Color(0xFFEFF6FF)
+                                                isSelected -> Color(0xFFE0EDFE)
                                                 !isAvailable -> Color(0xFFF8FAFC)
                                                 else -> Color(0xFFF1F5F9)
                                             }
@@ -700,19 +674,19 @@ fun PersonalRideOptionsCard(
                                         tint = when {
                                             isSelected -> Color(0xFF2563EB)
                                             !isAvailable -> Color(0xFF94A3B8)
-                                            else -> Color(0xFF334155)
+                                            else -> Color(0xFF0F172A)
                                         },
-                                        modifier = Modifier.size(22.dp)
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
 
-                                Spacer(modifier = Modifier.width(10.dp))
+                                Spacer(modifier = Modifier.width(12.dp))
 
                                 Column {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text(
                                             text = opt.type.displayName,
-                                            fontSize = 13.sp,
+                                            fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = if (isAvailable) Color(0xFF0F172A) else Color(0xFF64748B)
                                         )
@@ -721,11 +695,11 @@ fun PersonalRideOptionsCard(
                                             imageVector = Icons.Default.Person,
                                             contentDescription = null,
                                             tint = if (isAvailable) Color(0xFF64748B) else Color(0xFF94A3B8),
-                                            modifier = Modifier.size(12.dp)
+                                            modifier = Modifier.size(13.dp)
                                         )
                                         Text(
                                             text = "${opt.type.capacity}",
-                                            fontSize = 11.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = if (isAvailable) Color(0xFF64748B) else Color(0xFF94A3B8)
                                         )
@@ -745,29 +719,30 @@ fun PersonalRideOptionsCard(
                                             }
                                         }
                                     }
+                                    Spacer(modifier = Modifier.height(2.dp))
                                     Text(
                                         text = if (isAvailable) {
                                             "${opt.etaMinutes} min away • Drop ${opt.dropTimeFormatted}"
                                         } else {
                                             "No driver online in your area"
                                         },
-                                        fontSize = 10.sp,
+                                        fontSize = 11.sp,
                                         color = if (isAvailable) Color(0xFF64748B) else Color(0xFFEF4444)
                                     )
                                 }
                             }
 
-                            // Right: Upfront Price (e.g. ₹118 Auto, ₹84 Bike) + Rate per KM
+                            // Right: Upfront Price (e.g. ₹87 Auto, ₹64 Bike) + Rate per KM
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
                                     text = "₹${opt.fareAmount}",
-                                    fontSize = 16.sp,
+                                    fontSize = 18.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = if (isAvailable) Color(0xFF0F172A) else Color(0xFF94A3B8)
                                 )
                                 Text(
                                     text = "₹${opt.type.perKmRate.toInt()}/km",
-                                    fontSize = 9.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = Color(0xFF64748B)
                                 )
@@ -819,6 +794,9 @@ fun PersonalRideOptionsCard(
  */
 @Composable
 fun RouteVehicleSearchingCard(
+    pickupLocation: String = "",
+    dropLocation: String = "",
+    onChangeLocation: () -> Unit = {},
     secondsRemaining: Int,
     distanceKm: Double,
     onSkipToPersonal: () -> Unit,
@@ -873,6 +851,76 @@ fun RouteVehicleSearchingCard(
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF2563EB),
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Pickup and drop and change
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(34.dp),
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFFF8FAFC),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(GlipGreenPrimary)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = pickupLocation.ifBlank { "Pickup" },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "➔", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFEF4444))
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = dropLocation.ifBlank { "Drop" },
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                    }
+                    Text(
+                        text = "Change",
+                        fontSize = 10.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GlipGreenPrimary,
+                        modifier = Modifier
+                            .clickable { onChangeLocation() }
+                            .padding(start = 6.dp, top = 2.dp, bottom = 2.dp)
                     )
                 }
             }

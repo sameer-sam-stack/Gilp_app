@@ -8,7 +8,9 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -119,7 +121,15 @@ fun InteractiveDemoMap(
             modifier = Modifier
                 .fillMaxSize()
                 .then(
-                    if (isBlurred) Modifier else Modifier.clip(RoundedCornerShape(16.dp))
+                    if (isBlurred) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            Modifier.blur(24.dp)
+                        } else {
+                            Modifier
+                        }
+                    } else {
+                        Modifier.clip(RoundedCornerShape(16.dp))
+                    }
                 )
                 .clipToBounds(),
             factory = { ctx ->
@@ -132,6 +142,11 @@ fun InteractiveDemoMap(
                         setTileSource(MapStyles.GLIP_CLEAN)
                         if (isBlurred) {
                             MapStyles.applyBlurredTone(this)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                try {
+                                    setRenderEffect(android.graphics.RenderEffect.createBlurEffect(32f, 32f, android.graphics.Shader.TileMode.CLAMP))
+                                } catch (_: Exception) {}
+                            }
                         } else {
                             MapStyles.applyGlipTone(this)
                         }
@@ -168,10 +183,6 @@ fun InteractiveDemoMap(
                         }
                         overlay.position = geoPoint
                         view.overlays.add(overlay)
-
-                        if (vehicles.isEmpty() && !isRideAccepted) {
-                            view.controller.setCenter(geoPoint)
-                        }
                     }
 
                     // 2. Render Polylines: Only show passenger's own pickup-to-drop polyline!
@@ -265,7 +276,7 @@ fun InteractiveDemoMap(
                     val targetLng = userCoords?.second ?: 77.2090
                     val isBookedOrAccepted = rideBookingStatus == "REQUESTED" || rideBookingStatus == "ACCEPTED"
                     mapViewRef?.controller?.setZoom(if (isBookedOrAccepted) 16.8 else 15.0)
-                    mapViewRef?.controller?.setCenter(GeoPoint(targetLat, targetLng))
+                    mapViewRef?.controller?.animateTo(GeoPoint(targetLat, targetLng))
                     onRecenter()
                 },
                 modifier = Modifier

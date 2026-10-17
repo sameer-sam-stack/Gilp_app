@@ -61,7 +61,7 @@ class HomeViewModel(
 
     private val TAG = "HomeViewModel"
 
-    private val _uiState = MutableStateFlow(HomeUiState(isLoading = true))
+    private val _uiState = MutableStateFlow(HomeUiState(isLoading = false))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     // Distinct soft light colors for individual vehicle routes matching user requirement
@@ -247,8 +247,6 @@ class HomeViewModel(
      */
     fun applyRealDriverSearch() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = it.vehicles.isEmpty()) }
-
             val pLat = _uiState.value.pickupLat
             val pLng = _uiState.value.pickupLng
             val dLat = _uiState.value.dropLat

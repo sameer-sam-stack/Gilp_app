@@ -132,19 +132,18 @@ fun ServicesScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // New Bottom AD container requested by user
+        // New Bottom AD container requested by user: enlarged from bottom
         AdBannerBox(
             slotId = AdConfig.SLOT_SERVICES_BOTTOM_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(115.dp)
-                .padding(bottom = 20.dp),
+                .height(160.dp),
             shape = RoundedCornerShape(16.dp),
             fallbackContent = {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(115.dp),
+                        .height(160.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
@@ -168,6 +167,8 @@ fun ServicesScreen(
                 }
             }
         )
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 

@@ -30,7 +30,7 @@ import com.glip.app.ui.personal.PersonalVehicleScreen
 import androidx.compose.ui.text.font.FontWeight
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.components.AppLoadingSplashScreen
-import com.glip.app.util.LocationTracker
+import com.glip.app.data.supabase.RideRequestClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -71,6 +71,7 @@ fun AppNavigation(
     var isParcelBookingOpen by remember { mutableStateOf(false) }
     var isSchoolVehicleOpen by remember { mutableStateOf(false) }
     var isPersonalVehicleOpen by remember { mutableStateOf(false) }
+    var isPersonalSearchFromServices by remember { mutableStateOf(false) }
 
     if (isAppLoading) {
         AppLoadingSplashScreen(modifier = modifier)
@@ -124,10 +125,19 @@ fun AppNavigation(
 
                 // Pass selected route corridor coordinates to HomeViewModel so matching vehicles appear
                 homeViewModel.setTripCoordinates(pickup, drop, pLat, pLng, dLat, dLng)
+                if (isPersonalSearchFromServices) {
+                    homeViewModel.skipRouteSearchAndOpenPersonal()
+                    isPersonalSearchFromServices = false
+                }
             },
             onCancel = {
+                if (isPersonalSearchFromServices) {
+                    isPersonalSearchFromServices = false
+                    currentBottomTab = 1
+                } else {
+                    currentBottomTab = 0
+                }
                 hasSearchedRide = true
-                currentBottomTab = 0
             },
             modifier = modifier.fillMaxSize()
         )
@@ -173,30 +183,8 @@ fun AppNavigation(
                             isSchoolVehicleOpen = true
                         },
                         onNavigateToPersonalVehicle = {
-                            isPersonalVehicleOpen = false
-                            currentBottomTab = 0
-                            hasSearchedRide = true
-                            if (selectedPickup.isBlank()) {
-                                val currentLoc = LocationTracker.currentAddress.value ?: "SH5, Gol Bazar, Mamta Nagar, Rajnandgaon"
-                                val coords = LocationTracker.currentCoordinates.value
-                                selectedPickup = currentLoc
-                                selectedPickupLat = coords?.first ?: 21.0970
-                                selectedPickupLng = coords?.second ?: 81.0315
-                            }
-                            if (selectedDrop.isBlank()) {
-                                selectedDrop = "Baldeo Bagh, Rajnandgaon"
-                                selectedDropLat = 21.1042
-                                selectedDropLng = 81.0378
-                            }
-                            homeViewModel.setTripCoordinates(
-                                selectedPickup,
-                                selectedDrop,
-                                selectedPickupLat,
-                                selectedPickupLng,
-                                selectedDropLat,
-                                selectedDropLng
-                            )
-                            homeViewModel.setPersonalRideMode(true)
+                            isPersonalSearchFromServices = true
+                            hasSearchedRide = false
                         },
                         modifier = contentModifier
                     )

@@ -156,6 +156,25 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Section: My Activity (Requested by user)
+            Text(
+                text = "My Activity",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ProfileOptionItem(
+                icon = Icons.Default.History,
+                title = "My History",
+                subtitle = "Past rides, parcel bookings & receipts",
+                onClick = { /* Placeholder for future ride history */ }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             // Section: App Settings
             Text(
                 text = stringResource(id = R.string.settings_title),
