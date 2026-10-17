@@ -9,10 +9,10 @@ android {
     compileSdk = 36
     defaultConfig {
         applicationId = "com.glip.app"
-        minSdk = 21
+        minSdk = 24
         targetSdk = 35
-        versionCode = 32
-        versionName = "3.9"
+        versionCode = 33
+        versionName = "4.0"
 
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -21,30 +21,6 @@ android {
 
     signingConfigs {
         getByName("debug") {
-            val ks = file("keystore/debug.keystore")
-            if (ks.exists()) {
-                storeFile = ks
-                storePassword = "androiddebugkey"
-                keyAlias = "androiddebugkey"
-                keyPassword = "androiddebugkey"
-                storeType = "PKCS12"
-            }
-            enableV1Signing = true
-            enableV2Signing = true
-            enableV3Signing = true
-            enableV4Signing = true
-        }
-        create("release") {
-            val ks = file("keystore/debug.keystore")
-            if (ks.exists()) {
-                storeFile = ks
-                storePassword = "androiddebugkey"
-                keyAlias = "androiddebugkey"
-                keyPassword = "androiddebugkey"
-                storeType = "PKCS12"
-            } else {
-                initWith(getByName("debug"))
-            }
             enableV1Signing = true
             enableV2Signing = true
             enableV3Signing = true
@@ -53,12 +29,9 @@ android {
     }
 
     buildTypes {
-        debug {
-            signingConfig = signingConfigs.getByName("debug")
-        }
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
