@@ -6,13 +6,13 @@ plugins {
 
 android {
     namespace = "com.glip.app"
-    compileSdk = 36
+    compileSdk = 35
     defaultConfig {
         applicationId = "com.glip.app"
         minSdk = 24
-        targetSdk = 36
-        versionCode = 19
-        versionName = "2.9"
+        targetSdk = 35
+        versionCode = 20
+        versionName = "2.9.1"
     }
 
     buildTypes {
