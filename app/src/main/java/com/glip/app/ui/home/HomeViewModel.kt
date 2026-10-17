@@ -490,16 +490,26 @@ class HomeViewModel(
             val dLng = _uiState.value.dropLng
 
             val onlineDrivers = _uiState.value.allOnlineDrivers
-            // STRICT CATEGORY MATCH: Ensure a bike ride ONLY goes to a bike driver, auto to auto, cab to cab!
+            // Match drivers of this vehicle category, or nearest online driver partner
             val matchingDrivers = onlineDrivers.filter { drv ->
                 drv.isOnline && drv.matchesCategory(selectedOption.type.name)
             }
 
-            if (matchingDrivers.isEmpty()) {
+            val nearestDriver = matchingDrivers.minByOrNull { drv ->
+                val results = FloatArray(1)
+                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
+                results[0]
+            } ?: onlineDrivers.filter { it.isOnline }.minByOrNull { drv ->
+                val results = FloatArray(1)
+                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
+                results[0]
+            }
+
+            if (nearestDriver == null && onlineDrivers.none { it.isOnline }) {
                 _uiState.update {
                     it.copy(
                         rideBookingStatus = "NONE",
-                        bookingError = "Kshama karein, koi bhi ${selectedOption.type.displayName} driver is waqt online nahi hai. Kripya doosra available vehicle chunein."
+                        bookingError = "Kshama karein, koi bhi driver is waqt online nahi hai. Kripya Driver app me Online jayein."
                     )
                 }
                 return@launch
@@ -512,12 +522,6 @@ class HomeViewModel(
                     bookingError = null,
                     rideOtp = generatedOtp
                 )
-            }
-
-            val nearestDriver = matchingDrivers.minByOrNull { drv ->
-                val results = FloatArray(1)
-                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
-                results[0]
             }
 
             val targetDriverUuid = nearestDriver?.id?.takeIf { RideRequestClient.isValidUuid(it) }

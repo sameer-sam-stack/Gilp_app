@@ -20,35 +20,35 @@ enum class PersonalVehicleType(
         categoryId = "BIKE",
         displayName = "Bike",
         capacity = 1,
-        perKmRate = 22.0, // Exact user requirement: 1 KM = 22 rupees
-        minFare = 25.0,
+        perKmRate = 16.0, // Exact user requirement: ₹16 - 1 KM, 1 Seat
+        minFare = 16.0,
         iconEmoji = "🏍️",
         description = "Quick 1-passenger bike ride"
     ),
     E_RICKSHAW(
         categoryId = "E_RICKSHAW",
-        displayName = "E-Rickshaw",
-        capacity = 4,
-        perKmRate = 27.0, // Exact user requirement: 1 KM = 27 rupees
-        minFare = 30.0,
+        displayName = "E - Rickshaw",
+        capacity = 5,
+        perKmRate = 22.0, // Exact user requirement: ₹22 - 1 KM, 5 Seats
+        minFare = 22.0,
         iconEmoji = "🛺",
-        description = "Eco-friendly battery rickshaw"
+        description = "5-Seater electric rickshaw"
     ),
     AUTO(
         categoryId = "AUTO",
         displayName = "Auto",
-        capacity = 3,
-        perKmRate = 30.0, // Exact user requirement: 1 KM = 30 rupees
-        minFare = 35.0,
+        capacity = 7,
+        perKmRate = 27.0, // Exact user requirement: ₹27 - 1 KM, 7 Seats
+        minFare = 27.0,
         iconEmoji = "🛺",
-        description = "Dedicated 3-wheeler auto"
+        description = "7-Seater auto rickshaw"
     ),
     CAB(
         categoryId = "CAB",
-        displayName = "Cab / Taxi",
+        displayName = "CAB",
         capacity = 4,
-        perKmRate = 40.0, // Exact user requirement: 1 KM = 40 rupees
-        minFare = 60.0,
+        perKmRate = 31.0, // Exact user requirement: ₹31 - 1 KM, 4 Seats
+        minFare = 31.0,
         iconEmoji = "🚗",
         description = "Comfortable 4-wheeler AC cab"
     )
@@ -147,11 +147,15 @@ object FareCalculationEngine {
         ).map { type ->
             val fare = calculatePersonalFare(distanceKm, type)
 
-            // Check if there is an online driver matching this exact vehicle category
+            // Check if there is an online driver matching this exact vehicle category or any nearby online driver
             val matchingDrivers = nearbyDrivers.filter { it.matchesCategory(type.name) }
-            val isAvailable = if (onlineDrivers.isEmpty()) true else matchingDrivers.isNotEmpty()
+            val isAvailable = if (onlineDrivers.isEmpty()) true else (matchingDrivers.isNotEmpty() || nearbyDrivers.isNotEmpty())
 
             val nearest = matchingDrivers.minByOrNull { drv ->
+                val res = FloatArray(1)
+                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, res)
+                res[0]
+            } ?: nearbyDrivers.minByOrNull { drv ->
                 val res = FloatArray(1)
                 Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, res)
                 res[0]

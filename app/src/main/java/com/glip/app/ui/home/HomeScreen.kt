@@ -616,7 +616,7 @@ fun PersonalRideOptionsCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 3. Vehicle Category Rows (Bike ₹22/km, E-Rickshaw ₹27/km, Auto ₹30/km, Cab ₹40/km) matching Screenshot 1
+            // 3. Vehicle Category Rows: Bike ₹16/km (1 Seat), E - Rickshaw ₹22/km (5 Seats), Auto ₹27/km (7 Seats), CAB ₹31/km (4 Seats)
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
