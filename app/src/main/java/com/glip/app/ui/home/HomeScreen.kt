@@ -204,39 +204,7 @@ fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
-
-        // View toggle & Active vehicles counter
-        if (uiState.rideBookingStatus != "ACCEPTED") {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "${uiState.filteredVehicles.size} active vehicle(s) on your route",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-                TextButton(
-                    onClick = { viewModel.toggleFallbackListView() },
-                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)
-                ) {
-                    Text(
-                        text = if (uiState.isFallbackListVisible) "Show Map" else "Show List",
-                        fontSize = 12.sp,
-                        color = GlipGreenPrimary,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-        }
+        Spacer(modifier = Modifier.height(4.dp))
 
         // 3. Bottom Cards Area
         if (uiState.rideBookingStatus == "ACCEPTED") {
@@ -401,23 +369,11 @@ fun HomeScreen(
             if (isSearchingRoute) {
                 // 60-Second Route Vehicle Search Radar Card (Auto-switches to Personal if no route driver joins)
                 val effectiveKm = if (uiState.tripDistanceKm > 0.0) uiState.tripDistanceKm else 5.4
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    RouteVehicleSearchingCard(
-                        secondsRemaining = uiState.routeSearchSecondsRemaining,
-                        distanceKm = effectiveKm,
-                        onSkipToPersonal = { viewModel.skipRouteSearchAndOpenPersonal() }
-                    )
-
-                    // Trailing AD Container: Kept 100% Intact as specified by user
-                    AdBannerBox(
-                        slotId = AdConfig.SLOT_HOME_VEHICLE_TRAILING_CARD,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .padding(horizontal = 14.dp, vertical = 4.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                }
+                RouteVehicleSearchingCard(
+                    secondsRemaining = uiState.routeSearchSecondsRemaining,
+                    distanceKm = effectiveKm,
+                    onSkipToPersonal = { viewModel.skipRouteSearchAndOpenPersonal() }
+                )
             } else {
                 // Mode Selector Tabs (only shown when vehicles exist along the corridor)
                 if (uiState.filteredVehicles.isNotEmpty()) {
@@ -518,31 +474,19 @@ fun HomeScreen(
                 }
                 val selectedPersonal = uiState.selectedPersonalOption ?: personalOptions.firstOrNull { it.type == PersonalVehicleType.AUTO } ?: personalOptions.firstOrNull()
 
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    PersonalRideOptionsCard(
-                        options = personalOptions,
-                        selectedOption = selectedPersonal,
-                        onSelectOption = { viewModel.selectPersonalOption(it) },
-                        onBookClick = { opt ->
-                            viewModel.bookPersonalRide(opt, userName, userPhone)
-                        },
-                        canSwitchToPooling = uiState.filteredVehicles.isNotEmpty(),
-                        onSwitchToPooling = { viewModel.setPersonalRideMode(false) },
-                        distanceKm = effectiveKm,
-                        isRequested = uiState.rideBookingStatus == "REQUESTED",
-                        isCorridorEmpty = uiState.filteredVehicles.isEmpty()
-                    )
-
-                    // Trailing AD Container: Kept 100% Intact as specified by user
-                    AdBannerBox(
-                        slotId = AdConfig.SLOT_HOME_VEHICLE_TRAILING_CARD,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .padding(horizontal = 14.dp, vertical = 4.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                }
+                PersonalRideOptionsCard(
+                    options = personalOptions,
+                    selectedOption = selectedPersonal,
+                    onSelectOption = { viewModel.selectPersonalOption(it) },
+                    onBookClick = { opt ->
+                        viewModel.bookPersonalRide(opt, userName, userPhone)
+                    },
+                    canSwitchToPooling = uiState.filteredVehicles.isNotEmpty(),
+                    onSwitchToPooling = { viewModel.setPersonalRideMode(false) },
+                    distanceKm = effectiveKm,
+                    isRequested = uiState.rideBookingStatus == "REQUESTED",
+                    isCorridorEmpty = uiState.filteredVehicles.isEmpty()
+                )
             } else {
                 // SHARED POOLING VEHICLES LIST
                 LazyRow(
@@ -563,17 +507,6 @@ fun HomeScreen(
                                 viewModel.bookSelectedVehicle(vehicle, userName, userPhone)
                             },
                             modifier = Modifier.width(120.dp)
-                        )
-                    }
-
-                    // Trailing AD Container: Kept 100% Intact as specified by user
-                    item {
-                        AdBannerBox(
-                            slotId = AdConfig.SLOT_HOME_VEHICLE_TRAILING_CARD,
-                            modifier = Modifier
-                                .width(120.dp)
-                                .height(120.dp),
-                            shape = RoundedCornerShape(12.dp)
                         )
                     }
                 }
