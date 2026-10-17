@@ -56,9 +56,6 @@ fun PersonalVehicleScreen(
         onNavigateBack()
     }
 
-    // 0 = "Book Vehicle", 1 = "History"
-    var selectedTab by remember { mutableIntStateOf(0) }
-
     // Live coordinates and address
     val liveAddress by LocationTracker.currentAddress.collectAsState()
     val liveCoords by LocationTracker.currentCoordinates.collectAsState()
@@ -169,7 +166,7 @@ fun PersonalVehicleScreen(
                             color = Color(0xFF0F172A)
                         )
                         Text(
-                            text = if (selectedTab == 0) "Book Private Ride" else "My Ride History",
+                            text = "Book Private Ride",
                             fontSize = 12.sp,
                             color = Color(0xFF64748B)
                         )
@@ -184,69 +181,12 @@ fun PersonalVehicleScreen(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            // TAB SWITCHER [ Book Vehicle | History ]
-            Surface(
+            // BOOKING FORM
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                shape = RoundedCornerShape(28.dp),
-                color = Color(0xFFF1F5F9),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    // Tab 0: Book Vehicle
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(if (selectedTab == 0) Color.White else Color.Transparent)
-                            .clickable { selectedTab = 0 }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Book Vehicle",
-                            fontSize = 14.sp,
-                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium,
-                            color = if (selectedTab == 0) Color(0xFF16A34A) else Color(0xFF64748B)
-                        )
-                    }
-
-                    // Tab 1: History
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(if (selectedTab == 1) Color.White else Color.Transparent)
-                            .clickable {
-                                bookingsHistory = PersonalBookingRepository.getBookings(context)
-                                selectedTab = 1
-                            }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "History",
-                            fontSize = 14.sp,
-                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium,
-                            color = if (selectedTab == 1) Color(0xFF16A34A) else Color(0xFF64748B)
-                        )
-                    }
-                }
-            }
-
-            if (selectedTab == 0) {
-                // TAB 0: BOOKING FORM
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                ) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
@@ -682,57 +622,6 @@ fun PersonalVehicleScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-            } else {
-                // TAB 1: HISTORY (Saved in app only, not in external DB)
-                if (bookingsHistory.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(20.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Default.DirectionsCar,
-                                contentDescription = "No Bookings",
-                                tint = Color(0xFF94A3B8),
-                                modifier = Modifier.size(56.dp)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "No Personal Vehicle Rides Yet",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF334155)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Your private ride history will appear here.",
-                                fontSize = 13.sp,
-                                color = Color(0xFF64748B),
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Button(
-                                onClick = { selectedTab = 0 },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Book a Personal Vehicle")
-                            }
-                        }
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(bookingsHistory, key = { it.id }) { item ->
-                            PersonalBookingCard(item = item)
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -741,7 +630,7 @@ fun PersonalVehicleScreen(
         AlertDialog(
             onDismissRequest = {
                 showSuccessDialog = false
-                selectedTab = 1 // Switch to History
+                onNavigateBack()
             },
             icon = {
                 Icon(
@@ -761,7 +650,7 @@ fun PersonalVehicleScreen(
             },
             text = {
                 Text(
-                    text = "A driver has been assigned to your private ride. You can view full details in your ride history.",
+                    text = "A driver has been assigned to your private ride.",
                     fontSize = 14.sp,
                     color = Color(0xFF475569),
                     textAlign = TextAlign.Center
@@ -771,7 +660,7 @@ fun PersonalVehicleScreen(
                 Button(
                     onClick = {
                         showSuccessDialog = false
-                        selectedTab = 1
+                        onNavigateBack()
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF16A34A),
