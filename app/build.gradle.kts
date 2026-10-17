@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.glip.app"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "com.glip.app"
         minSdk = 24
