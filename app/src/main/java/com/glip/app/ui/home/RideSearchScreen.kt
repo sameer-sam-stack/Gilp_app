@@ -255,21 +255,21 @@ fun RideSearchScreen(
         ) {
             Spacer(modifier = Modifier.height(4.dp))
 
-            // TOP SECTION: Top Hero Ad Banner (Enlarged to 190dp)
+            // TOP SECTION: Top Hero Ad Banner (Compact height 140dp as requested)
             AdBannerBox(
                 slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_BANNER,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(190.dp),
-                shape = RoundedCornerShape(18.dp)
+                    .height(140.dp),
+                shape = RoundedCornerShape(16.dp)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // FLOATING PICKUP & DROP CARD (Compact height and padding)
+            // FLOATING PICKUP & DROP CARD (Matching 2nd image exactly)
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
                 ),
@@ -279,7 +279,7 @@ fun RideSearchScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .padding(16.dp)
                 ) {
                     // Vertical Route Indicator + Two Address Rows (Matching 2nd image exactly)
                     Row(
@@ -291,16 +291,16 @@ fun RideSearchScreen(
                             modifier = Modifier.width(20.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            // Top Green Dot Box (matching pickup row height 38.dp, centered at 19.dp)
+                            // Top Green Dot Box (matching pickup row height 48.dp, centered at 24.dp)
                             Box(
-                                modifier = Modifier.height(38.dp),
+                                modifier = Modifier.height(48.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .width(2.dp)
                                         .fillMaxHeight()
-                                        .padding(top = 19.dp)
+                                        .padding(top = 24.dp)
                                         .background(Color(0xFFCBD5E1))
                                 )
                                 Box(
@@ -319,16 +319,16 @@ fun RideSearchScreen(
                                     .background(Color(0xFFCBD5E1))
                             )
 
-                            // Bottom Red Dot Box (matching drop row height 38.dp, centered at 19.dp)
+                            // Bottom Red Dot Box (matching drop row height 48.dp, centered at 24.dp)
                             Box(
-                                modifier = Modifier.height(38.dp),
+                                modifier = Modifier.height(48.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .width(2.dp)
                                         .fillMaxHeight()
-                                        .padding(bottom = 19.dp)
+                                        .padding(bottom = 24.dp)
                                         .background(Color(0xFFCBD5E1))
                                 )
                                 Box(
@@ -348,7 +348,7 @@ fun RideSearchScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(38.dp),
+                                    .height(48.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 BasicTextField(
@@ -368,7 +368,7 @@ fun RideSearchScreen(
                                             }
                                         },
                                     textStyle = TextStyle(
-                                        fontSize = 14.5.sp,
+                                        fontSize = 15.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = Color(0xFF0F172A)
                                     ),
@@ -376,7 +376,7 @@ fun RideSearchScreen(
                                         if (pickup.isEmpty()) {
                                             Text(
                                                 text = "Enter Pickup Location",
-                                                fontSize = 14.5.sp,
+                                                fontSize = 15.sp,
                                                 color = Color(0xFF94A3B8)
                                             )
                                         }
@@ -390,13 +390,13 @@ fun RideSearchScreen(
                                         activeField = null
                                         selectingLocationMode = "pickup"
                                     },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(36.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.MyLocation,
                                         contentDescription = "Pick Pickup on Map",
                                         tint = Color(0xFF10B981),
-                                        modifier = Modifier.size(19.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
@@ -410,7 +410,7 @@ fun RideSearchScreen(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(38.dp),
+                                    .height(48.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 BasicTextField(
@@ -430,7 +430,7 @@ fun RideSearchScreen(
                                             }
                                         },
                                     textStyle = TextStyle(
-                                        fontSize = 14.5.sp,
+                                        fontSize = 15.sp,
                                         fontWeight = FontWeight.Medium,
                                         color = Color(0xFF0F172A)
                                     ),
@@ -438,7 +438,7 @@ fun RideSearchScreen(
                                         if (drop.isEmpty()) {
                                             Text(
                                                 text = "Enter Drop Location",
-                                                fontSize = 14.5.sp,
+                                                fontSize = 15.sp,
                                                 color = Color(0xFF94A3B8)
                                             )
                                         }
@@ -452,13 +452,13 @@ fun RideSearchScreen(
                                         activeField = null
                                         selectingLocationMode = "drop"
                                     },
-                                    modifier = Modifier.size(32.dp)
+                                    modifier = Modifier.size(36.dp)
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.MyLocation,
                                         contentDescription = "Pick Drop on Map",
                                         tint = Color(0xFFEF4444),
-                                        modifier = Modifier.size(19.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
@@ -467,7 +467,7 @@ fun RideSearchScreen(
 
                     // Real-time Autocomplete Suggestions Dropdown
                     if (activeField != null && (currentQuery.trim().length >= 2 || isSearchingPlaces || suggestions.isNotEmpty())) {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
                         PlaceAutocompleteDropdown(
                             suggestions = suggestions,
                             isLoading = isSearchingPlaces,
@@ -493,7 +493,7 @@ fun RideSearchScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             // CHOOSE YOUR VEHICLE HEADING (Matching Image exactly)
             Row(
@@ -502,13 +502,13 @@ fun RideSearchScreen(
             ) {
                 Text(
                     text = "Choose Your Vehicle",
-                    fontSize = 17.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // 4 VEHICLE OPTION CARDS (Matching Image exactly)
             Column(
