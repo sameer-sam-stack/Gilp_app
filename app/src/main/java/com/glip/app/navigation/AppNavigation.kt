@@ -100,6 +100,10 @@ fun AppNavigation(
         RideSearchScreen(
             initialPickup = selectedPickup,
             initialDrop = selectedDrop,
+            initialPickupLat = selectedPickupLat,
+            initialPickupLng = selectedPickupLng,
+            initialDropLat = selectedDropLat,
+            initialDropLng = selectedDropLng,
             onConfirmRideSearch = { pickup, drop, pLat, pLng, dLat, dLng ->
                 selectedPickup = pickup
                 selectedDrop = drop
@@ -139,7 +143,10 @@ fun AppNavigation(
                         dropLocation = selectedDrop,
                         userName = profile?.fullName ?: "",
                         userPhone = profile?.phoneNumber ?: "",
-                        onChangeLocation = { hasSearchedRide = false },
+                        onChangeLocation = {
+                            homeViewModel.cancelCurrentRide()
+                            hasSearchedRide = false
+                        },
                         modifier = contentModifier
                     )
                 }

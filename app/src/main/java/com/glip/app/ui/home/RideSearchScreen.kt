@@ -54,6 +54,10 @@ import kotlinx.coroutines.delay
 fun RideSearchScreen(
     initialPickup: String = "",
     initialDrop: String = "",
+    initialPickupLat: Double = 0.0,
+    initialPickupLng: Double = 0.0,
+    initialDropLat: Double = 0.0,
+    initialDropLng: Double = 0.0,
     onConfirmRideSearch: (
         pickup: String,
         drop: String,
@@ -75,13 +79,21 @@ fun RideSearchScreen(
     var pickup by remember { mutableStateOf(initialPickup) }
     var drop by remember { mutableStateOf(initialDrop) }
 
-    // Coordinates state
-    var pickupCoordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    var dropCoordinates by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    // Coordinates state - initialized from passed coordinates if available
+    var pickupCoordinates by remember {
+        mutableStateOf<Pair<Double, Double>?>(
+            if (initialPickupLat != 0.0 && initialPickupLng != 0.0) Pair(initialPickupLat, initialPickupLng) else null
+        )
+    }
+    var dropCoordinates by remember {
+        mutableStateOf<Pair<Double, Double>?>(
+            if (initialDropLat != 0.0 && initialDropLng != 0.0) Pair(initialDropLat, initialDropLng) else null
+        )
+    }
 
     // Selection validity tracking
-    var isPickupSelected by remember { mutableStateOf(initialPickup.isNotBlank()) }
-    var isDropSelected by remember { mutableStateOf(initialDrop.isNotBlank()) }
+    var isPickupSelected by remember { mutableStateOf(initialPickup.isNotBlank() || (initialPickupLat != 0.0 && initialPickupLng != 0.0)) }
+    var isDropSelected by remember { mutableStateOf(initialDrop.isNotBlank() || (initialDropLat != 0.0 && initialDropLng != 0.0)) }
 
     // Autocomplete active field: null, "pickup", or "drop"
     var activeField by remember { mutableStateOf<String?>(null) }
@@ -570,10 +582,10 @@ fun RideSearchScreen(
                                 if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
                                     showSameLocationDialog = true
                                 } else {
-                                    val pLat = pickupCoordinates?.first ?: 28.6139
-                                    val pLng = pickupCoordinates?.second ?: 77.2090
-                                    val dLat = dropCoordinates?.first ?: 28.5355
-                                    val dLng = dropCoordinates?.second ?: 77.3910
+                                    val pLat = pickupCoordinates?.first ?: if (initialPickupLat != 0.0) initialPickupLat else (liveCoords?.first ?: 28.6139)
+                                    val pLng = pickupCoordinates?.second ?: if (initialPickupLng != 0.0) initialPickupLng else (liveCoords?.second ?: 77.2090)
+                                    val dLat = dropCoordinates?.first ?: if (initialDropLat != 0.0) initialDropLat else 28.5355
+                                    val dLng = dropCoordinates?.second ?: if (initialDropLng != 0.0) initialDropLng else 77.3910
                                     onConfirmRideSearch(pickup.trim(), drop.trim(), pLat, pLng, dLat, dLng)
                                 }
                             }

@@ -105,7 +105,15 @@ class HomeViewModel(
                 pickupLat = pLat,
                 pickupLng = pLng,
                 dropLat = dLat,
-                dropLng = dLng
+                dropLng = dLng,
+                tripDistanceKm = 0.0,
+                personalOptions = emptyList(),
+                selectedPersonalOption = null,
+                passengerRoutePoints = emptyList(),
+                selectedVehicle = null,
+                acceptedVehicle = null,
+                rideBookingStatus = "NONE",
+                bookingError = null
             )
         }
         computeRoadDistanceAndPricing(pLat, pLng, dLat, dLng)
@@ -121,17 +129,19 @@ class HomeViewModel(
                 destLat = dLat,
                 destLng = dLng
             )
-            val distanceKm = (roadResult?.distanceMeters ?: 4000.0) / 1000.0
+            val rawKm = (roadResult?.distanceMeters ?: 4000.0) / 1000.0
+            val distanceKm = Math.round(rawKm * 10.0) / 10.0
             val personalOpts = FareCalculationEngine.getPersonalOptions(distanceKm)
             val defaultSel = personalOpts.firstOrNull { it.type == PersonalVehicleType.AUTO } ?: personalOpts.firstOrNull()
             val poolEst = FareCalculationEngine.calculatePoolingFare(distanceKm, occupiedSeats = 1)
             val routePoints = roadResult?.points ?: emptyList()
 
             _uiState.update { current ->
+                val freshSelected = personalOpts.firstOrNull { it.type == current.selectedPersonalOption?.type } ?: defaultSel
                 current.copy(
                     tripDistanceKm = distanceKm,
                     personalOptions = personalOpts,
-                    selectedPersonalOption = current.selectedPersonalOption ?: defaultSel,
+                    selectedPersonalOption = freshSelected,
                     poolingFareEstimate = poolEst,
                     passengerRoutePoints = routePoints
                 )
@@ -640,6 +650,7 @@ class HomeViewModel(
                     rideBookingStatus = "NONE",
                     activeRequestId = null,
                     acceptedVehicle = null,
+                    selectedVehicle = null,
                     passengerRoutePoints = emptyList(),
                     bookingError = null
                 )

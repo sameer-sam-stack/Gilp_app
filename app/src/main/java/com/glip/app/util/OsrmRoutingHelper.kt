@@ -102,9 +102,14 @@ object OsrmRoutingHelper {
             } catch (_: Exception) {}
         }
 
-        // Fallback: If network timed out, reuse any cached route ending at same destination
-        val rDLat = (destLat * 1000).toInt()
-        val rDLng = (destLng * 1000).toInt()
-        routeCache.entries.firstOrNull { it.key.endsWith("_${rDLat}_${rDLng}") }?.value?.second
+        // Fallback: If network timed out, use straight-line road distance approximation with curvature factor
+        val results = FloatArray(1)
+        android.location.Location.distanceBetween(originLat, originLng, destLat, destLng, results)
+        val approxMeters = results[0].toDouble() * 1.3
+        RoadRouteResult(
+            points = listOf(GeoPoint(originLat, originLng), GeoPoint(destLat, destLng)),
+            distanceMeters = approxMeters,
+            durationSeconds = (approxMeters / 1000.0) / 25.0 * 3600.0
+        )
     }
 }
