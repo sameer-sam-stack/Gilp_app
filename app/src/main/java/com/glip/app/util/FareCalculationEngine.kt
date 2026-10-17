@@ -1,5 +1,7 @@
 package com.glip.app.util
 
+import android.location.Location
+import com.glip.app.data.supabase.RemoteDriver
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -9,55 +11,46 @@ enum class PersonalVehicleType(
     val categoryId: String,
     val displayName: String,
     val capacity: Int,
-    val baseFare: Double,
     val perKmRate: Double,
     val minFare: Double,
+    val iconEmoji: String,
     val description: String
 ) {
     BIKE(
         categoryId = "BIKE",
         displayName = "Bike",
         capacity = 1,
-        baseFare = 25.0,
-        perKmRate = 11.0,
+        perKmRate = 22.0, // Exact user requirement: 1 KM = 22 rupees
+        minFare = 25.0,
+        iconEmoji = "🏍️",
+        description = "Quick 1-passenger bike ride"
+    ),
+    E_RICKSHAW(
+        categoryId = "E_RICKSHAW",
+        displayName = "E-Rickshaw",
+        capacity = 4,
+        perKmRate = 27.0, // Exact user requirement: 1 KM = 27 rupees
         minFare = 30.0,
-        description = "Quick Bike rides"
+        iconEmoji = "🛺",
+        description = "Eco-friendly battery rickshaw"
     ),
     AUTO(
         categoryId = "AUTO",
         displayName = "Auto",
         capacity = 3,
-        baseFare = 0.0,
-        perKmRate = 22.0, // Exact rate per user: 1 KM = 22 rupees (5.4 km * 22 = ₹118.8 -> ₹118)
-        minFare = 45.0,
-        description = "Affordable, dedicated auto rides"
+        perKmRate = 30.0, // Exact user requirement: 1 KM = 30 rupees
+        minFare = 35.0,
+        iconEmoji = "🛺",
+        description = "Dedicated 3-wheeler auto"
     ),
-    CAB_MINI(
-        categoryId = "CAB_MINI",
-        displayName = "Cab Economy",
+    CAB(
+        categoryId = "CAB",
+        displayName = "Cab / Taxi",
         capacity = 4,
-        baseFare = 40.0,
-        perKmRate = 20.0,
-        minFare = 90.0,
-        description = "Comfy hatchback cabs"
-    ),
-    CAB_PREMIUM(
-        categoryId = "CAB_PREMIUM",
-        displayName = "Cab Premium",
-        capacity = 4,
-        baseFare = 60.0,
-        perKmRate = 26.0,
-        minFare = 130.0,
-        description = "Spacious sedans with top drivers"
-    ),
-    CAB_XL(
-        categoryId = "CAB_XL",
-        displayName = "Cab XL",
-        capacity = 6,
-        baseFare = 80.0,
-        perKmRate = 32.0,
-        minFare = 180.0,
-        description = "SUV 6-seater for groups & luggage"
+        perKmRate = 40.0, // Exact user requirement: 1 KM = 40 rupees
+        minFare = 60.0,
+        iconEmoji = "🚗",
+        description = "Comfortable 4-wheeler AC cab"
     )
 }
 
@@ -66,7 +59,8 @@ data class PersonalFareEstimate(
     val fareAmount: Int,
     val etaMinutes: Int,
     val dropTimeFormatted: String,
-    val distanceKm: Double
+    val distanceKm: Double,
+    val isAvailable: Boolean = true
 )
 
 data class PoolingFareEstimate(
@@ -79,36 +73,29 @@ data class PoolingFareEstimate(
 
 /**
  * Intelligent Dynamic Pricing Engine for Glip Mobility.
- * Handles:
- * 1. Sahi Road KM upfront calculation.
- * 2. Personal Vehicle (Rapido / Uber Style Solo Rides) at ₹22/KM Auto base.
- * 3. Shared Route Pooling with progressive 40%-60% passenger seat sharing discounts.
+ * Enforces exact user per-KM rates:
+ * - Bike: ₹22/KM
+ * - E-Rickshaw: ₹27/KM
+ * - Auto: ₹30/KM
+ * - Cab: ₹40/KM
+ *
+ * Checks driver vehicle type and live online presence so only genuine available vehicles
+ * can be booked.
  */
 object FareCalculationEngine {
-    const val AUTO_RATE_PER_KM = 22.0
 
     /**
      * Calculates upfront fare for Personal Solo Rides.
-     * Matches user screenshot: 5.4 km Auto -> ₹118, Bike -> ₹84.
      */
     fun calculatePersonalFare(distanceKm: Double, type: PersonalVehicleType): Int {
         val safeKm = distanceKm.coerceAtLeast(0.5)
-        val rawFare = when (type) {
-            PersonalVehicleType.AUTO -> safeKm * AUTO_RATE_PER_KM
-            PersonalVehicleType.BIKE -> type.baseFare + (safeKm * type.perKmRate)
-            else -> type.baseFare + (safeKm * type.perKmRate)
-        }
+        val rawFare = safeKm * type.perKmRate
         return rawFare.roundToInt().coerceAtLeast(type.minFare.toInt())
     }
 
     /**
      * Calculates upfront fare for Shared Route Pooling (Ola Share / Uber Pool).
      * Distributes fuel & driver cost across co-passengers.
-     * Occupied seats reduce each passenger's price:
-     * - 0 co-passengers: 30% discount off personal fare
-     * - 1 co-passenger: 45% discount off personal fare
-     * - 2 co-passengers: 52% discount off personal fare (e.g. ₹61 vs ₹118)
-     * - 3+ co-passengers: 58% discount off personal fare
      */
     fun calculatePoolingFare(distanceKm: Double, occupiedSeats: Int): PoolingFareEstimate {
         val personalFare = calculatePersonalFare(distanceKm, PersonalVehicleType.AUTO)
@@ -118,7 +105,7 @@ object FareCalculationEngine {
             2 -> 0.48
             else -> 0.42
         }
-        val poolFare = (personalFare * discountFactor).roundToInt().coerceAtLeast(25)
+        val poolFare = (personalFare * discountFactor).roundToInt().coerceAtLeast(20)
         val savings = (personalFare - poolFare).coerceAtLeast(0)
         val discountPct = (((personalFare - poolFare).toDouble() / personalFare) * 100).roundToInt().coerceIn(15, 65)
 
@@ -132,27 +119,58 @@ object FareCalculationEngine {
     }
 
     /**
-     * Generates all personal vehicle options matching the user's reference design.
+     * Generates personal vehicle options with live availability checks against nearby online drivers.
      */
-    fun getPersonalOptions(distanceKm: Double, baseEtaMinutes: Int = 3): List<PersonalFareEstimate> {
+    fun getPersonalOptions(
+        distanceKm: Double,
+        pLat: Double = 0.0,
+        pLng: Double = 0.0,
+        onlineDrivers: List<RemoteDriver> = emptyList(),
+        baseEtaMinutes: Int = 3
+    ): List<PersonalFareEstimate> {
         val format = SimpleDateFormat("hh:mm a", Locale.getDefault())
+
+        // Filter drivers who are currently online and within a reasonable city radius (25 km)
+        val nearbyDrivers = onlineDrivers.filter { drv ->
+            if (!drv.isOnline) return@filter false
+            if (pLat == 0.0 || pLng == 0.0 || drv.currentLat == 0.0 || drv.currentLng == 0.0) return@filter true
+            val results = FloatArray(1)
+            Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
+            results[0] <= 25_000f
+        }
 
         return listOf(
             PersonalVehicleType.BIKE,
+            PersonalVehicleType.E_RICKSHAW,
             PersonalVehicleType.AUTO,
-            PersonalVehicleType.CAB_MINI,
-            PersonalVehicleType.CAB_PREMIUM,
-            PersonalVehicleType.CAB_XL
+            PersonalVehicleType.CAB
         ).map { type ->
             val fare = calculatePersonalFare(distanceKm, type)
-            val eta = when (type) {
-                PersonalVehicleType.BIKE -> (baseEtaMinutes - 1).coerceAtLeast(2)
-                PersonalVehicleType.AUTO -> baseEtaMinutes.coerceAtLeast(3)
-                PersonalVehicleType.CAB_MINI -> (baseEtaMinutes + 1).coerceAtLeast(4)
-                PersonalVehicleType.CAB_PREMIUM -> (baseEtaMinutes + 1).coerceAtLeast(4)
-                PersonalVehicleType.CAB_XL -> (baseEtaMinutes + 2).coerceAtLeast(5)
+
+            // Check if there is an online driver matching this exact vehicle category
+            val matchingDrivers = nearbyDrivers.filter { it.matchesCategory(type.name) }
+            val isAvailable = if (onlineDrivers.isEmpty()) true else matchingDrivers.isNotEmpty()
+
+            val nearest = matchingDrivers.minByOrNull { drv ->
+                val res = FloatArray(1)
+                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, res)
+                res[0]
             }
-            // Estimate trip duration based on urban speed (~22 km/h)
+
+            val eta = if (nearest != null && pLat != 0.0) {
+                val res = FloatArray(1)
+                Location.distanceBetween(nearest.currentLat, nearest.currentLng, pLat, pLng, res)
+                val distKm = res[0] / 1000.0
+                (distKm * 2.5 + 2).roundToInt().coerceIn(2, 25)
+            } else {
+                when (type) {
+                    PersonalVehicleType.BIKE -> (baseEtaMinutes - 1).coerceAtLeast(2)
+                    PersonalVehicleType.E_RICKSHAW -> baseEtaMinutes.coerceAtLeast(3)
+                    PersonalVehicleType.AUTO -> baseEtaMinutes.coerceAtLeast(3)
+                    PersonalVehicleType.CAB -> (baseEtaMinutes + 2).coerceAtLeast(4)
+                }
+            }
+
             val tripDurationMins = ((distanceKm / 22.0) * 60).roundToInt().coerceAtLeast(5)
             val dropCal = Calendar.getInstance().apply {
                 add(Calendar.MINUTE, eta + tripDurationMins)
@@ -164,7 +182,8 @@ object FareCalculationEngine {
                 fareAmount = fare,
                 etaMinutes = eta,
                 dropTimeFormatted = dropTime,
-                distanceKm = distanceKm
+                distanceKm = distanceKm,
+                isAvailable = isAvailable
             )
         }
     }

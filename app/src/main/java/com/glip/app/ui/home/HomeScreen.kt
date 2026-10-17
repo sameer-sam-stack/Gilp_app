@@ -435,10 +435,32 @@ fun HomeScreen(
                 }
             }
         } else {
-            val isPersonalMode = uiState.isPersonalRideMode || uiState.filteredVehicles.isEmpty()
+            val isSearchingRoute = uiState.isSearchingRouteVehicles && uiState.filteredVehicles.isEmpty()
+            val isPersonalMode = uiState.isPersonalRideMode || (!uiState.isSearchingRouteVehicles && uiState.filteredVehicles.isEmpty())
 
-            // Mode Selector Tabs (only shown when vehicles exist along the corridor)
-            if (uiState.filteredVehicles.isNotEmpty()) {
+            if (isSearchingRoute) {
+                // 60-Second Route Vehicle Search Radar Card (Auto-switches to Personal if no route driver joins)
+                val effectiveKm = if (uiState.tripDistanceKm > 0.0) uiState.tripDistanceKm else 5.4
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    RouteVehicleSearchingCard(
+                        secondsRemaining = uiState.routeSearchSecondsRemaining,
+                        distanceKm = effectiveKm,
+                        onSkipToPersonal = { viewModel.skipRouteSearchAndOpenPersonal() }
+                    )
+
+                    // Trailing AD Container: Kept 100% Intact as specified by user
+                    AdBannerBox(
+                        slotId = AdConfig.SLOT_HOME_VEHICLE_TRAILING_CARD,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .padding(horizontal = 14.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            } else {
+                // Mode Selector Tabs (only shown when vehicles exist along the corridor)
+                if (uiState.filteredVehicles.isNotEmpty()) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -646,6 +668,7 @@ fun HomeScreen(
                     }
                 }
             }
+            }
         }
     }
 }
@@ -726,12 +749,13 @@ fun PersonalRideOptionsCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Vehicle Category Rows (Bike, Auto, Cab Economy, Cab Premium, Cab XL)
+            // Vehicle Category Rows (Bike ₹22/km, E-Rickshaw ₹27/km, Auto ₹30/km, Cab ₹40/km)
             Column(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 options.forEach { opt ->
                     val isSelected = opt.type == (selectedOption?.type ?: PersonalVehicleType.AUTO)
+                    val isAvailable = opt.isAvailable
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -740,7 +764,11 @@ fun PersonalRideOptionsCard(
                         color = if (isSelected) Color(0xFFF8FAFC) else Color.White,
                         border = androidx.compose.foundation.BorderStroke(
                             width = if (isSelected) 1.8.dp else 1.dp,
-                            color = if (isSelected) Color(0xFF2563EB) else Color(0xFFE2E8F0)
+                            color = when {
+                                isSelected -> Color(0xFF2563EB)
+                                !isAvailable -> Color(0xFFF1F5F9)
+                                else -> Color(0xFFE2E8F0)
+                            }
                         )
                     ) {
                         Row(
@@ -759,19 +787,28 @@ fun PersonalRideOptionsCard(
                                     modifier = Modifier
                                         .size(36.dp)
                                         .clip(RoundedCornerShape(8.dp))
-                                        .background(if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF1F5F9)),
+                                        .background(
+                                            when {
+                                                isSelected -> Color(0xFFEFF6FF)
+                                                !isAvailable -> Color(0xFFF8FAFC)
+                                                else -> Color(0xFFF1F5F9)
+                                            }
+                                        ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = when (opt.type) {
                                             PersonalVehicleType.BIKE -> Icons.Default.TwoWheeler
+                                            PersonalVehicleType.E_RICKSHAW -> Icons.Default.ElectricRickshaw
                                             PersonalVehicleType.AUTO -> Icons.Default.ElectricRickshaw
-                                            PersonalVehicleType.CAB_MINI -> Icons.Default.DirectionsCar
-                                            PersonalVehicleType.CAB_PREMIUM -> Icons.Default.LocalTaxi
-                                            PersonalVehicleType.CAB_XL -> Icons.Default.AirportShuttle
+                                            PersonalVehicleType.CAB -> Icons.Default.DirectionsCar
                                         },
                                         contentDescription = opt.type.displayName,
-                                        tint = if (isSelected) Color(0xFF2563EB) else Color(0xFF334155),
+                                        tint = when {
+                                            isSelected -> Color(0xFF2563EB)
+                                            !isAvailable -> Color(0xFF94A3B8)
+                                            else -> Color(0xFF334155)
+                                        },
                                         modifier = Modifier.size(22.dp)
                                     )
                                 }
@@ -784,37 +821,64 @@ fun PersonalRideOptionsCard(
                                             text = opt.type.displayName,
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF0F172A)
+                                            color = if (isAvailable) Color(0xFF0F172A) else Color(0xFF64748B)
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Icon(
                                             imageVector = Icons.Default.Person,
                                             contentDescription = null,
-                                            tint = Color(0xFF64748B),
+                                            tint = if (isAvailable) Color(0xFF64748B) else Color(0xFF94A3B8),
                                             modifier = Modifier.size(12.dp)
                                         )
                                         Text(
                                             text = "${opt.type.capacity}",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = Color(0xFF64748B)
+                                            color = if (isAvailable) Color(0xFF64748B) else Color(0xFF94A3B8)
                                         )
+                                        if (!isAvailable) {
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Surface(
+                                                shape = RoundedCornerShape(4.dp),
+                                                color = Color(0xFFFEE2E2)
+                                            ) {
+                                                Text(
+                                                    text = "No Drivers",
+                                                    fontSize = 8.5.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFFDC2626),
+                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                )
+                                            }
+                                        }
                                     }
                                     Text(
-                                        text = "${opt.etaMinutes} min away • Drop ${opt.dropTimeFormatted}",
+                                        text = if (isAvailable) {
+                                            "${opt.etaMinutes} min away • Drop ${opt.dropTimeFormatted}"
+                                        } else {
+                                            "No driver online in your area"
+                                        },
                                         fontSize = 10.sp,
-                                        color = Color(0xFF64748B)
+                                        color = if (isAvailable) Color(0xFF64748B) else Color(0xFFEF4444)
                                     )
                                 }
                             }
 
-                            // Right: Upfront Price (e.g. ₹118 Auto, ₹84 Bike)
-                            Text(
-                                text = "₹${opt.fareAmount}",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = Color(0xFF0F172A)
-                            )
+                            // Right: Upfront Price (e.g. ₹118 Auto, ₹84 Bike) + Rate per KM
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    text = "₹${opt.fareAmount}",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = if (isAvailable) Color(0xFF0F172A) else Color(0xFF94A3B8)
+                                )
+                                Text(
+                                    text = "₹${opt.type.perKmRate.toInt()}/km",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
                         }
                     }
                 }
@@ -903,9 +967,10 @@ fun PersonalRideOptionsCard(
 
             // Primary Booking Button (Rapido warm gold yellow #F5B838)
             val effectiveSel = selectedOption ?: options.firstOrNull()
+            val isAvailable = effectiveSel?.isAvailable == true
             Button(
                 onClick = {
-                    if (effectiveSel != null && !isRequested) {
+                    if (effectiveSel != null && !isRequested && isAvailable) {
                         onBookClick(effectiveSel)
                     }
                 },
@@ -914,17 +979,147 @@ fun PersonalRideOptionsCard(
                     .height(46.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFF5B838),
+                    containerColor = if (isAvailable) Color(0xFFF5B838) else Color(0xFFE2E8F0),
                     disabledContainerColor = Color(0xFFE2E8F0)
                 ),
-                enabled = !isRequested
+                enabled = !isRequested && isAvailable
             ) {
                 Text(
-                    text = if (isRequested) "Requesting Nearest Driver..." else "Book ${effectiveSel?.type?.displayName ?: "Vehicle"}",
-                    fontSize = 14.sp,
+                    text = when {
+                        isRequested -> "Requesting Nearest Driver..."
+                        !isAvailable -> "No ${effectiveSel?.type?.displayName ?: "Vehicle"} Available Nearby"
+                        else -> "Book ${effectiveSel?.type?.displayName ?: "Vehicle"} • ₹${effectiveSel?.fareAmount}"
+                    },
+                    fontSize = 13.5.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color.Black
+                    color = if (isAvailable && !isRequested) Color.Black else Color(0xFF94A3B8)
                 )
+            }
+        }
+    }
+}
+
+/**
+ * 60-Second Route Vehicle Scanning Radar Card.
+ * Displays a countdown radar scanning for vehicles along the route corridor.
+ * Passenger can wait or immediately tap "Skip & Book Personal Vehicle Now".
+ */
+@Composable
+fun RouteVehicleSearchingCard(
+    secondsRemaining: Int,
+    distanceKm: Double,
+    onSkipToPersonal: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 2.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(GlipGreenPrimary)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "FINDING SHARED VEHICLES",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = GlipGreenDark,
+                        letterSpacing = 0.5.sp
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFEFF6FF)
+                ) {
+                    Text(
+                        text = "00:${secondsRemaining.toString().padStart(2, '0')}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF2563EB),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Animated progress bar
+            LinearProgressIndicator(
+                progress = { (60 - secondsRemaining) / 60f },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                color = GlipGreenPrimary,
+                trackColor = Color(0xFFF1F5F9)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Scanning for shared autos & cabs heading along your route (${String.format(Locale.getDefault(), "%.1f", distanceKm)} KM)...",
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF334155),
+                lineHeight = 16.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "Shared pooling saves up to 48% on fuel & fare. If no driver matches in 60s, you can book a solo personal vehicle.",
+                fontSize = 10.5.sp,
+                color = Color(0xFF64748B),
+                lineHeight = 14.sp,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Skip & Book Personal Vehicle Button
+            Button(
+                onClick = onSkipToPersonal,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp),
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5B838))
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.FlashOn,
+                        contentDescription = null,
+                        tint = Color.Black,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Skip Wait • Book Personal Ride Now",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.Black
+                    )
+                }
             }
         }
     }

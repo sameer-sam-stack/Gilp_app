@@ -48,7 +48,10 @@ data class HomeUiState(
     val personalOptions: List<PersonalFareEstimate> = emptyList(),
     val selectedPersonalOption: PersonalFareEstimate? = null,
     val allOnlineDrivers: List<RemoteDriver> = emptyList(),
-    val poolingFareEstimate: PoolingFareEstimate? = null
+    val poolingFareEstimate: PoolingFareEstimate? = null,
+    val isSearchingRouteVehicles: Boolean = false,
+    val routeSearchSecondsRemaining: Int = 60,
+    val hasRouteSearchTimedOut: Boolean = false
 )
 
 class HomeViewModel(
@@ -73,6 +76,7 @@ class HomeViewModel(
     private var pollJob: Job? = null
     private var driverTrackingJob: Job? = null
     private var driverRefreshJob: Job? = null
+    private var routeSearchTimerJob: Job? = null
 
     init {
         startPeriodicDriverSearch()
@@ -98,6 +102,7 @@ class HomeViewModel(
         dLat: Double,
         dLng: Double
     ) {
+        routeSearchTimerJob?.cancel()
         _uiState.update {
             it.copy(
                 pickupQuery = pickup,
@@ -113,11 +118,55 @@ class HomeViewModel(
                 selectedVehicle = null,
                 acceptedVehicle = null,
                 rideBookingStatus = "NONE",
-                bookingError = null
+                bookingError = null,
+                isPersonalRideMode = false,
+                isSearchingRouteVehicles = true,
+                routeSearchSecondsRemaining = 60,
+                hasRouteSearchTimedOut = false
             )
         }
         computeRoadDistanceAndPricing(pLat, pLng, dLat, dLng)
         applyRealDriverSearch()
+
+        // 60-second search countdown: Look for live drivers heading along the passenger's route
+        routeSearchTimerJob = viewModelScope.launch {
+            for (sec in 60 downTo 1) {
+                _uiState.update { it.copy(routeSearchSecondsRemaining = sec) }
+                delay(1000L)
+                // If a vehicle matched along the route, cancel countdown
+                if (_uiState.value.filteredVehicles.isNotEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            isSearchingRouteVehicles = false,
+                            routeSearchSecondsRemaining = 0,
+                            hasRouteSearchTimedOut = false
+                        )
+                    }
+                    return@launch
+                }
+            }
+            // 60s expired with no matching route vehicle: auto-switch to Personal Ride option (Rapido style)!
+            _uiState.update {
+                it.copy(
+                    isSearchingRouteVehicles = false,
+                    routeSearchSecondsRemaining = 0,
+                    hasRouteSearchTimedOut = true,
+                    isPersonalRideMode = true
+                )
+            }
+        }
+    }
+
+    fun skipRouteSearchAndOpenPersonal() {
+        routeSearchTimerJob?.cancel()
+        _uiState.update {
+            it.copy(
+                isSearchingRouteVehicles = false,
+                routeSearchSecondsRemaining = 0,
+                hasRouteSearchTimedOut = true,
+                isPersonalRideMode = true
+            )
+        }
     }
 
     private fun computeRoadDistanceAndPricing(pLat: Double, pLng: Double, dLat: Double, dLng: Double) {
@@ -131,8 +180,15 @@ class HomeViewModel(
             )
             val rawKm = (roadResult?.distanceMeters ?: 4000.0) / 1000.0
             val distanceKm = Math.round(rawKm * 10.0) / 10.0
-            val personalOpts = FareCalculationEngine.getPersonalOptions(distanceKm)
-            val defaultSel = personalOpts.firstOrNull { it.type == PersonalVehicleType.AUTO } ?: personalOpts.firstOrNull()
+            val personalOpts = FareCalculationEngine.getPersonalOptions(
+                distanceKm = distanceKm,
+                pLat = pLat,
+                pLng = pLng,
+                onlineDrivers = _uiState.value.allOnlineDrivers
+            )
+            val defaultSel = personalOpts.firstOrNull { it.isAvailable && it.type == PersonalVehicleType.AUTO }
+                ?: personalOpts.firstOrNull { it.isAvailable }
+                ?: personalOpts.firstOrNull()
             val poolEst = FareCalculationEngine.calculatePoolingFare(distanceKm, occupiedSeats = 1)
             val routePoints = roadResult?.points ?: emptyList()
 
@@ -330,12 +386,29 @@ class HomeViewModel(
                 Log.w(TAG, "Error querying real drivers from Supabase: ${e.message}")
             }
 
+            val distKm = _uiState.value.tripDistanceKm
+            val freshPersonalOpts = if (distKm > 0.0) {
+                FareCalculationEngine.getPersonalOptions(
+                    distanceKm = distKm,
+                    pLat = _uiState.value.pickupLat,
+                    pLng = _uiState.value.pickupLng,
+                    onlineDrivers = remoteDrivers
+                )
+            } else {
+                _uiState.value.personalOptions
+            }
+            val updatedSelectedPersonal = freshPersonalOpts.firstOrNull { it.type == _uiState.value.selectedPersonalOption?.type }
+                ?: freshPersonalOpts.firstOrNull { it.isAvailable }
+                ?: freshPersonalOpts.firstOrNull()
+
             // Real live vehicles only - no fake demo fallbacks
             _uiState.update {
                 it.copy(
                     vehicles = matchedVehicles,
                     filteredVehicles = matchedVehicles,
                     allOnlineDrivers = remoteDrivers,
+                    personalOptions = freshPersonalOpts,
+                    selectedPersonalOption = updatedSelectedPersonal,
                     isLoading = false,
                     selectedVehicle = it.selectedVehicle?.takeIf { sel -> matchedVehicles.any { v -> v.vehicleId == sel.vehicleId } } ?: matchedVehicles.firstOrNull()
                 )
@@ -401,7 +474,7 @@ class HomeViewModel(
 
     /**
      * Books a dedicated Personal Vehicle (Rapido / Uber Style).
-     * Finds the nearest online driver to passenger's pickup location and targets them.
+     * Finds the nearest online driver to passenger's pickup location who matches the EXACT vehicle category.
      */
     fun bookPersonalRide(
         selectedOption: PersonalFareEstimate,
@@ -409,6 +482,27 @@ class HomeViewModel(
         userPhone: String
     ) {
         viewModelScope.launch {
+            val pLat = _uiState.value.pickupLat
+            val pLng = _uiState.value.pickupLng
+            val dLat = _uiState.value.dropLat
+            val dLng = _uiState.value.dropLng
+
+            val onlineDrivers = _uiState.value.allOnlineDrivers
+            // STRICT CATEGORY MATCH: Ensure a bike ride ONLY goes to a bike driver, auto to auto, cab to cab!
+            val matchingDrivers = onlineDrivers.filter { drv ->
+                drv.isOnline && drv.matchesCategory(selectedOption.type.name)
+            }
+
+            if (matchingDrivers.isEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        rideBookingStatus = "NONE",
+                        bookingError = "Kshama karein, koi bhi ${selectedOption.type.displayName} driver is waqt online nahi hai. Kripya doosra available vehicle chunein."
+                    )
+                }
+                return@launch
+            }
+
             _uiState.update {
                 it.copy(
                     rideBookingStatus = "REQUESTED",
@@ -416,13 +510,7 @@ class HomeViewModel(
                 )
             }
 
-            val pLat = _uiState.value.pickupLat
-            val pLng = _uiState.value.pickupLng
-            val dLat = _uiState.value.dropLat
-            val dLng = _uiState.value.dropLng
-
-            val onlineDrivers = _uiState.value.allOnlineDrivers
-            val nearestDriver = onlineDrivers.minByOrNull { drv ->
+            val nearestDriver = matchingDrivers.minByOrNull { drv ->
                 val results = FloatArray(1)
                 Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
                 results[0]
@@ -431,7 +519,7 @@ class HomeViewModel(
             val targetDriverUuid = nearestDriver?.id?.takeIf { RideRequestClient.isValidUuid(it) }
 
             val result = RideRequestClient.createRideRequest(
-                passengerName = "$userName (Personal ${selectedOption.type.displayName})",
+                passengerName = "$userName (${selectedOption.type.displayName})",
                 passengerMobile = userPhone.ifBlank { "9876543210" },
                 pickupAddress = _uiState.value.pickupQuery.ifBlank { "Pickup Location" },
                 pickupLat = pLat,
@@ -450,10 +538,9 @@ class HomeViewModel(
                     licensePlateMasked = drv.vehicleNumber.ifBlank { "DL 01 ** 9821" },
                     category = when (selectedOption.type) {
                         PersonalVehicleType.AUTO -> VehicleCategory.AUTO_RICKSHAW
-                        PersonalVehicleType.BIKE -> VehicleCategory.AUTO_RICKSHAW
-                        PersonalVehicleType.CAB_MINI -> VehicleCategory.MINI_CAR
-                        PersonalVehicleType.CAB_PREMIUM -> VehicleCategory.SEDAN
-                        PersonalVehicleType.CAB_XL -> VehicleCategory.SUV
+                        PersonalVehicleType.E_RICKSHAW -> VehicleCategory.E_RICKSHAW
+                        PersonalVehicleType.BIKE -> VehicleCategory.BIKE
+                        PersonalVehicleType.CAB -> VehicleCategory.MINI_CAR
                     },
                     modelName = "${selectedOption.type.displayName} (Personal Dedicated)",
                     currentLat = drv.currentLat,
@@ -641,6 +728,7 @@ class HomeViewModel(
         viewModelScope.launch {
             pollJob?.cancel()
             driverTrackingJob?.cancel()
+            routeSearchTimerJob?.cancel()
             val reqId = _uiState.value.activeRequestId
             if (!reqId.isNullOrBlank()) {
                 RideRequestClient.cancelRideRequest(reqId)
@@ -652,7 +740,8 @@ class HomeViewModel(
                     acceptedVehicle = null,
                     selectedVehicle = null,
                     passengerRoutePoints = emptyList(),
-                    bookingError = null
+                    bookingError = null,
+                    isSearchingRouteVehicles = false
                 )
             }
             applyRealDriverSearch()
@@ -665,5 +754,6 @@ class HomeViewModel(
         pollJob?.cancel()
         driverTrackingJob?.cancel()
         driverRefreshJob?.cancel()
+        routeSearchTimerJob?.cancel()
     }
 }

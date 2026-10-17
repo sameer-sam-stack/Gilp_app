@@ -6,7 +6,8 @@ enum class VehicleCategory {
     SEDAN,
     SUV,
     VAN,
-    E_RICKSHAW
+    E_RICKSHAW,
+    BIKE
 }
 
 enum class RouteStatus {

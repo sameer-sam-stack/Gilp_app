@@ -24,7 +24,34 @@ data class RemoteDriver(
     val currentLng: Double,
     val bearing: Float,
     val isOnline: Boolean
-)
+) {
+    fun matchesCategory(categoryQuery: String): Boolean {
+        val q = categoryQuery.trim().uppercase()
+        val vt = vehicleType.trim().uppercase()
+        val vm = vehicleModel.trim().uppercase()
+        val vn = vehicleNumber.trim().uppercase()
+        val combined = "$vt $vm $vn"
+
+        return when (q) {
+            "BIKE", "MOTORCYCLE", "TWO_WHEELER" -> {
+                combined.contains("BIKE") || combined.contains("MOTORCYCLE") || combined.contains("SCOOTER") || combined.contains("TWO")
+            }
+            "E_RICKSHAW", "E-RICKSHAW", "TOTO" -> {
+                combined.contains("E_RICKSHAW") || combined.contains("E-RICKSHAW") || combined.contains("E RICKSHAW") ||
+                combined.contains("TOTO") || combined.contains("BATTERY") || (combined.contains("RICKSHAW") && (combined.contains("E") || combined.contains("ELECTRIC")))
+            }
+            "AUTO", "AUTO_RICKSHAW" -> {
+                (combined.contains("AUTO") || combined.contains("RICKSHAW") || combined.contains("THREE")) &&
+                !combined.contains("E_") && !combined.contains("E-") && !combined.contains("ELECTRIC") && !combined.contains("BATTERY") && !combined.contains("TOTO")
+            }
+            "CAB", "CAR", "CAB_MINI", "CAB_PREMIUM", "CAB_XL", "TAXI" -> {
+                combined.contains("CAR") || combined.contains("CAB") || combined.contains("TAXI") ||
+                combined.contains("SEDAN") || combined.contains("HATCHBACK") || combined.contains("SUV") || combined.contains("VAN")
+            }
+            else -> combined.contains(q)
+        }
+    }
+}
 
 data class RemoteDriverRoute(
     val driverMobile: String,
