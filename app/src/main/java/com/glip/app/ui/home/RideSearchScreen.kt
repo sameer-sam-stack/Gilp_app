@@ -30,7 +30,9 @@ import com.glip.app.ads.AdConfig
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.PinDrop
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -232,322 +234,241 @@ fun RideSearchScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    // Header Row: Pickup (Green Pill) & Drop (Red Pill) + Right Arrow Action Button ➡️
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    // Close button if dismissible
+                    if (onCancel != null) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            // 1. Pickup Badge Pill (Refined Green)
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFFDCFCE7),
-                                border = BorderStroke(1.dp, Color(0xFF86EFAC))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(7.dp)
-                                            .clip(CircleShape)
-                                            .background(Color(0xFF16A34A))
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Pickup",
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF15803D)
-                                    )
-                                }
-                            }
-
-                            // 2. Drop Badge Pill (Refined Red)
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFFFEE2E2),
-                                border = BorderStroke(1.dp, Color(0xFFFCA5A5))
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(7.dp)
-                                            .clip(RoundedCornerShape(1.5.dp))
-                                            .background(Color(0xFFDC2626))
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Drop",
-                                        fontSize = 11.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFB91C1C)
-                                    )
-                                }
-                            }
-                        }
-
-                        // Top-Right Cancel / Close Action Button (✕ icon)
-                        IconButton(
-                            onClick = {
-                                if (onCancel != null) {
-                                    onCancel()
-                                } else {
-                                    pickup = ""
-                                    drop = ""
-                                    pickupCoordinates = null
-                                    dropCoordinates = null
-                                    isPickupSelected = false
-                                    isDropSelected = false
-                                    activeField = null
-                                    suggestions = emptyList()
-                                }
-                            },
                             modifier = Modifier
-                                .size(30.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFF1F5F9))
-                                .border(1.dp, Color(0xFFE2E8F0), CircleShape)
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp),
+                            horizontalArrangement = Arrangement.End
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Cancel",
-                                tint = Color(0xFF64748B),
-                                modifier = Modifier.size(16.dp)
-                            )
+                            IconButton(
+                                onClick = { onCancel() },
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFF1F5F9))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Close",
+                                    tint = Color(0xFF64748B),
+                                    modifier = Modifier.size(15.dp)
+                                )
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Row: Pickup Input Box -> Arrow Connector -> Drop Input Box
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    // SCREENSHOT 1 PICKUP & DROP LOCATION SELECTOR
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color.White,
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        // Pickup Input Box with Map Icon Button on right
-                        Surface(
+                        Row(
                             modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFF8FAFC),
-                            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(start = 10.dp, end = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            // Left Timeline Indicator: Green dot -> Vertical Line -> Red dot
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(vertical = 12.dp)
                             ) {
                                 Box(
-                                    modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    BasicTextField(
-                                        value = pickup,
-                                        onValueChange = {
-                                            pickup = it
-                                            isPickupSelected = false
-                                            pickupCoordinates = null
-                                            activeField = "pickup"
-                                        },
-                                        singleLine = true,
-                                        textStyle = MaterialTheme.typography.bodySmall.copy(
-                                             fontSize = 12.sp,
-                                             fontWeight = FontWeight.Medium,
-                                             color = Color(0xFF0F172A)
-                                        ),
-                                        decorationBox = { innerTextField ->
-                                            if (pickup.isEmpty()) {
-                                                Text(
-                                                    text = "Pickup address",
-                                                    fontSize = 12.sp,
-                                                    color = Color(0xFF94A3B8)
-                                                )
-                                            }
-                                            innerTextField()
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .onFocusChanged { focusState ->
-                                                if (focusState.isFocused && activeField != "pickup") {
-                                                    activeField = "pickup"
-                                                }
-                                            }
-                                    )
-                                }
-
-                                // Cancel/Clear button inside Pickup input box
-                                if (pickup.isNotEmpty()) {
-                                    IconButton(
-                                        onClick = {
-                                            pickup = ""
-                                            pickupCoordinates = null
-                                            isPickupSelected = false
-                                            if (activeField == "pickup") {
-                                                suggestions = emptyList()
-                                            }
-                                        },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = "Clear Pickup",
-                                            tint = Color(0xFF94A3B8),
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                }
-
-                                // Location Pin Icon Button for Pickup
-                                IconButton(
-                                    onClick = {
-                                        activeField = null
-                                        selectingLocationMode = "pickup"
-                                    },
-                                    modifier = Modifier.size(30.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.LocationOn,
-                                        contentDescription = "Pick Pickup on Map",
-                                        tint = Color(0xFF2563EB),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
+                                    modifier = Modifier
+                                        .size(9.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF10B981))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(1.5.dp)
+                                        .height(36.dp)
+                                        .background(Color(0xFFCBD5E1))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(9.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFEF4444))
+                                )
                             }
-                        }
 
-                        // Center Connecting Arrow Circle (Modern UI - Clickable to swap/reverse)
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFF1F5F9))
-                                .clickable {
-                                    val tempText = pickup
-                                    pickup = drop
-                                    drop = tempText
+                            Spacer(modifier = Modifier.width(12.dp))
 
-                                    val tempCoords = pickupCoordinates
-                                    pickupCoordinates = dropCoordinates
-                                    dropCoordinates = tempCoords
-
-                                    val tempSelected = isPickupSelected
-                                    isPickupSelected = isDropSelected
-                                    isDropSelected = tempSelected
-
-                                    activeField = null
-                                    suggestions = emptyList()
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = "Swap Pickup and Drop",
-                                tint = Color(0xFF64748B),
-                                modifier = Modifier.size(13.dp)
-                            )
-                        }
-
-                        // Drop Input Box with Map Icon Button on right
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = Color(0xFFF8FAFC),
-                            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(start = 10.dp, end = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.CenterStart
+                            // Right Inputs: Pickup row -> Divider -> Drop row
+                            Column(modifier = Modifier.weight(1f)) {
+                                // 1. Top: Pickup Row
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(46.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    BasicTextField(
-                                        value = drop,
-                                        onValueChange = {
-                                            drop = it
-                                            isDropSelected = false
-                                            dropCoordinates = null
-                                            activeField = "drop"
-                                        },
-                                        singleLine = true,
-                                        textStyle = MaterialTheme.typography.bodySmall.copy(
-                                             fontSize = 12.sp,
-                                             fontWeight = FontWeight.Medium,
-                                             color = Color(0xFF0F172A)
-                                        ),
-                                        decorationBox = { innerTextField ->
-                                            if (drop.isEmpty()) {
-                                                Text(
-                                                    text = "Drop address",
-                                                    fontSize = 12.sp,
-                                                    color = Color(0xFF94A3B8)
-                                                )
-                                            }
-                                            innerTextField()
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .onFocusChanged { focusState ->
-                                                if (focusState.isFocused && activeField != "drop") {
-                                                    activeField = "drop"
+                                    Box(
+                                        modifier = Modifier.weight(1f),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        BasicTextField(
+                                            value = pickup,
+                                            onValueChange = {
+                                                pickup = it
+                                                isPickupSelected = false
+                                                pickupCoordinates = null
+                                                activeField = "pickup"
+                                            },
+                                            singleLine = true,
+                                            textStyle = TextStyle(
+                                                fontSize = 14.5.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF0F172A)
+                                            ),
+                                            decorationBox = { innerTextField ->
+                                                if (pickup.isEmpty()) {
+                                                    Text(
+                                                        text = "Enter Pickup Location",
+                                                        fontSize = 14.5.sp,
+                                                        fontWeight = FontWeight.Normal,
+                                                        color = Color(0xFF94A3B8)
+                                                    )
                                                 }
-                                            }
-                                    )
-                                }
+                                                innerTextField()
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .onFocusChanged { focusState ->
+                                                    if (focusState.isFocused && activeField != "pickup") {
+                                                        activeField = "pickup"
+                                                    }
+                                                }
+                                        )
+                                    }
 
-                                // Cancel/Clear button inside Drop input box
-                                if (drop.isNotEmpty()) {
+                                    if (pickup.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = {
+                                                pickup = ""
+                                                pickupCoordinates = null
+                                                isPickupSelected = false
+                                                if (activeField == "pickup") suggestions = emptyList()
+                                            },
+                                            modifier = Modifier.size(26.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Clear",
+                                                tint = Color(0xFF94A3B8),
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                        }
+                                    }
+
+                                    // Green Target / MyLocation Icon (Clicking opens Map for pickup)
                                     IconButton(
                                         onClick = {
-                                            drop = ""
-                                            dropCoordinates = null
-                                            isDropSelected = false
-                                            if (activeField == "drop") {
-                                                suggestions = emptyList()
-                                            }
+                                            activeField = null
+                                            selectingLocationMode = "pickup"
                                         },
-                                        modifier = Modifier.size(24.dp)
+                                        modifier = Modifier.size(36.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = "Clear Drop",
-                                            tint = Color(0xFF94A3B8),
-                                            modifier = Modifier.size(14.dp)
+                                            imageVector = Icons.Default.MyLocation,
+                                            contentDescription = "Pick Pickup on Map",
+                                            tint = Color(0xFF10B981),
+                                            modifier = Modifier.size(22.dp)
                                         )
                                     }
                                 }
 
-                                // Location Pin Icon Button for Drop
-                                IconButton(
-                                    onClick = {
-                                        activeField = null
-                                        selectingLocationMode = "drop"
-                                    },
-                                    modifier = Modifier.size(30.dp)
+                                HorizontalDivider(
+                                    color = Color(0xFFF1F5F9),
+                                    thickness = 1.dp,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                // 2. Bottom: Drop Row
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(46.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.LocationOn,
-                                        contentDescription = "Pick Drop on Map",
-                                        tint = Color(0xFFEF4444),
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    Box(
+                                        modifier = Modifier.weight(1f),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        BasicTextField(
+                                            value = drop,
+                                            onValueChange = {
+                                                drop = it
+                                                isDropSelected = false
+                                                dropCoordinates = null
+                                                activeField = "drop"
+                                            },
+                                            singleLine = true,
+                                            textStyle = TextStyle(
+                                                fontSize = 14.5.sp,
+                                                fontWeight = if (drop.isNotEmpty()) FontWeight.SemiBold else FontWeight.Normal,
+                                                color = Color(0xFF0F172A)
+                                            ),
+                                            decorationBox = { innerTextField ->
+                                                if (drop.isEmpty()) {
+                                                    Text(
+                                                        text = "Enter Drop Location",
+                                                        fontSize = 14.5.sp,
+                                                        fontWeight = FontWeight.Normal,
+                                                        color = Color(0xFF94A3B8)
+                                                    )
+                                                }
+                                                innerTextField()
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .onFocusChanged { focusState ->
+                                                    if (focusState.isFocused && activeField != "drop") {
+                                                        activeField = "drop"
+                                                    }
+                                                }
+                                        )
+                                    }
+
+                                    if (drop.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = {
+                                                drop = ""
+                                                dropCoordinates = null
+                                                isDropSelected = false
+                                                if (activeField == "drop") suggestions = emptyList()
+                                            },
+                                            modifier = Modifier.size(26.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Clear",
+                                                tint = Color(0xFF94A3B8),
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                        }
+                                    }
+
+                                    // Red Target / MyLocation Icon (Clicking opens Map for drop)
+                                    IconButton(
+                                        onClick = {
+                                            activeField = null
+                                            selectingLocationMode = "drop"
+                                        },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.MyLocation,
+                                            contentDescription = "Pick Drop on Map",
+                                            tint = Color(0xFFEF4444),
+                                            modifier = Modifier.size(22.dp)
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -62,16 +62,16 @@ fun HomeScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
-        // 1. Top AD Banner Box: Minimized left/right gap per user requirement
+        // 1. Top AD Banner Box: Taller height and reduced roundness per user requirement
         AdBannerBox(
             slotId = AdConfig.SLOT_HOME_TOP_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 6.dp, end = 6.dp, bottom = 10.dp)
-                .height(96.dp),
-            shape = RoundedCornerShape(14.dp)
+                .padding(start = 6.dp, end = 6.dp, bottom = 8.dp)
+                .height(125.dp),
+            shape = RoundedCornerShape(8.dp)
         )
 
         // Map Area (Directly under Top AD per user requirement)
@@ -810,13 +810,13 @@ fun RouteVehicleSearchingCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 2.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -831,7 +831,7 @@ fun RouteVehicleSearchingCard(
                             .clip(CircleShape)
                             .background(GlipGreenPrimary)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = "FINDING SHARED VEHICLES",
                         fontSize = 11.sp,
@@ -850,26 +850,26 @@ fun RouteVehicleSearchingCard(
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF2563EB),
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
-            // Pickup and drop and change
+            // Pickup and drop and change (Compact)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(34.dp),
-                shape = RoundedCornerShape(8.dp),
+                    .height(30.dp),
+                shape = RoundedCornerShape(7.dp),
                 color = Color(0xFFF8FAFC),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 10.dp),
+                        .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -879,33 +879,33 @@ fun RouteVehicleSearchingCard(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(6.dp)
+                                .size(5.dp)
                                 .clip(CircleShape)
                                 .background(GlipGreenPrimary)
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = pickupLocation.ifBlank { "Pickup" },
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF0F172A),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "➔", fontSize = 10.sp, color = Color(0xFF94A3B8))
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(text = "➔", fontSize = 9.sp, color = Color(0xFF94A3B8))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Box(
                             modifier = Modifier
-                                .size(6.dp)
+                                .size(5.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFFEF4444))
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = dropLocation.ifBlank { "Drop" },
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF0F172A),
                             maxLines = 1,
@@ -915,52 +915,38 @@ fun RouteVehicleSearchingCard(
                     }
                     Text(
                         text = "Change",
-                        fontSize = 10.5.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                         color = GlipGreenPrimary,
                         modifier = Modifier
                             .clickable { onChangeLocation() }
-                            .padding(start = 6.dp, top = 2.dp, bottom = 2.dp)
+                            .padding(start = 5.dp, top = 2.dp, bottom = 2.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             // Yellow Progress Bar (Pila line jo aage badte rahta hai)
             LinearProgressIndicator(
                 progress = { (120 - secondsRemaining) / 120f },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(5.dp)
-                    .clip(RoundedCornerShape(3.dp)),
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(2.dp)),
                 color = Color(0xFFF5B838),
                 trackColor = Color(0xFFFEF3C7)
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Scanning Wait..",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF64748B)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             // Skip & Book Personal Vehicle Button
             Button(
                 onClick = onSkipToPersonal,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(38.dp),
-                shape = RoundedCornerShape(10.dp),
+                    .height(34.dp),
+                shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5B838)),
                 contentPadding = PaddingValues(0.dp)
             ) {
@@ -969,12 +955,12 @@ fun RouteVehicleSearchingCard(
                         imageVector = Icons.Default.FlashOn,
                         contentDescription = null,
                         tint = Color.Black,
-                        modifier = Modifier.size(15.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = "Skip Wait • Book Personal Ride Now",
-                        fontSize = 11.5.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.Black
                     )
