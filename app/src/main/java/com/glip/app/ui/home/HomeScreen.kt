@@ -64,13 +64,13 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(6.dp))
 
-        // 1. Top AD Banner Box: Taller height and reduced roundness per user requirement
+        // 1. Top AD Banner Box: Enlarged height from bottom per user requirement
         AdBannerBox(
             slotId = AdConfig.SLOT_HOME_TOP_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 6.dp, end = 6.dp, bottom = 8.dp)
-                .height(125.dp),
+                .height(150.dp),
             shape = RoundedCornerShape(8.dp)
         )
 

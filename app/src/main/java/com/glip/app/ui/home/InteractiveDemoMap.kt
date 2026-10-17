@@ -296,20 +296,20 @@ fun InteractiveDemoMap(
             }
         }
 
-        // OpenStreetMap Legal Attribution (ODbL Compliance)
+        // OpenStreetMap Legal Attribution (ODbL Compliance - Ultra-compact subtle in bottom-left corner)
         Surface(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(start = 12.dp, bottom = 12.dp),
-            shape = RoundedCornerShape(6.dp),
-            color = Color.White.copy(alpha = 0.88f)
+                .padding(start = 4.dp, bottom = 4.dp),
+            shape = RoundedCornerShape(3.dp),
+            color = Color.White.copy(alpha = 0.65f)
         ) {
             Text(
-                text = "© OpenStreetMap contributors",
-                fontSize = 9.sp,
-                fontWeight = FontWeight.Medium,
+                text = "© OpenStreetMap",
+                fontSize = 6.5.sp,
+                fontWeight = FontWeight.Normal,
                 color = Color(0xFF64748B),
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
             )
         }
     }

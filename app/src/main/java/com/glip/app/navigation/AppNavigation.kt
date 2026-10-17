@@ -226,7 +226,7 @@ fun GlipCompactBottomBar(
             NavigationBar(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(58.dp),
+                    .height(48.dp),
                 tonalElevation = 0.dp,
                 containerColor = Color(0xFFFFFFFF),
                 windowInsets = WindowInsets(0.dp)
@@ -238,13 +238,13 @@ fun GlipCompactBottomBar(
                         Icon(
                             imageVector = Icons.Default.DirectionsCar,
                             contentDescription = "Ride",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     },
                     label = {
                         Text(
                             text = "Ride",
-                            fontSize = 11.5.sp,
+                            fontSize = 10.sp,
                             fontWeight = if (currentTab == 0) FontWeight.Bold else FontWeight.Normal
                         )
                     },
@@ -263,13 +263,13 @@ fun GlipCompactBottomBar(
                         Icon(
                             imageVector = Icons.Default.GridView,
                             contentDescription = "All Services",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     },
                     label = {
                         Text(
                             text = "All Services",
-                            fontSize = 11.5.sp,
+                            fontSize = 10.sp,
                             fontWeight = if (currentTab == 1) FontWeight.Bold else FontWeight.Normal
                         )
                     },
@@ -288,13 +288,13 @@ fun GlipCompactBottomBar(
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = "Profile",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     },
                     label = {
                         Text(
                             text = "Profile",
-                            fontSize = 11.5.sp,
+                            fontSize = 10.sp,
                             fontWeight = if (currentTab == 2) FontWeight.Bold else FontWeight.Normal
                         )
                     },
