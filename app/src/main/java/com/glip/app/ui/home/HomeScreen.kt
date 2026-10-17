@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glip.app.domain.model.Vehicle
+import com.glip.app.domain.model.VehicleCategory
 import com.glip.app.ui.theme.GlipGreenDark
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.theme.GlipOrangeAccent
