@@ -174,9 +174,9 @@ fun InteractiveDemoMap(
                         }
                     }
 
-                    // 2. Render Polylines
-                    if (isRideAccepted && passengerRoutePoints.isNotEmpty()) {
-                        // Accepted Ride: Dark casing line + Vibrant Emerald Core Line
+                    // 2. Render Polylines: Only show passenger's own pickup-to-drop polyline!
+                    if (passengerRoutePoints.isNotEmpty()) {
+                        // Passenger's Chosen Trip Polyline: Dark casing line + Vibrant Emerald Core Line
                         val casingLine = Polyline(view).apply {
                             outlinePaint.color = android.graphics.Color.parseColor("#0F172A")
                             outlinePaint.strokeWidth = 12f
@@ -218,44 +218,9 @@ fun InteractiveDemoMap(
                             }
                             view.overlays.add(dMarker)
                         }
-                    } else {
-                        // Pre-booking: Render each vehicle's corridor polyline in its distinct light color
-                        vehicles.forEach { vehicle ->
-                            val linePoints = if (vehicle.roadPolylinePoints.isNotEmpty()) {
-                                vehicle.roadPolylinePoints.map { GeoPoint(it.first, it.second) }
-                            } else if (vehicle.route.destinationLat != 0.0) {
-                                listOf(
-                                    GeoPoint(vehicle.currentLat, vehicle.currentLng),
-                                    GeoPoint(vehicle.route.destinationLat, vehicle.route.destinationLng)
-                                )
-                            } else {
-                                emptyList()
-                            }
-
-                            if (linePoints.isNotEmpty()) {
-                                val colorInt = try {
-                                    android.graphics.Color.parseColor(vehicle.routeColorHex)
-                                } catch (_: Exception) {
-                                    android.graphics.Color.parseColor("#10B981")
-                                }
-
-                                val isSel = vehicle.vehicleId == (selectedVehicle?.vehicleId ?: vehicles.firstOrNull()?.vehicleId)
-
-                                val polyline = Polyline(view).apply {
-                                    outlinePaint.color = colorInt
-                                    outlinePaint.alpha = if (isSel) 240 else 185
-                                    outlinePaint.strokeWidth = if (isSel) 9f else 6.5f
-                                    outlinePaint.strokeCap = Paint.Cap.ROUND
-                                    outlinePaint.strokeJoin = Paint.Join.ROUND
-                                    outlinePaint.isAntiAlias = true
-                                    setPoints(linePoints)
-                                }
-                                view.overlays.add(polyline)
-                            }
-                        }
                     }
 
-                    // 3. Render Vehicle Markers
+                    // 3. Render Vehicle Markers (Clean vehicle position without exposing driver personal details before acceptance)
                     val visibleVehicles = if (isRideAccepted) {
                         listOfNotNull(selectedVehicle ?: vehicles.firstOrNull())
                     } else {
@@ -266,8 +231,16 @@ fun InteractiveDemoMap(
                         val marker = Marker(view).apply {
                             position = GeoPoint(vehicle.currentLat, vehicle.currentLng)
                             rotation = vehicle.headingDegrees
-                            title = "${vehicle.driver.fullName} (${vehicle.licensePlateMasked})"
-                            snippet = "${vehicle.seatAvailability.availableSeats}/${vehicle.seatAvailability.totalSeats} seats free • ${vehicle.etaMinutes} min away"
+                            title = if (isRideAccepted) {
+                                "${vehicle.driver.fullName} (${vehicle.licensePlateMasked})"
+                            } else {
+                                "${vehicle.category.name.replace('_', ' ')} • ${vehicle.etaMinutes} min away"
+                            }
+                            snippet = if (isRideAccepted) {
+                                "${vehicle.seatAvailability.availableSeats}/${vehicle.seatAvailability.totalSeats} seats free • ${vehicle.etaMinutes} min away"
+                            } else {
+                                "Available on route • Tap to request"
+                            }
                             icon = createVehicleMarkerDrawable(context, vehicle.routeColorHex, vehicle.category)
                             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                             if (isInteractive) {

@@ -50,8 +50,9 @@ data class HomeUiState(
     val allOnlineDrivers: List<RemoteDriver> = emptyList(),
     val poolingFareEstimate: PoolingFareEstimate? = null,
     val isSearchingRouteVehicles: Boolean = false,
-    val routeSearchSecondsRemaining: Int = 60,
-    val hasRouteSearchTimedOut: Boolean = false
+    val routeSearchSecondsRemaining: Int = 120,
+    val hasRouteSearchTimedOut: Boolean = false,
+    val rideOtp: String = ""
 )
 
 class HomeViewModel(
@@ -121,16 +122,16 @@ class HomeViewModel(
                 bookingError = null,
                 isPersonalRideMode = false,
                 isSearchingRouteVehicles = true,
-                routeSearchSecondsRemaining = 60,
+                routeSearchSecondsRemaining = 120,
                 hasRouteSearchTimedOut = false
             )
         }
         computeRoadDistanceAndPricing(pLat, pLng, dLat, dLng)
         applyRealDriverSearch()
 
-        // 60-second search countdown: Look for live drivers heading along the passenger's route
+        // 120-second (2 minutes) search countdown: Look for live drivers heading along the passenger's route
         routeSearchTimerJob = viewModelScope.launch {
-            for (sec in 60 downTo 1) {
+            for (sec in 120 downTo 1) {
                 _uiState.update { it.copy(routeSearchSecondsRemaining = sec) }
                 delay(1000L)
                 // If a vehicle matched along the route, cancel countdown
@@ -145,7 +146,7 @@ class HomeViewModel(
                     return@launch
                 }
             }
-            // 60s expired with no matching route vehicle: auto-switch to Personal Ride option (Rapido style)!
+            // 120s expired with no matching route vehicle: auto-switch to Personal Ride option (Rapido style)!
             _uiState.update {
                 it.copy(
                     isSearchingRouteVehicles = false,
@@ -426,11 +427,13 @@ class HomeViewModel(
         userPhone: String
     ) {
         viewModelScope.launch {
+            val generatedOtp = String.format(java.util.Locale.US, "%04d", (1000..9999).random())
             _uiState.update {
                 it.copy(
                     selectedVehicle = targetVehicle,
                     rideBookingStatus = "REQUESTED",
-                    bookingError = null
+                    bookingError = null,
+                    rideOtp = generatedOtp
                 )
             }
 
@@ -454,7 +457,8 @@ class HomeViewModel(
                 dropLng = dLng,
                 targetDriverId = targetVehicle.driver.driverId.ifBlank { null },
                 requestedSeats = 1,
-                fare = calculatedPoolFare
+                fare = calculatedPoolFare,
+                otp = generatedOtp
             )
 
             if (result.isSuccess) {
@@ -503,10 +507,12 @@ class HomeViewModel(
                 return@launch
             }
 
+            val generatedOtp = String.format(java.util.Locale.US, "%04d", (1000..9999).random())
             _uiState.update {
                 it.copy(
                     rideBookingStatus = "REQUESTED",
-                    bookingError = null
+                    bookingError = null,
+                    rideOtp = generatedOtp
                 )
             }
 
@@ -529,7 +535,8 @@ class HomeViewModel(
                 dropLng = dLng,
                 targetDriverId = targetDriverUuid,
                 requestedSeats = selectedOption.type.capacity,
-                fare = selectedOption.fareAmount.toDouble()
+                fare = selectedOption.fareAmount.toDouble(),
+                otp = generatedOtp
             )
 
             val targetVehicle = nearestDriver?.let { drv ->

@@ -119,7 +119,8 @@ object RideRequestClient {
         fare: Double = 40.0,
         userId: String? = null,
         userName: String? = null,
-        userPhone: String? = null
+        userPhone: String? = null,
+        otp: String = "1234"
     ): Result<String> = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
@@ -146,7 +147,7 @@ object RideRequestClient {
                 put("requested_seats", requestedSeats)
                 put("status", "PENDING")
                 put("fare_amount", fare)
-                put("otp", "1234")
+                put("otp", otp)
             }
 
             OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { writer ->

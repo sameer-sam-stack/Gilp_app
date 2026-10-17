@@ -81,15 +81,15 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp)
-                    .height(44.dp),
-                shape = RoundedCornerShape(10.dp),
+                    .height(34.dp),
+                shape = RoundedCornerShape(8.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 12.dp),
+                        .padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -99,33 +99,33 @@ fun HomeScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(6.dp)
                                 .clip(CircleShape)
                                 .background(GlipGreenPrimary)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = pickupLocation.ifBlank { "Pickup" },
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f, fill = false)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "➔", fontSize = 11.sp, color = Color(0xFF94A3B8))
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(text = "➔", fontSize = 10.sp, color = Color(0xFF94A3B8))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(6.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFFEF4444))
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Text(
                             text = dropLocation.ifBlank { "Drop" },
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
@@ -135,93 +135,13 @@ fun HomeScreen(
                     }
                     Text(
                         text = "Change",
-                        fontSize = 11.sp,
+                        fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = GlipGreenPrimary,
                         modifier = Modifier
                             .clickable { onChangeLocation() }
-                            .padding(start = 8.dp, top = 2.dp, bottom = 2.dp)
+                            .padding(start = 6.dp, top = 2.dp, bottom = 2.dp)
                     )
-                }
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // Dynamic Ride Status Indicator Banner
-            val isAccepted = uiState.rideBookingStatus == "ACCEPTED"
-            val isRequested = uiState.rideBookingStatus == "REQUESTED"
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp)
-                    .padding(bottom = 6.dp),
-                shape = RoundedCornerShape(10.dp),
-                color = when {
-                    isAccepted -> Color(0xFFF0FDF4)
-                    isRequested -> Color(0xFFFFFBEB)
-                    else -> Color(0xFFF0FDF4)
-                },
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    when {
-                        isAccepted -> Color(0xFF86EFAC)
-                        isRequested -> Color(0xFFFDE68A)
-                        else -> Color(0xFF86EFAC)
-                    }
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .clip(CircleShape)
-                                .background(
-                                    when {
-                                        isAccepted -> Color(0xFF16A34A)
-                                        isRequested -> Color(0xFFD97706)
-                                        else -> GlipGreenPrimary
-                                    }
-                                )
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = when {
-                                isAccepted -> "Driver Accepted! Arriving in ${uiState.acceptedVehicle?.etaMinutes ?: 2} mins"
-                                isRequested -> "Request Sent to ${uiState.selectedVehicle?.driver?.fullName ?: "Driver"}..."
-                                else -> "Drivers Heading Along Your Route"
-                            },
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = when {
-                                isAccepted -> Color(0xFF15803D)
-                                isRequested -> Color(0xFFB45309)
-                                else -> Color(0xFF15803D)
-                            }
-                        )
-                    }
-                    if (isRequested) {
-                        Text(
-                            text = "Cancel",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFEF4444),
-                            modifier = Modifier.clickable { viewModel.cancelCurrentRide() }
-                        )
-                    } else {
-                        Text(
-                            text = if (userPhone.isNotBlank()) userPhone else "Live Corridor",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF166534)
-                        )
-                    }
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
@@ -411,6 +331,45 @@ fun HomeScreen(
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 4-Digit Ride OTP Badge
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFFEF3C7),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(
+                                    text = "RIDE OTP",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFFB45309)
+                                )
+                                Text(
+                                    text = "Share OTP with driver upon boarding",
+                                    fontSize = 9.5.sp,
+                                    color = Color(0xFF78350F)
+                                )
+                            }
+                            Text(
+                                text = uiState.rideOtp.ifBlank { "4821" },
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFB45309),
+                                letterSpacing = 2.sp
+                            )
                         }
                     }
 
@@ -740,10 +699,10 @@ fun PersonalRideOptionsCard(
             if (isCorridorEmpty) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "No shared vehicles on your route corridor. Nearest driver will be dispatched for your personal ride.",
-                    fontSize = 10.5.sp,
-                    color = Color(0xFF64748B),
-                    lineHeight = 14.sp
+                    text = "No Shared vehicle On Your Route..",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF64748B)
                 )
             }
 
@@ -886,85 +845,6 @@ fun PersonalRideOptionsCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Cash / Offers Row (matches Rapido reference design)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(36.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFFF8FAFC))
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFDCFCE7)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "₹", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Cash",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = Color(0xFF94A3B8),
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .width(1.dp)
-                        .height(20.dp)
-                        .background(Color(0xFFE2E8F0))
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFDCFCE7)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "%", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF16A34A))
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Offers",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = Color(0xFF94A3B8),
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
             // Primary Booking Button (Rapido warm gold yellow #F5B838)
             val effectiveSel = selectedOption ?: options.firstOrNull()
             val isAvailable = effectiveSel?.isAvailable == true
@@ -1000,9 +880,8 @@ fun PersonalRideOptionsCard(
 }
 
 /**
- * 60-Second Route Vehicle Scanning Radar Card.
- * Displays a countdown radar scanning for vehicles along the route corridor.
- * Passenger can wait or immediately tap "Skip & Book Personal Vehicle Now".
+ * 120-Second Route Vehicle Scanning Radar Card.
+ * Sleek, compact radar with yellow progress indicator and single "Scanning Wait.." status.
  */
 @Composable
 fun RouteVehicleSearchingCard(
@@ -1011,17 +890,21 @@ fun RouteVehicleSearchingCard(
     onSkipToPersonal: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val minutes = secondsRemaining / 60
+    val seconds = secondsRemaining % 60
+    val timeFormatted = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 2.dp),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -1032,7 +915,7 @@ fun RouteVehicleSearchingCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(8.dp)
+                            .size(7.dp)
                             .clip(CircleShape)
                             .background(GlipGreenPrimary)
                     )
@@ -1051,7 +934,7 @@ fun RouteVehicleSearchingCard(
                     color = Color(0xFFEFF6FF)
                 ) {
                     Text(
-                        text = "00:${secondsRemaining.toString().padStart(2, '0')}",
+                        text = timeFormatted,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF2563EB),
@@ -1060,62 +943,56 @@ fun RouteVehicleSearchingCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Animated progress bar
+            // Yellow Progress Bar (Pila line jo aage badte rahta hai)
             LinearProgressIndicator(
-                progress = { (60 - secondsRemaining) / 60f },
+                progress = { (120 - secondsRemaining) / 120f },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(6.dp)
+                    .height(5.dp)
                     .clip(RoundedCornerShape(3.dp)),
-                color = GlipGreenPrimary,
-                trackColor = Color(0xFFF1F5F9)
+                color = Color(0xFFF5B838),
+                trackColor = Color(0xFFFEF3C7)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            Text(
-                text = "Scanning for shared autos & cabs heading along your route (${String.format(Locale.getDefault(), "%.1f", distanceKm)} KM)...",
-                fontSize = 11.5.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF334155),
-                lineHeight = 16.sp,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Scanning Wait..",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF64748B)
+                )
+            }
 
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Shared pooling saves up to 48% on fuel & fare. If no driver matches in 60s, you can book a solo personal vehicle.",
-                fontSize = 10.5.sp,
-                color = Color(0xFF64748B),
-                lineHeight = 14.sp,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Skip & Book Personal Vehicle Button
             Button(
                 onClick = onSkipToPersonal,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(42.dp),
+                    .height(38.dp),
                 shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5B838))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF5B838)),
+                contentPadding = PaddingValues(0.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.FlashOn,
                         contentDescription = null,
                         tint = Color.Black,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "Skip Wait • Book Personal Ride Now",
-                        fontSize = 12.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.Black
                     )
@@ -1126,13 +1003,9 @@ fun RouteVehicleSearchingCard(
 }
 
 /**
- * Compact Redesigned Vehicle Box with:
- * 1. Color Indicator dot matching its map polyline
- * 2. Driver Name
- * 3. Seat info (e.g. 3/5 seats free)
- * 4. Upfront Pooling Fare Badge (e.g. ₹61 • Save ~48%)
- * 5. ETA & Plate number
- * 6. Call button
+ * Compact Redesigned Vehicle Box:
+ * Shows vehicle category, available seats, ETA, and upfront pooling fare.
+ * Driver full personal name, phone and license plate are hidden until ride is accepted.
  */
 @Composable
 fun VehicleCard(
@@ -1142,7 +1015,13 @@ fun VehicleCard(
     onBookClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
+    val categoryLabel = when (vehicle.category) {
+        VehicleCategory.BIKE -> "Bike"
+        VehicleCategory.AUTO_RICKSHAW -> "Auto"
+        VehicleCategory.E_RICKSHAW -> "E-Rickshaw"
+        else -> "Cab"
+    }
+
     val colorInt = try {
         Color(android.graphics.Color.parseColor(vehicle.routeColorHex))
     } catch (_: Exception) {
@@ -1167,7 +1046,7 @@ fun VehicleCard(
                 .fillMaxWidth()
                 .padding(horizontal = 7.dp, vertical = 6.dp)
         ) {
-            // 1. Driver Name + Route Color Dot
+            // 1. Vehicle Category Title + Color Dot
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -1180,10 +1059,10 @@ fun VehicleCard(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = vehicle.driver.fullName,
+                    text = categoryLabel,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 11.sp,
+                    fontSize = 11.5.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1191,7 +1070,7 @@ fun VehicleCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
             // 2. Seat Info & ETA in Row
             Row(
@@ -1221,7 +1100,7 @@ fun VehicleCard(
                 )
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(3.dp))
 
             // 3. Upfront Pooling Fare Badge
             Row(
@@ -1235,7 +1114,7 @@ fun VehicleCard(
                 ) {
                     Text(
                         text = "₹${vehicle.farePerKmEstimate.toInt()}",
-                        fontSize = 9.5.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF1D4ED8),
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
@@ -1247,50 +1126,6 @@ fun VehicleCard(
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF16A34A)
                 )
-            }
-
-            Spacer(modifier = Modifier.height(3.dp))
-
-            // 4. Vehicle Number & Call Button in a row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = vehicle.licensePlateMasked.replace(" ", ""),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF475569),
-                    fontSize = 9.sp,
-                    maxLines = 1,
-                    modifier = Modifier.weight(1f)
-                )
-
-                // Call icon button
-                Surface(
-                    shape = CircleShape,
-                    color = GlipGreenPrimary,
-                    shadowElevation = 1.dp,
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable {
-                            val phoneToCall = vehicle.driverPhone.ifBlank { "9874561239" }
-                            val callIntent = Intent(Intent.ACTION_DIAL).apply {
-                                data = Uri.parse("tel:$phoneToCall")
-                            }
-                            context.startActivity(callIntent)
-                        }
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Default.Call,
-                            contentDescription = "Call Driver",
-                            tint = Color.Black,
-                            modifier = Modifier.size(10.dp)
-                        )
-                    }
-                }
             }
         }
     }
