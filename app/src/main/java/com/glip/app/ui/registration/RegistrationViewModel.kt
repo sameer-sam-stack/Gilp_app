@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -97,7 +98,7 @@ class RegistrationViewModel(
                 val searchResult = UserSupabaseClient.findUserByPhone(cleanPhone)
                 val existingProfile = searchResult.getOrNull()
 
-                val localProfile = userRepository.getUserProfile()
+                val localProfile = userRepository.getUserProfile().firstOrNull()
                 val hasLocal = localProfile != null && (localProfile.phoneNumber == cleanPhone || localProfile.phoneNumber.endsWith(state.phoneNumber))
 
                 if (existingProfile == null && !hasLocal) {
@@ -243,7 +244,7 @@ class RegistrationViewModel(
                 // Look up existing account in Supabase
                 val searchResult = UserSupabaseClient.findUserByPhone(cleanPhone)
                 val existingProfile = searchResult.getOrNull()
-                val localProfile = userRepository.getUserProfile()
+                val localProfile = userRepository.getUserProfile().firstOrNull()
                 val resolvedProfile = existingProfile ?: if (localProfile != null && (localProfile.phoneNumber == cleanPhone || localProfile.phoneNumber.endsWith(state.phoneNumber))) localProfile else null
 
                 if (resolvedProfile != null) {
