@@ -27,11 +27,6 @@ import com.glip.app.ads.AdBannerBox
 import com.glip.app.ads.AdConfig
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.filled.ElectricRickshaw
-import androidx.compose.material.icons.filled.TwoWheeler
-import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
@@ -117,50 +112,6 @@ fun RideSearchScreen(
     var selectingLocationMode by remember { mutableStateOf<String?>(null) }
     var showSameLocationDialog by remember { mutableStateOf(false) }
 
-    // Selected vehicle option matching 2nd image
-    var selectedVehicleType by remember { mutableStateOf("auto") }
-
-    val vehicleOptions = remember {
-        listOf(
-            VehicleChoice(
-                id = "auto",
-                name = "Auto Rickshaw",
-                fare = 70.0,
-                etaMinutes = 3,
-                capacity = "3 Seats",
-                tag = "Most Popular",
-                description = "Private auto ride directly to your destination"
-            ),
-            VehicleChoice(
-                id = "bike",
-                name = "Bike Taxi",
-                fare = 40.0,
-                etaMinutes = 2,
-                capacity = "1 Seat",
-                tag = "Fastest",
-                description = "Beat traffic with a solo bike ride"
-            ),
-            VehicleChoice(
-                id = "erickshaw",
-                name = "E-Rickshaw",
-                fare = 50.0,
-                etaMinutes = 4,
-                capacity = "4 Seats",
-                tag = "Eco Friendly",
-                description = "Silent, smooth electric local ride"
-            ),
-            VehicleChoice(
-                id = "cab",
-                name = "Mini Cab",
-                fare = 120.0,
-                etaMinutes = 5,
-                capacity = "4 Seats",
-                tag = "AC Comfort",
-                description = "Comfortable air-conditioned private car"
-            )
-        )
-    }
-
     // Auto-fill pickup with live GPS location as soon as detected
     LaunchedEffect(liveAddress, liveCoords) {
         if (!liveAddress.isNullOrBlank() && pickup.isBlank()) {
@@ -243,37 +194,33 @@ fun RideSearchScreen(
                 }
         )
 
-        // Main UI Scrollable Column
+        // Main UI Column: SpaceBetween layout puts Top at the top, Center in center, and Bottom Ad at the very bottom
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // TOP SECTION: Top Hero Ad Banner (Compact height 140dp as requested)
+            // TOP SECTION: Top Hero Ad Banner (Square shape, moved to the very top)
             AdBannerBox(
                 slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_BANNER,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp),
-                shape = RoundedCornerShape(16.dp)
+                    .aspectRatio(1f),
+                shape = RoundedCornerShape(20.dp)
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // FLOATING PICKUP & DROP CARD (Matching 2nd image exactly)
+            // CENTER: Floating Pickup & Drop Card (Matching 2nd image) + Ride Button
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = Color.White
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
                 border = BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
                 Column(
@@ -384,7 +331,7 @@ fun RideSearchScreen(
                                     }
                                 )
 
-                                // Green Target Icon (Matching Image)
+                                // Green Target Icon (Matching Image 2)
                                 IconButton(
                                     onClick = {
                                         activeField = null
@@ -446,7 +393,7 @@ fun RideSearchScreen(
                                     }
                                 )
 
-                                // Red Target Icon (Matching Image)
+                                // Red Target Icon (Matching Image 2)
                                 IconButton(
                                     onClick = {
                                         activeField = null
@@ -490,184 +437,64 @@ fun RideSearchScreen(
                             }
                         )
                     }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-            // CHOOSE YOUR VEHICLE HEADING (Matching Image exactly)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Choose Your Vehicle",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+                    val isRideEnabled = isPickupSelected && isDropSelected && pickup.isNotBlank() && drop.isNotBlank()
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 4 VEHICLE OPTION CARDS (Matching Image exactly)
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                vehicleOptions.forEach { opt ->
-                    val isSelected = selectedVehicleType == opt.id
-                    Card(
+                    // RIDE BUTTON (Clickable ONLY when both valid pickup and drop locations are selected)
+                    Button(
+                        onClick = {
+                            if (isRideEnabled) {
+                                activeField = null
+                                suggestions = emptyList()
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                                if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
+                                    showSameLocationDialog = true
+                                } else {
+                                    val pLat = pickupCoordinates?.first ?: if (initialPickupLat != 0.0) initialPickupLat else (liveCoords?.first ?: 28.6139)
+                                    val pLng = pickupCoordinates?.second ?: if (initialPickupLng != 0.0) initialPickupLng else (liveCoords?.second ?: 77.2090)
+                                    val dLat = dropCoordinates?.first ?: if (initialDropLat != 0.0) initialDropLat else 28.5355
+                                    val dLng = dropCoordinates?.second ?: if (initialDropLng != 0.0) initialDropLng else 77.3910
+                                    onConfirmRideSearch(pickup.trim(), drop.trim(), pLat, pLng, dLat, dLng)
+                                }
+                            }
+                        },
+                        enabled = isRideEnabled,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable { selectedVehicleType = opt.id },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) Color(0xFFF0FDF4) else Color.White
-                        ),
-                        border = BorderStroke(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) Color(0xFF10B981) else Color(0xFFE2E8F0)
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 3.dp else 1.dp)
+                            .height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF18181B),
+                            disabledContainerColor = Color(0xFFCBD5E1),
+                            contentColor = Color.White,
+                            disabledContentColor = Color.White
+                        )
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
                         ) {
-                            // Left Icon badge
-                            Box(
-                                modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isSelected) Color(0xFFDCFCE7) else Color(0xFFF1F5F9)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = when (opt.id) {
-                                        "bike" -> Icons.Default.TwoWheeler
-                                        "cab" -> Icons.Default.DirectionsCar
-                                        else -> Icons.Default.ElectricRickshaw
-                                    },
-                                    contentDescription = opt.name,
-                                    tint = if (isSelected) Color(0xFF10B981) else Color(0xFF64748B),
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            // Name, Tag & ETA
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = opt.name,
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0F172A)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = Color(0xFFFEF3C7)
-                                    ) {
-                                        Text(
-                                            text = opt.tag,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF92400E),
-                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(3.dp))
-                                Text(
-                                    text = "${opt.etaMinutes} mins away • ${opt.capacity}",
-                                    fontSize = 12.5.sp,
-                                    color = Color(0xFF64748B)
-                                )
-                            }
-
-                            // Price and Fixed Fare
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(
-                                    text = "₹${opt.fare.toInt()}",
-                                    fontSize = 19.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF0F172A)
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = "Fixed fare",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF10B981),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+                            Text(
+                                text = "Ride",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isRideEnabled) Color.White else Color.White.copy(alpha = 0.6f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = if (isRideEnabled) GlipGreenPrimary else Color.White.copy(alpha = 0.6f),
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
+
                 }
             }
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            val isRideEnabled = isPickupSelected && isDropSelected && pickup.isNotBlank() && drop.isNotBlank()
-
-            // RIDE BUTTON
-            Button(
-                onClick = {
-                    if (isRideEnabled) {
-                        activeField = null
-                        suggestions = emptyList()
-                        keyboardController?.hide()
-                        focusManager.clearFocus()
-                        if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
-                            showSameLocationDialog = true
-                        } else {
-                            val pLat = pickupCoordinates?.first ?: if (initialPickupLat != 0.0) initialPickupLat else (liveCoords?.first ?: 28.6139)
-                            val pLng = pickupCoordinates?.second ?: if (initialPickupLng != 0.0) initialPickupLng else (liveCoords?.second ?: 77.2090)
-                            val dLat = dropCoordinates?.first ?: if (initialDropLat != 0.0) initialDropLat else 28.5355
-                            val dLng = dropCoordinates?.second ?: if (initialDropLng != 0.0) initialDropLng else 77.3910
-                            onConfirmRideSearch(pickup.trim(), drop.trim(), pLat, pLng, dLat, dLng)
-                        }
-                    }
-                },
-                enabled = isRideEnabled,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF18181B),
-                    disabledContainerColor = Color(0xFFCBD5E1),
-                    contentColor = Color.White,
-                    disabledContentColor = Color.White
-                )
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Ride",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isRideEnabled) Color.White else Color.White.copy(alpha = 0.6f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        tint = if (isRideEnabled) GlipGreenPrimary else Color.White.copy(alpha = 0.6f),
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // BOTTOM SECTION: Empty Bottom Ad Container Box (Low height 72dp, white card with blue border)
             Card(
@@ -685,8 +512,6 @@ fun RideSearchScreen(
                     shape = RoundedCornerShape(16.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
         }
 
         // Location Picker Overlay (Opens map selection screen with fixed center pin)
@@ -738,13 +563,3 @@ fun RideSearchScreen(
         }
     }
 }
-
-private data class VehicleChoice(
-    val id: String,
-    val name: String,
-    val fare: Double,
-    val etaMinutes: Int,
-    val capacity: String,
-    val tag: String,
-    val description: String
-)

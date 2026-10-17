@@ -11,8 +11,8 @@ android {
         applicationId = "com.glip.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 26
-        versionName = "3.3"
+        versionCode = 27
+        versionName = "3.2"
     }
 
     buildTypes {
