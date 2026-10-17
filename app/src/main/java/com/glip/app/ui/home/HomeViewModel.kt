@@ -527,7 +527,7 @@ class HomeViewModel(
             val targetDriverUuid = nearestDriver?.id?.takeIf { RideRequestClient.isValidUuid(it) }
 
             val result = RideRequestClient.createRideRequest(
-                passengerName = "$userName (${selectedOption.type.displayName})",
+                passengerName = userName.ifBlank { "Passenger" },
                 passengerMobile = userPhone.ifBlank { "9876543210" },
                 pickupAddress = _uiState.value.pickupQuery.ifBlank { "Pickup Location" },
                 pickupLat = pLat,
