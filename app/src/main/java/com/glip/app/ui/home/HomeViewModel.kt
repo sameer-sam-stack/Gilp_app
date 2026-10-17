@@ -11,7 +11,11 @@ import com.glip.app.data.supabase.RideStatusResult
 import com.glip.app.domain.model.*
 import com.glip.app.domain.repository.MobilityRepository
 import com.glip.app.util.CorridorMatchingHelper
+import com.glip.app.util.FareCalculationEngine
 import com.glip.app.util.OsrmRoutingHelper
+import com.glip.app.util.PersonalFareEstimate
+import com.glip.app.util.PersonalVehicleType
+import com.glip.app.util.PoolingFareEstimate
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +42,13 @@ data class HomeUiState(
     val rideBookingStatus: String = "NONE", // NONE, REQUESTED, ACCEPTED, CANCELLED
     val acceptedVehicle: Vehicle? = null,
     val passengerRoutePoints: List<GeoPoint> = emptyList(),
-    val bookingError: String? = null
+    val bookingError: String? = null,
+    val tripDistanceKm: Double = 0.0,
+    val isPersonalRideMode: Boolean = false,
+    val personalOptions: List<PersonalFareEstimate> = emptyList(),
+    val selectedPersonalOption: PersonalFareEstimate? = null,
+    val allOnlineDrivers: List<RemoteDriver> = emptyList(),
+    val poolingFareEstimate: PoolingFareEstimate? = null
 )
 
 class HomeViewModel(
@@ -98,7 +108,43 @@ class HomeViewModel(
                 dropLng = dLng
             )
         }
+        computeRoadDistanceAndPricing(pLat, pLng, dLat, dLng)
         applyRealDriverSearch()
+    }
+
+    private fun computeRoadDistanceAndPricing(pLat: Double, pLng: Double, dLat: Double, dLng: Double) {
+        if (pLat == 0.0 || pLng == 0.0 || dLat == 0.0 || dLng == 0.0) return
+        viewModelScope.launch {
+            val roadResult = OsrmRoutingHelper.fetchRoadRoute(
+                originLat = pLat,
+                originLng = pLng,
+                destLat = dLat,
+                destLng = dLng
+            )
+            val distanceKm = (roadResult?.distanceMeters ?: 4000.0) / 1000.0
+            val personalOpts = FareCalculationEngine.getPersonalOptions(distanceKm)
+            val defaultSel = personalOpts.firstOrNull { it.type == PersonalVehicleType.AUTO } ?: personalOpts.firstOrNull()
+            val poolEst = FareCalculationEngine.calculatePoolingFare(distanceKm, occupiedSeats = 1)
+            val routePoints = roadResult?.points ?: emptyList()
+
+            _uiState.update { current ->
+                current.copy(
+                    tripDistanceKm = distanceKm,
+                    personalOptions = personalOpts,
+                    selectedPersonalOption = current.selectedPersonalOption ?: defaultSel,
+                    poolingFareEstimate = poolEst,
+                    passengerRoutePoints = routePoints
+                )
+            }
+        }
+    }
+
+    fun setPersonalRideMode(enabled: Boolean) {
+        _uiState.update { it.copy(isPersonalRideMode = enabled) }
+    }
+
+    fun selectPersonalOption(option: PersonalFareEstimate) {
+        _uiState.update { it.copy(selectedPersonalOption = option) }
     }
 
     fun onPickupQueryChange(query: String) {
@@ -257,7 +303,42 @@ class HomeViewModel(
                             totalRidesCompleted = 120,
                             isVerified = true
                         ),
-                        farePerKmEstimate = 12.0,
+                    val tripKm = if (_uiState.value.tripDistanceKm > 0.0) _uiState.value.tripDistanceKm else ((roadResult?.distanceMeters ?: 4000.0) / 1000.0)
+                    val poolEst = FareCalculationEngine.calculatePoolingFare(tripKm, (drv.totalSeats - drv.availableSeats).coerceAtLeast(0))
+
+                    val v = Vehicle(
+                        vehicleId = drv.id.ifBlank { "drv_${drv.mobileNumber}" },
+                        licensePlateMasked = drv.vehicleNumber.ifBlank { "DL 01 ** 4812" },
+                        category = category,
+                        modelName = drv.vehicleModel.ifBlank { "Auto Rickshaw (5 Seater)" },
+                        currentLat = drv.currentLat,
+                        currentLng = drv.currentLng,
+                        headingDegrees = drv.bearing,
+                        route = Route(
+                            routeId = "rte_${drv.id}",
+                            originName = "Current Location",
+                            destinationName = destName,
+                            originLat = drv.currentLat,
+                            originLng = drv.currentLng,
+                            destinationLat = destLat,
+                            destinationLng = destLng,
+                            polylinePoints = polylinePoints,
+                            totalDistanceKm = (roadResult?.distanceMeters ?: 4000.0) / 1000.0,
+                            estimatedDurationMinutes = etaMins
+                        ),
+                        routeStatus = RouteStatus.EN_ROUTE,
+                        seatAvailability = SeatAvailability(
+                            totalSeats = drv.totalSeats.coerceAtLeast(1),
+                            occupiedSeats = (drv.totalSeats - drv.availableSeats).coerceAtLeast(0)
+                        ),
+                        driver = DriverProfile(
+                            driverId = drv.id,
+                            fullName = drv.fullName.ifBlank { "Driver Partner" },
+                            rating = 4.8,
+                            totalRidesCompleted = 120,
+                            isVerified = true
+                        ),
+                        farePerKmEstimate = poolEst.fareAmount.toDouble(),
                         isDemoSimulated = false,
                         routeColorHex = colorHex,
                         etaMinutes = etaMins,
@@ -275,6 +356,7 @@ class HomeViewModel(
                 it.copy(
                     vehicles = matchedVehicles,
                     filteredVehicles = matchedVehicles,
+                    allOnlineDrivers = remoteDrivers,
                     isLoading = false,
                     selectedVehicle = it.selectedVehicle?.takeIf { sel -> matchedVehicles.any { v -> v.vehicleId == sel.vehicleId } } ?: matchedVehicles.firstOrNull()
                 )
@@ -305,6 +387,10 @@ class HomeViewModel(
             val dLat = _uiState.value.dropLat.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLat
             val dLng = _uiState.value.dropLng.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLng
 
+            val tripKm = if (_uiState.value.tripDistanceKm > 0.0) _uiState.value.tripDistanceKm else targetVehicle.route.totalDistanceKm
+            val occupied = targetVehicle.seatAvailability.occupiedSeats
+            val calculatedPoolFare = FareCalculationEngine.calculatePoolingFare(tripKm, occupied).fareAmount.toDouble()
+
             val result = RideRequestClient.createRideRequest(
                 passengerName = userName,
                 passengerMobile = userPhone,
@@ -316,7 +402,7 @@ class HomeViewModel(
                 dropLng = dLng,
                 targetDriverId = targetVehicle.driver.driverId.ifBlank { null },
                 requestedSeats = 1,
-                fare = 35.0
+                fare = calculatedPoolFare
             )
 
             if (result.isSuccess) {
@@ -328,6 +414,120 @@ class HomeViewModel(
                     it.copy(
                         rideBookingStatus = "REQUESTED",
                         activeRequestId = "local_${System.currentTimeMillis()}"
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Books a dedicated Personal Vehicle (Rapido / Uber Style).
+     * Finds the nearest online driver to passenger's pickup location and targets them.
+     */
+    fun bookPersonalRide(
+        selectedOption: PersonalFareEstimate,
+        userName: String,
+        userPhone: String
+    ) {
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    rideBookingStatus = "REQUESTED",
+                    bookingError = null
+                )
+            }
+
+            val pLat = _uiState.value.pickupLat
+            val pLng = _uiState.value.pickupLng
+            val dLat = _uiState.value.dropLat
+            val dLng = _uiState.value.dropLng
+
+            val onlineDrivers = _uiState.value.allOnlineDrivers
+            val nearestDriver = onlineDrivers.minByOrNull { drv ->
+                val results = FloatArray(1)
+                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
+                results[0]
+            }
+
+            val targetDriverUuid = nearestDriver?.id?.takeIf { RideRequestClient.isValidUuid(it) }
+
+            val result = RideRequestClient.createRideRequest(
+                passengerName = "$userName (Personal ${selectedOption.type.displayName})",
+                passengerMobile = userPhone.ifBlank { "9876543210" },
+                pickupAddress = _uiState.value.pickupQuery.ifBlank { "Pickup Location" },
+                pickupLat = pLat,
+                pickupLng = pLng,
+                dropAddress = _uiState.value.dropQuery.ifBlank { "Dropoff Location" },
+                dropLat = dLat,
+                dropLng = dLng,
+                targetDriverId = targetDriverUuid,
+                requestedSeats = selectedOption.type.capacity,
+                fare = selectedOption.fareAmount.toDouble()
+            )
+
+            val targetVehicle = nearestDriver?.let { drv ->
+                Vehicle(
+                    vehicleId = drv.id,
+                    licensePlateMasked = drv.vehicleNumber.ifBlank { "DL 01 ** 9821" },
+                    category = when (selectedOption.type) {
+                        PersonalVehicleType.AUTO -> VehicleCategory.AUTO_RICKSHAW
+                        PersonalVehicleType.BIKE -> VehicleCategory.AUTO_RICKSHAW
+                        PersonalVehicleType.CAB_MINI -> VehicleCategory.MINI_CAR
+                        PersonalVehicleType.CAB_PREMIUM -> VehicleCategory.SEDAN
+                        PersonalVehicleType.CAB_XL -> VehicleCategory.SUV
+                    },
+                    modelName = "${selectedOption.type.displayName} (Personal Dedicated)",
+                    currentLat = drv.currentLat,
+                    currentLng = drv.currentLng,
+                    headingDegrees = drv.bearing,
+                    route = Route(
+                        routeId = "personal_${drv.id}",
+                        originName = _uiState.value.pickupQuery,
+                        destinationName = _uiState.value.dropQuery,
+                        originLat = pLat,
+                        originLng = pLng,
+                        destinationLat = dLat,
+                        destinationLng = dLng,
+                        polylinePoints = emptyList(),
+                        totalDistanceKm = selectedOption.distanceKm,
+                        estimatedDurationMinutes = selectedOption.etaMinutes
+                    ),
+                    routeStatus = RouteStatus.EN_ROUTE,
+                    seatAvailability = SeatAvailability(
+                        totalSeats = selectedOption.type.capacity,
+                        occupiedSeats = selectedOption.type.capacity
+                    ),
+                    driver = DriverProfile(
+                        driverId = drv.id,
+                        fullName = drv.fullName.ifBlank { "Nearest Driver Partner" },
+                        rating = 4.9,
+                        totalRidesCompleted = 142,
+                        isVerified = true
+                    ),
+                    farePerKmEstimate = selectedOption.fareAmount.toDouble(),
+                    isDemoSimulated = false,
+                    routeColorHex = "#F59E0B",
+                    etaMinutes = selectedOption.etaMinutes,
+                    driverPhone = drv.mobileNumber
+                )
+            }
+
+            if (result.isSuccess) {
+                val reqId = result.getOrNull() ?: ""
+                _uiState.update {
+                    it.copy(
+                        activeRequestId = reqId,
+                        selectedVehicle = targetVehicle ?: it.selectedVehicle
+                    )
+                }
+                if (targetVehicle != null) {
+                    startRideStatusPolling(reqId, targetVehicle)
+                }
+            } else {
+                _uiState.update {
+                    it.copy(
+                        rideBookingStatus = "NONE",
+                        bookingError = "Nearest driver could not be reached. Please retry."
                     )
                 }
             }
@@ -346,7 +546,8 @@ class HomeViewModel(
                     _uiState.update {
                         it.copy(
                             rideBookingStatus = "NONE",
-                            bookingError = "Driver did not respond in time. Please try another vehicle."
+                            isPersonalRideMode = true,
+                            bookingError = "Driver response time expired (60s). You can book an instant Personal Ride below with the nearest driver."
                         )
                     }
                     startPeriodicDriverSearch()
