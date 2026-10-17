@@ -520,71 +520,107 @@ fun PersonalRideOptionsCard(
         Column(
             modifier = Modifier.padding(12.dp)
         ) {
-            // 1. Pickup and Drop and Change Bar (Replaces old Personal Ride header per user requirement)
+            // 1. Pickup and Drop Selector matching Screenshot 1
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(34.dp),
-                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
                 color = Color(0xFFF8FAFC),
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth()
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
+                    // Left Timeline Indicator
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(vertical = 4.dp)
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(6.dp)
+                                .size(8.dp)
                                 .clip(CircleShape)
-                                .background(GlipGreenPrimary)
+                                .background(Color(0xFF10B981))
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = pickupLocation.ifBlank { "Pickup" },
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF0F172A),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(text = "➔", fontSize = 10.sp, color = Color(0xFF94A3B8))
-                        Spacer(modifier = Modifier.width(6.dp))
                         Box(
                             modifier = Modifier
-                                .size(6.dp)
+                                .width(1.5.dp)
+                                .height(22.dp)
+                                .background(Color(0xFFCBD5E1))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFFEF4444))
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = dropLocation.ifBlank { "Drop" },
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF0F172A),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
                     }
-                    Text(
-                        text = "Change",
-                        fontSize = 10.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = GlipGreenPrimary,
-                        modifier = Modifier
-                            .clickable { onChangeLocation() }
-                            .padding(start = 6.dp, top = 2.dp, bottom = 2.dp)
-                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        // Top row: Pickup
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(28.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = pickupLocation.ifBlank { "Pickup" },
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF0F172A),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = "Change Pickup",
+                                tint = Color(0xFF10B981),
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .clickable { onChangeLocation() }
+                            )
+                        }
+
+                        HorizontalDivider(
+                            color = Color(0xFFF1F5F9),
+                            thickness = 1.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // Bottom row: Drop
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(28.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = dropLocation.ifBlank { "Drop" },
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF0F172A),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = Icons.Default.MyLocation,
+                                contentDescription = "Change Drop",
+                                tint = Color(0xFFEF4444),
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .clickable { onChangeLocation() }
+                            )
+                        }
+                    }
                 }
             }
 
