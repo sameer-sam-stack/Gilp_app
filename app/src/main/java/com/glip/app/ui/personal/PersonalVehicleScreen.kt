@@ -197,16 +197,16 @@ fun PersonalVehicleScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(18.dp)
+                                .padding(horizontal = 14.dp, vertical = 10.dp)
                         ) {
                             Text(
                                 text = "Private Ride (No Co-Passengers)",
-                                fontSize = 16.sp,
+                                fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF15803D)
                             )
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             // PICKUP & DROPOFF SECTION (Matching Image 2 alignment)
                             Row(
@@ -218,16 +218,16 @@ fun PersonalVehicleScreen(
                                     modifier = Modifier.width(20.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    // Top Green Dot Box (matching pickup row height 48.dp, centered at 24.dp)
+                                    // Top Green Dot Box (matching pickup row height 38.dp, centered at 19.dp)
                                     Box(
-                                        modifier = Modifier.height(48.dp),
+                                        modifier = Modifier.height(38.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Box(
                                             modifier = Modifier
                                                 .width(2.dp)
                                                 .fillMaxHeight()
-                                                .padding(top = 24.dp)
+                                                .padding(top = 19.dp)
                                                 .background(Color(0xFFCBD5E1))
                                         )
                                         Box(
@@ -246,16 +246,16 @@ fun PersonalVehicleScreen(
                                             .background(Color(0xFFCBD5E1))
                                     )
 
-                                    // Bottom Red Dot Box (matching drop row height 48.dp, centered at 24.dp)
+                                    // Bottom Red Dot Box (matching drop row height 38.dp, centered at 19.dp)
                                     Box(
-                                        modifier = Modifier.height(48.dp),
+                                        modifier = Modifier.height(38.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Box(
                                             modifier = Modifier
                                                 .width(2.dp)
                                                 .fillMaxHeight()
-                                                .padding(bottom = 24.dp)
+                                                .padding(bottom = 19.dp)
                                                 .background(Color(0xFFCBD5E1))
                                         )
                                         Box(
@@ -274,7 +274,7 @@ fun PersonalVehicleScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(48.dp),
+                                            .height(38.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         BasicTextField(
@@ -307,7 +307,7 @@ fun PersonalVehicleScreen(
                                                     if (focusState.isFocused) isEditingPickup = true
                                                 },
                                             textStyle = TextStyle(
-                                                fontSize = 15.sp,
+                                                fontSize = 14.5.sp,
                                                 fontWeight = FontWeight.Medium,
                                                 color = Color(0xFF0F172A)
                                             ),
@@ -316,7 +316,7 @@ fun PersonalVehicleScreen(
                                                 if (pickupLocation.isEmpty()) {
                                                     Text(
                                                         text = "Enter Pickup Location",
-                                                        fontSize = 15.sp,
+                                                        fontSize = 14.5.sp,
                                                         color = Color(0xFF94A3B8)
                                                     )
                                                 }
@@ -334,13 +334,13 @@ fun PersonalVehicleScreen(
                                                 }
                                                 selectingLocationMode = "pickup"
                                             },
-                                            modifier = Modifier.size(36.dp)
+                                            modifier = Modifier.size(32.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.MyLocation,
                                                 contentDescription = "Select Pickup on Map",
                                                 tint = Color(0xFF10B981),
-                                                modifier = Modifier.size(20.dp)
+                                                modifier = Modifier.size(19.dp)
                                             )
                                         }
                                     }
@@ -354,7 +354,7 @@ fun PersonalVehicleScreen(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(48.dp),
+                                            .height(38.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         BasicTextField(
@@ -387,7 +387,7 @@ fun PersonalVehicleScreen(
                                                     if (focusState.isFocused) isEditingDrop = true
                                                 },
                                             textStyle = TextStyle(
-                                                fontSize = 15.sp,
+                                                fontSize = 14.5.sp,
                                                 fontWeight = FontWeight.Medium,
                                                 color = Color(0xFF0F172A)
                                             ),
@@ -396,7 +396,7 @@ fun PersonalVehicleScreen(
                                                 if (dropLocation.isEmpty()) {
                                                     Text(
                                                         text = "Enter Drop Location",
-                                                        fontSize = 15.sp,
+                                                        fontSize = 14.5.sp,
                                                         color = Color(0xFF94A3B8)
                                                     )
                                                 }
@@ -409,13 +409,13 @@ fun PersonalVehicleScreen(
                                             onClick = {
                                                 selectingLocationMode = "drop"
                                             },
-                                            modifier = Modifier.size(36.dp)
+                                            modifier = Modifier.size(32.dp)
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.MyLocation,
                                                 contentDescription = "Select Drop on Map",
                                                 tint = Color(0xFFEF4444),
-                                                modifier = Modifier.size(20.dp)
+                                                modifier = Modifier.size(19.dp)
                                             )
                                         }
                                     }
