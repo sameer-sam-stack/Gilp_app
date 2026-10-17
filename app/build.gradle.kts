@@ -9,15 +9,56 @@ android {
     compileSdk = 36
     defaultConfig {
         applicationId = "com.glip.app"
-        minSdk = 24
+        minSdk = 21
         targetSdk = 35
-        versionCode = 31
-        versionName = "3.8"
+        versionCode = 32
+        versionName = "3.9"
+
+        ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+        }
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            val ks = file("keystore/debug.keystore")
+            if (ks.exists()) {
+                storeFile = ks
+                storePassword = "androiddebugkey"
+                keyAlias = "androiddebugkey"
+                keyPassword = "androiddebugkey"
+                storeType = "PKCS12"
+            }
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = true
+        }
+        create("release") {
+            val ks = file("keystore/debug.keystore")
+            if (ks.exists()) {
+                storeFile = ks
+                storePassword = "androiddebugkey"
+                keyAlias = "androiddebugkey"
+                keyPassword = "androiddebugkey"
+                storeType = "PKCS12"
+            } else {
+                initWith(getByName("debug"))
+            }
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = true
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -35,6 +76,9 @@ android {
     packaging {
       resources {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
+      }
+      jniLibs {
+        useLegacyPackaging = true
       }
     }
 }
