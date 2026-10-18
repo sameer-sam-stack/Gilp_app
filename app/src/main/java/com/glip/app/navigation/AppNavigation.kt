@@ -159,21 +159,24 @@ fun AppNavigation(
             modifier = modifier.fillMaxSize()
         )
     } else {
+        val homeUiState by homeViewModel.uiState.collectAsState()
+        val isTripActive = homeUiState.rideBookingStatus != "NONE"
+        val showBottomBar = currentBottomTab != 0 || hasSearchedRide || isTripActive
+
         Scaffold(
             modifier = modifier.fillMaxSize(),
             bottomBar = {
-                GlipCompactBottomBar(
-                    currentTab = currentBottomTab,
-                    onTabSelected = { currentBottomTab = it }
-                )
+                if (showBottomBar) {
+                    GlipCompactBottomBar(
+                        currentTab = currentBottomTab,
+                        onTabSelected = { currentBottomTab = it }
+                    )
+                }
             }
         ) { innerPadding ->
             val contentModifier = Modifier.padding(innerPadding)
             when (currentBottomTab) {
                 0 -> {
-                    val homeUiState by homeViewModel.uiState.collectAsState()
-                    val isTripActive = homeUiState.rideBookingStatus != "NONE"
-
                     if (!hasSearchedRide && !isTripActive) {
                         RideSearchScreen(
                             initialPickup = selectedPickup,
@@ -207,7 +210,7 @@ fun AppNavigation(
                                     currentBottomTab = 1
                                 }
                             },
-                            modifier = contentModifier
+                            modifier = Modifier.fillMaxSize()
                         )
                     } else {
                         val profile = userProfile ?: preferences.getUserProfile()

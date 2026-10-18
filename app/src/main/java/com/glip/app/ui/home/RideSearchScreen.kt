@@ -203,7 +203,9 @@ fun RideSearchScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(vertical = 6.dp),
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(vertical = 8.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
