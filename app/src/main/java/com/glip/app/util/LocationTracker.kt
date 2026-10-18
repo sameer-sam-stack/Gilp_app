@@ -5,15 +5,27 @@ import android.content.Context
 import android.content.Intent
 import android.location.Geocoder
 import android.location.Location
+import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
+import android.os.Bundle
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 object LocationTracker {
+    private const val TAG = "LocationTracker"
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     private val _currentAddress = MutableStateFlow<String?>(null)
     val currentAddress: StateFlow<String?> = _currentAddress.asStateFlow()
 
@@ -22,8 +34,9 @@ object LocationTracker {
 
     fun isGpsEnabled(context: Context): Boolean {
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
-        return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+        val gps = try { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) } catch (e: Exception) { false }
+        val net = try { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } catch (e: Exception) { false }
+        return gps || net
     }
 
     fun promptEnableGps(context: Context) {
@@ -33,7 +46,31 @@ object LocationTracker {
             }
             context.startActivity(intent)
         } catch (e: Exception) {
-            Log.e("LocationTracker", "Error opening location settings", e)
+            Log.e(TAG, "Error opening location settings", e)
+        }
+    }
+
+    private fun updateLocationAndAddress(context: Context, location: Location) {
+        _currentCoordinates.value = Pair(location.latitude, location.longitude)
+        scope.launch {
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val list = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                val addr = list?.firstOrNull()
+                if (addr != null) {
+                    val fullLine = addr.getAddressLine(0)
+                    val shortLoc = addr.subLocality ?: addr.locality ?: addr.featureName
+                    _currentAddress.value = when {
+                        !shortLoc.isNullOrBlank() -> shortLoc
+                        !fullLine.isNullOrBlank() -> fullLine.split(",").take(2).joinToString(",").trim()
+                        else -> "My Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"
+                    }
+                    return@launch
+                }
+            } catch (_: Exception) {}
+            if (_currentAddress.value == null) {
+                _currentAddress.value = "My Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"
+            }
         }
     }
 
@@ -42,51 +79,50 @@ object LocationTracker {
         try {
             val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return
 
-            fun processLocation(location: Location) {
-                _currentCoordinates.value = Pair(location.latitude, location.longitude)
-                try {
-                    val geocoder = Geocoder(context, Locale.getDefault())
-                    val list = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                    val addr = list?.firstOrNull()
-                    if (addr != null) {
-                        val fullLine = addr.getAddressLine(0)
-                        val shortLoc = addr.subLocality ?: addr.locality ?: addr.featureName
-                        _currentAddress.value = when {
-                            !shortLoc.isNullOrBlank() -> shortLoc
-                            !fullLine.isNullOrBlank() -> fullLine.split(",").take(2).joinToString(",").trim()
-                            else -> "My Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"
-                        }
-                        return
-                    }
-                } catch (_: Exception) {}
-                _currentAddress.value = "My Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"
-            }
-
             // 1. Instant check from last known GPS/Network location
             val lastLocation: Location? = when {
-                lm.isProviderEnabled(LocationManager.GPS_PROVIDER) -> lm.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                try { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) } catch (_: Exception) { false } ->
+                    try { lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) } catch (_: Exception) { null }
+                try { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } catch (_: Exception) { false } ->
+                    try { lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) } catch (_: Exception) { null }
                 else -> null
             }
 
             if (lastLocation != null) {
-                processLocation(lastLocation)
+                updateLocationAndAddress(context, lastLocation)
             }
 
             // 2. Request a fresh real-time single fix from GPS/Network provider
             val provider = when {
-                lm.isProviderEnabled(LocationManager.GPS_PROVIDER) -> LocationManager.GPS_PROVIDER
-                lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) -> LocationManager.NETWORK_PROVIDER
+                try { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) } catch (_: Exception) { false } -> LocationManager.GPS_PROVIDER
+                try { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } catch (_: Exception) { false } -> LocationManager.NETWORK_PROVIDER
                 else -> null
             }
 
             if (provider != null) {
-                lm.requestSingleUpdate(provider, { liveLoc ->
-                    processLocation(liveLoc)
-                }, android.os.Looper.getMainLooper())
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val executor = ContextCompat.getMainExecutor(context)
+                    try {
+                        lm.getCurrentLocation(provider, null, executor) { loc ->
+                            if (loc != null) updateLocationAndAddress(context, loc)
+                        }
+                    } catch (_: Exception) {}
+                } else {
+                    try {
+                        lm.requestSingleUpdate(provider, object : LocationListener {
+                            override fun onLocationChanged(location: Location) {
+                                updateLocationAndAddress(context, location)
+                            }
+                            @Deprecated("Deprecated in Java")
+                            override fun onStatusChanged(p: String?, s: Int, e: Bundle?) {}
+                            override fun onProviderEnabled(p: String) {}
+                            override fun onProviderDisabled(p: String) {}
+                        }, Looper.getMainLooper())
+                    } catch (_: Exception) {}
+                }
             }
         } catch (e: Exception) {
-            Log.e("LocationTracker", "Error refreshing location", e)
+            Log.e(TAG, "Error refreshing location", e)
         }
     }
 
@@ -115,7 +151,7 @@ object LocationTracker {
                 }
             }
         } catch (e: Exception) {
-            Log.e("LocationTracker", "Reverse geocode failed", e)
+            Log.e(TAG, "Reverse geocode failed", e)
         }
         return "Pin Location (${String.format(Locale.US, "%.4f, %.4f", latitude, longitude)})"
     }

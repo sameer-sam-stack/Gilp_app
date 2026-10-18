@@ -6,13 +6,14 @@ plugins {
 
 android {
     namespace = "com.glip.app"
-    compileSdk = 36
+    compileSdk = 35
     defaultConfig {
         applicationId = "com.glip.app"
         minSdk = 24
         targetSdk = 35
         versionCode = 41
         versionName = "4.8"
+        multiDexEnabled = true
 
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -36,6 +37,7 @@ android {
         }
     }
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -50,9 +52,6 @@ android {
       resources {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
       }
-      jniLibs {
-        useLegacyPackaging = true
-      }
     }
 }
 
@@ -61,6 +60,9 @@ kotlin {
 }
 
 dependencies {
+  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+  implementation("androidx.multidex:multidex:2.0.1")
+
   val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)
   androidTestImplementation(composeBom)
