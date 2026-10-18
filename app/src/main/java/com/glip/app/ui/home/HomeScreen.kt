@@ -1025,6 +1025,7 @@ fun HomeScreen(
         }
     }
 }
+}
 
 /**
  * Rapido / Uber Style Personal Vehicle Selection Card.
