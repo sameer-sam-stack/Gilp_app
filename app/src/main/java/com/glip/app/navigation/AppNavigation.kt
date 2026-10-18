@@ -184,6 +184,10 @@ fun AppNavigation(
                     isPersonalSearchFromServices = false
                 }
             },
+            onNavigateToServices = {
+                hasSearchedRide = true
+                currentBottomTab = 1
+            },
             onCancel = {
                 if (isPersonalSearchFromServices) {
                     isPersonalSearchFromServices = false

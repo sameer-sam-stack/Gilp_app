@@ -92,59 +92,22 @@ fun ServicesScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        // Promotional / Live Advertisement Banner below services (Top Ad Container on Services Screen)
-        AdBannerBox(
-            slotId = AdConfig.SLOT_SERVICES_PROMO_BANNER,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(96.dp),
-            shape = RoundedCornerShape(16.dp),
-            fallbackContent = {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(96.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    ),
-                    elevation = CardDefaults.cardElevation(2.dp),
-                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Advertisement Space",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF94A3B8),
-                            fontSize = 12.sp
-                        )
-                    }
-                }
-            }
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // New Bottom AD container requested by user: enlarged from bottom
+        // Enlarged Bottom AD Banner on Services Screen
         AdBannerBox(
             slotId = AdConfig.SLOT_SERVICES_BOTTOM_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(160.dp),
-            shape = RoundedCornerShape(16.dp),
+                .height(320.dp)
+                .padding(bottom = 20.dp),
+            shape = RoundedCornerShape(18.dp),
             fallbackContent = {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(160.dp),
-                    shape = RoundedCornerShape(16.dp),
+                        .height(320.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color.White
                     ),
@@ -154,14 +117,14 @@ fun ServicesScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(12.dp),
+                            .padding(16.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "Advertisement Space",
                             style = MaterialTheme.typography.bodySmall,
                             color = Color(0xFF94A3B8),
-                            fontSize = 12.sp
+                            fontSize = 13.sp
                         )
                     }
                 }

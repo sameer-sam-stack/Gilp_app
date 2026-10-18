@@ -28,6 +28,7 @@ import com.glip.app.ads.AdBannerBox
 import com.glip.app.ads.AdConfig
 
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.MyLocation
@@ -69,6 +70,7 @@ fun RideSearchScreen(
         dropLat: Double,
         dropLng: Double
     ) -> Unit,
+    onNavigateToServices: (() -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -534,22 +536,75 @@ fun RideSearchScreen(
                 }
             }
 
-            // BOTTOM SECTION: Empty Bottom Ad Container Box (Low height 72dp, white card with blue border)
+            // BOTTOM SECTION: "Our Other Services" Navigation Card (Clickable container navigating to All Services)
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp)
-                    .height(72.dp),
+                    .height(64.dp)
+                    .clickable { onNavigateToServices?.invoke() },
                 shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(1.5.dp, Color(0xFF2563EB)),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
-                AdBannerBox(
-                    slotId = AdConfig.SLOT_FIRST_SCREEN_BOTTOM_STRIP,
-                    modifier = Modifier.fillMaxSize(),
-                    shape = RoundedCornerShape(16.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFEFF6FF),
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.GridView,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2563EB),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Our Other Services",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+                            Text(
+                                text = "Parcel • School Van • Personal Ride",
+                                fontSize = 11.5.sp,
+                                color = Color(0xFF64748B),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFFF1F5F9),
+                        modifier = Modifier.size(30.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Open All Services",
+                                tint = Color(0xFF2563EB),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
 
