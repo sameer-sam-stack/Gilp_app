@@ -154,24 +154,8 @@ fun HomeScreen(
         }
     }
 
-    // User requirement: Enlarge Top Ad height downwards and make Map smaller from top
-    val isSearchingDriver = uiState.rideBookingStatus == "REQUESTED"
-    val animatedAdHeight by animateDpAsState(
-        targetValue = when {
-            isSearchingDriver -> 280.dp
-            !hasConfirmedRoute -> 275.dp
-            else -> 240.dp
-        },
-        label = "adHeight"
-    )
-    val animatedMapWeight by animateFloatAsState(
-        targetValue = when {
-            isSearchingDriver -> 0.52f
-            !hasConfirmedRoute -> 0.58f
-            else -> 0.76f
-        },
-        label = "mapWeight"
-    )
+    // Fixed Top AD Height across all screens & states
+    val topAdHeight = 250.dp
 
     // Sync search query if passed from search card
     LaunchedEffect(pickupLocation, dropLocation) {
@@ -191,86 +175,36 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(6.dp))
 
-        // 1. Top AD Banner Box: Enlarged height from bottom
+        // 1. Top AD Banner Box: Fixed 250dp height across all screens & states
         AdBannerBox(
             slotId = AdConfig.SLOT_HOME_TOP_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 6.dp, end = 6.dp, bottom = 8.dp)
-                .height(animatedAdHeight),
+                .height(topAdHeight),
             shape = RoundedCornerShape(12.dp)
         )
 
-        // Map Area (Directly under Top AD per user requirement; shrinks when searching)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(animatedMapWeight)
-                .padding(horizontal = 14.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
-        ) {
-            if (!uiState.isFallbackListVisible) {
-                InteractiveDemoMap(
-                    vehicles = if (uiState.rideBookingStatus == "ACCEPTED" || uiState.rideBookingStatus == "IN_PROGRESS") listOfNotNull(uiState.acceptedVehicle) else uiState.filteredVehicles,
-                    selectedVehicle = uiState.selectedVehicle,
-                    onVehicleSelect = { viewModel.selectVehicle(it) },
-                    onRecenter = { viewModel.recenterDemoArea() },
-                    passengerRoutePoints = uiState.passengerRoutePoints,
-                    isRideAccepted = uiState.rideBookingStatus == "ACCEPTED" || uiState.rideBookingStatus == "IN_PROGRESS",
-                    rideBookingStatus = uiState.rideBookingStatus,
-                    pickupGeoPoint = if (effectivePickupLat != 0.0) GeoPoint(effectivePickupLat, effectivePickupLng) else null,
-                    dropGeoPoint = if (effectiveDropLat != 0.0) GeoPoint(effectiveDropLat, effectiveDropLng) else null,
-                    pickupLocation = pickup.ifBlank { pickupLocation.ifBlank { uiState.pickupQuery } },
-                    dropLocation = drop.ifBlank { dropLocation.ifBlank { uiState.dropQuery } },
-                    onEditPickup = {
-                        if (hasConfirmedRoute) onChangeLocation()
-                        onEditPickup()
-                    },
-                    onEditDrop = {
-                        if (hasConfirmedRoute) onChangeLocation()
-                        onEditDrop()
-                    }
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(uiState.filteredVehicles) { vehicle ->
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            VehicleCard(
-                                vehicle = vehicle,
-                                isSelected = vehicle.vehicleId == uiState.selectedVehicle?.vehicleId,
-                                onClick = { viewModel.selectVehicle(vehicle) },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        // 3. Bottom Cards Area
+        // 2. Main Content: When !hasConfirmedRoute, NO MAP is shown (Only Pickup & Drop Card + Ride Button)
         if (!hasConfirmedRoute) {
-            Card(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 2.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    .weight(1f)
+                    .padding(horizontal = 14.dp),
+                contentAlignment = Alignment.TopCenter
             ) {
-                Column(
+                Card(
                     modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                ) {
+                    Column(
+                        modifier = Modifier
                         .fillMaxWidth()
                         .padding(14.dp)
                 ) {
@@ -573,10 +507,68 @@ fun HomeScreen(
             if (showSameLocationDialog) {
                 SameLocationAlertDialog(onDismiss = { showSameLocationDialog = false })
             }
-        } else if (uiState.rideBookingStatus == "ACCEPTED") {
-            // ACCEPTED RIDE: Show dedicated single driver card with live ETA and Call
-            val driverVeh = uiState.acceptedVehicle ?: uiState.selectedVehicle
-            Card(
+        } else {
+            // ROUTE CONFIRMED: Active OSM Map + Status Cards
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = 14.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+            ) {
+                if (!uiState.isFallbackListVisible) {
+                    InteractiveDemoMap(
+                        vehicles = if (uiState.rideBookingStatus == "ACCEPTED" || uiState.rideBookingStatus == "IN_PROGRESS") listOfNotNull(uiState.acceptedVehicle) else uiState.filteredVehicles,
+                        selectedVehicle = uiState.selectedVehicle,
+                        onVehicleSelect = { viewModel.selectVehicle(it) },
+                        onRecenter = { viewModel.recenterDemoArea() },
+                        passengerRoutePoints = uiState.passengerRoutePoints,
+                        isRideAccepted = uiState.rideBookingStatus == "ACCEPTED" || uiState.rideBookingStatus == "IN_PROGRESS",
+                        rideBookingStatus = uiState.rideBookingStatus,
+                        pickupGeoPoint = if (effectivePickupLat != 0.0) GeoPoint(effectivePickupLat, effectivePickupLng) else null,
+                        dropGeoPoint = if (effectiveDropLat != 0.0) GeoPoint(effectiveDropLat, effectiveDropLng) else null,
+                        pickupLocation = pickup.ifBlank { pickupLocation.ifBlank { uiState.pickupQuery } },
+                        dropLocation = drop.ifBlank { dropLocation.ifBlank { uiState.dropQuery } },
+                        onEditPickup = {
+                            onChangeLocation()
+                            onEditPickup()
+                        },
+                        onEditDrop = {
+                            onChangeLocation()
+                            onEditDrop()
+                        }
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(uiState.filteredVehicles) { vehicle ->
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                VehicleCard(
+                                    vehicle = vehicle,
+                                    isSelected = vehicle.vehicleId == uiState.selectedVehicle?.vehicleId,
+                                    onClick = { viewModel.selectVehicle(vehicle) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            if (uiState.rideBookingStatus == "ACCEPTED") {
+                // ACCEPTED RIDE: Show dedicated single driver card with live ETA and Call
+                val driverVeh = uiState.acceptedVehicle ?: uiState.selectedVehicle
+                Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp, vertical = 4.dp),
@@ -1029,6 +1021,7 @@ fun HomeScreen(
                 }
             }
             }
+        }
         }
     }
 }
