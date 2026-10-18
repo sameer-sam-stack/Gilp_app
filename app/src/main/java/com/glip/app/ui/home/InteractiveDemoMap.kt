@@ -613,7 +613,7 @@ fun createAddressPinDrawable(
     canvas.drawRoundRect(pencilBody, 0.7f * density, 0.7f * density, pencilPaint)
 
     // Pencil tip
-    val tipPath = Path().apply {
+    val tipPath = android.graphics.Path().apply {
         moveTo(-pw, -ph + (1.8f * density))
         lineTo(pw, -ph + (1.8f * density))
         lineTo(0f, -ph - (1.5f * density))

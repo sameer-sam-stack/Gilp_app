@@ -94,8 +94,8 @@ fun HomeScreen(
                     rideBookingStatus = uiState.rideBookingStatus,
                     pickupGeoPoint = if (uiState.pickupLat != 0.0) GeoPoint(uiState.pickupLat, uiState.pickupLng) else null,
                     dropGeoPoint = if (uiState.dropLat != 0.0) GeoPoint(uiState.dropLat, uiState.dropLng) else null,
-                    pickupLocation = pickupLocation.ifBlank { uiState.pickupLocationName },
-                    dropLocation = dropLocation.ifBlank { uiState.dropLocationName },
+                    pickupLocation = pickupLocation.ifBlank { uiState.pickupQuery },
+                    dropLocation = dropLocation.ifBlank { uiState.dropQuery },
                     onEditPickup = { onChangeLocation() },
                     onEditDrop = { onChangeLocation() }
                 )
