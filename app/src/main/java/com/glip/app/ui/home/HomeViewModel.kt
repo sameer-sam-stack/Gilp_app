@@ -754,19 +754,55 @@ class HomeViewModel(
                 try {
                     val reqId = _uiState.value.activeRequestId ?: ""
                     val updatedStatus = RideRequestClient.pollRideStatus(reqId)
-                    if (updatedStatus != null && updatedStatus.driverLat != 0.0) {
-                        _uiState.update { current ->
-                            val currentAcc = current.acceptedVehicle ?: return@update current
-                            val updatedAcc = currentAcc.copy(
-                                currentLat = updatedStatus.driverLat,
-                                currentLng = updatedStatus.driverLng,
-                                headingDegrees = updatedStatus.driverBearing
-                            )
-                            current.copy(
-                                acceptedVehicle = updatedAcc,
-                                selectedVehicle = updatedAcc,
-                                filteredVehicles = listOf(updatedAcc)
-                            )
+                    if (updatedStatus != null) {
+                        if (updatedStatus.status.equals("COMPLETED", ignoreCase = true)) {
+                            // Trip successfully completed by driver
+                            _uiState.update {
+                                it.copy(
+                                    rideBookingStatus = "NONE",
+                                    activeRequestId = null,
+                                    acceptedVehicle = null,
+                                    selectedVehicle = null,
+                                    passengerRoutePoints = emptyList(),
+                                    bookingError = "Aapki ride safaltapoorvak poori ho gayi hai. Dhanyawad!"
+                                )
+                            }
+                            applyRealDriverSearch()
+                            startPeriodicDriverSearch()
+                            break
+                        } else if (updatedStatus.status.equals("CANCELLED", ignoreCase = true) ||
+                            updatedStatus.status.equals("DECLINED", ignoreCase = true)
+                        ) {
+                            // Trip cancelled by driver
+                            _uiState.update {
+                                it.copy(
+                                    rideBookingStatus = "NONE",
+                                    activeRequestId = null,
+                                    acceptedVehicle = null,
+                                    selectedVehicle = null,
+                                    passengerRoutePoints = emptyList(),
+                                    bookingError = "Driver dwara ride cancel kar di gayi hai."
+                                )
+                            }
+                            applyRealDriverSearch()
+                            startPeriodicDriverSearch()
+                            break
+                        }
+
+                        if (updatedStatus.driverLat != 0.0) {
+                            _uiState.update { current ->
+                                val currentAcc = current.acceptedVehicle ?: return@update current
+                                val updatedAcc = currentAcc.copy(
+                                    currentLat = updatedStatus.driverLat,
+                                    currentLng = updatedStatus.driverLng,
+                                    headingDegrees = updatedStatus.driverBearing
+                                )
+                                current.copy(
+                                    acceptedVehicle = updatedAcc,
+                                    selectedVehicle = updatedAcc,
+                                    filteredVehicles = listOf(updatedAcc)
+                                )
+                            }
                         }
                     }
                 } catch (_: Exception) {}

@@ -519,7 +519,8 @@ fun PersonalRideOptionsCard(
     val displayTypes = listOf(
         PersonalVehicleType.BIKE,
         PersonalVehicleType.E_RICKSHAW,
-        PersonalVehicleType.AUTO
+        PersonalVehicleType.AUTO,
+        PersonalVehicleType.CAB
     )
     val displayOptions = displayTypes.map { type ->
         options.find { it.type == type } ?: PersonalFareEstimate(
