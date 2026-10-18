@@ -10,14 +10,9 @@ object AdConfig {
      */
     var BASE_URL: String = "https://advertisement-management-system.vercel.app"
 
-    // Slot IDs matching Glip_go in-app containers
-    const val SLOT_FIRST_SCREEN_TOP_STRIP = "first_screen_top_strip"
-    const val SLOT_FIRST_SCREEN_TOP_BANNER = "first_screen_top_banner"
-    const val SLOT_FIRST_SCREEN_BOTTOM_STRIP = "first_screen_bottom_strip"
-    const val SLOT_HOME_TOP_BANNER = "home_top_banner"
-    const val SLOT_HOME_VEHICLE_TRAILING_CARD = "home_vehicle_trailing_card"
-    const val SLOT_SERVICES_PROMO_BANNER = "services_promo_banner"
-    const val SLOT_SERVICES_BOTTOM_BANNER = "services_bottom_banner"
+    // 2 Active Fixed-Size (250dp) In-App Ad Containers
+    const val SLOT_HOME_TOP_BANNER = "home_top_banner" // HomeScreen: Top Hero Banner (Fixed 250dp, Shape 12dp, 1080x750px)
+    const val SLOT_SERVICES_BOTTOM_BANNER = "services_bottom_banner" // ServicesScreen: Bottom Ad Banner (Fixed 250dp, Shape 10dp, 1080x750px)
 
     // Ultra-fast polling refresh interval (3.5 seconds for instant live ad updates)
     const val REFRESH_INTERVAL_MILLIS: Long = 3_500L
