@@ -11,8 +11,8 @@ android {
         applicationId = "com.glip.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 44
-        versionName = "5.1"
+        versionCode = 45
+        versionName = "5.2"
         multiDexEnabled = true
 
         ndk {
@@ -51,6 +51,9 @@ android {
     packaging {
       resources {
         excludes += "/META-INF/{AL2.0,LGPL2.1}"
+      }
+      jniLibs {
+        useLegacyPackaging = true
       }
     }
 }
