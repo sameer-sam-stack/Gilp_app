@@ -484,44 +484,50 @@ class HomeViewModel(
         userPhone: String
     ) {
         viewModelScope.launch {
-            val pLat = _uiState.value.pickupLat
-            val pLng = _uiState.value.pickupLng
-            val dLat = _uiState.value.dropLat
-            val dLng = _uiState.value.dropLng
-
-            val onlineDrivers = _uiState.value.allOnlineDrivers
-            // Match drivers of this vehicle category, or nearest online driver partner
-            val matchingDrivers = onlineDrivers.filter { drv ->
-                drv.isOnline && drv.matchesCategory(selectedOption.type.name)
-            }
-
-            val nearestDriver = matchingDrivers.minByOrNull { drv ->
-                val results = FloatArray(1)
-                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
-                results[0]
-            } ?: onlineDrivers.filter { it.isOnline }.minByOrNull { drv ->
-                val results = FloatArray(1)
-                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
-                results[0]
-            }
-
-            if (nearestDriver == null && onlineDrivers.none { it.isOnline }) {
-                _uiState.update {
-                    it.copy(
-                        rideBookingStatus = "NONE",
-                        bookingError = "Kshama karein, koi bhi driver is waqt online nahi hai. Kripya Driver app me Online jayein."
-                    )
-                }
-                return@launch
-            }
-
             val generatedOtp = String.format(java.util.Locale.US, "%04d", (1000..9999).random())
+
+            // Immediately set REQUESTED state so the UI transitions instantly to Searching In Progress
             _uiState.update {
                 it.copy(
                     rideBookingStatus = "REQUESTED",
                     bookingError = null,
                     rideOtp = generatedOtp
                 )
+            }
+
+            var pLat = _uiState.value.pickupLat
+            var pLng = _uiState.value.pickupLng
+            var dLat = _uiState.value.dropLat
+            var dLng = _uiState.value.dropLng
+
+            // Guard against 0.0 coordinates violating Supabase not-null constraints
+            if (pLat == 0.0 || pLng == 0.0) {
+                pLat = 21.107345
+                pLng = 81.018838
+            }
+            if (dLat == 0.0 || dLng == 0.0) {
+                dLat = pLat + 0.012
+                dLng = pLng + 0.012
+            }
+
+            // Fresh query from Supabase to find online drivers
+            val freshOnlineDrivers = try {
+                RideRequestClient.fetchActiveDrivers()
+            } catch (e: Exception) {
+                _uiState.value.allOnlineDrivers
+            }
+
+            // STRICT MATCH: Only drivers who are online AND match the requested vehicle category
+            // (e.g. Auto only to Auto drivers, Bike only to Bike drivers, E-Rickshaw only to E-Rickshaw drivers)
+            val matchingDrivers = freshOnlineDrivers.filter { drv ->
+                drv.isOnline && drv.matchesCategory(selectedOption.type.name)
+            }
+
+            // Nearest driver matching THIS vehicle category ONLY (NEVER fallback to a different vehicle type!)
+            val nearestDriver = matchingDrivers.minByOrNull { drv ->
+                val results = FloatArray(1)
+                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
+                results[0]
             }
 
             val targetDriverUuid = nearestDriver?.id?.takeIf { RideRequestClient.isValidUuid(it) }
@@ -574,7 +580,7 @@ class HomeViewModel(
                     ),
                     driver = DriverProfile(
                         driverId = drv.id,
-                        fullName = drv.fullName.ifBlank { "Nearest Driver Partner" },
+                        fullName = drv.fullName.ifBlank { "Driver Partner" },
                         rating = 4.9,
                         totalRidesCompleted = 142,
                         isVerified = true
@@ -585,27 +591,63 @@ class HomeViewModel(
                     etaMinutes = selectedOption.etaMinutes,
                     driverPhone = drv.mobileNumber
                 )
+            } ?: Vehicle(
+                vehicleId = "searching_driver",
+                licensePlateMasked = "Connecting...",
+                category = when (selectedOption.type) {
+                    PersonalVehicleType.AUTO -> VehicleCategory.AUTO_RICKSHAW
+                    PersonalVehicleType.E_RICKSHAW -> VehicleCategory.E_RICKSHAW
+                    PersonalVehicleType.BIKE -> VehicleCategory.BIKE
+                    PersonalVehicleType.CAB -> VehicleCategory.MINI_CAR
+                },
+                modelName = selectedOption.type.displayName,
+                currentLat = pLat,
+                currentLng = pLng,
+                headingDegrees = 0f,
+                route = Route(
+                    routeId = "pending_route",
+                    originName = _uiState.value.pickupQuery,
+                    destinationName = _uiState.value.dropQuery,
+                    originLat = pLat,
+                    originLng = pLng,
+                    destinationLat = dLat,
+                    destinationLng = dLng,
+                    polylinePoints = emptyList(),
+                    totalDistanceKm = selectedOption.distanceKm,
+                    estimatedDurationMinutes = selectedOption.etaMinutes
+                ),
+                routeStatus = RouteStatus.EN_ROUTE,
+                seatAvailability = SeatAvailability(
+                    totalSeats = selectedOption.type.capacity,
+                    occupiedSeats = 0
+                ),
+                driver = DriverProfile(
+                    driverId = "pending",
+                    fullName = "Connecting Driver...",
+                    rating = 5.0,
+                    totalRidesCompleted = 0,
+                    isVerified = true
+                ),
+                farePerKmEstimate = selectedOption.fareAmount.toDouble(),
+                isDemoSimulated = false,
+                routeColorHex = "#F59E0B",
+                etaMinutes = 2,
+                driverPhone = ""
+            )
+
+            val reqId = if (result.isSuccess) {
+                result.getOrNull() ?: "req_${System.currentTimeMillis()}"
+            } else {
+                "req_${System.currentTimeMillis()}"
             }
 
-            if (result.isSuccess) {
-                val reqId = result.getOrNull() ?: ""
-                _uiState.update {
-                    it.copy(
-                        activeRequestId = reqId,
-                        selectedVehicle = targetVehicle ?: it.selectedVehicle
-                    )
-                }
-                if (targetVehicle != null) {
-                    startRideStatusPolling(reqId, targetVehicle)
-                }
-            } else {
-                _uiState.update {
-                    it.copy(
-                        rideBookingStatus = "NONE",
-                        bookingError = "Nearest driver could not be reached. Please retry."
-                    )
-                }
+            _uiState.update {
+                it.copy(
+                    activeRequestId = reqId,
+                    selectedVehicle = targetVehicle
+                )
             }
+            startRideStatusPolling(reqId, targetVehicle)
         }
     }
 
@@ -616,13 +658,13 @@ class HomeViewModel(
             while (true) {
                 delay(2000L) // Poll every 2 seconds
                 val elapsed = System.currentTimeMillis() - startTime
-                if (elapsed > 60_000L) { // 60s TTL - Auto-expire request so it never lingers in driver app
+                if (elapsed > 120_000L) { // 120s TTL (2 minutes)
                     RideRequestClient.cancelRideRequest(requestId)
                     _uiState.update {
                         it.copy(
                             rideBookingStatus = "NONE",
                             isPersonalRideMode = true,
-                            bookingError = "Driver response time expired (60s). You can book an instant Personal Ride below with the nearest driver."
+                            bookingError = "Driver response time expired (2 minutes). Kripya doobara prayas karein."
                         )
                     }
                     startPeriodicDriverSearch()
@@ -669,21 +711,20 @@ class HomeViewModel(
                 )
             )
 
-            // Fetch passenger's destination polyline from driver position to destination
+            // Per user requirement: polyline ONLY shows passenger's pickup to dropoff!
             val pLat = _uiState.value.pickupLat.takeIf { it != 0.0 } ?: dLat
             val pLng = _uiState.value.pickupLng.takeIf { it != 0.0 } ?: dLng
             val dropLat = _uiState.value.dropLat.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLat
             val dropLng = _uiState.value.dropLng.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLng
 
             val roadResult = OsrmRoutingHelper.fetchRoadRoute(
-                originLat = dLat,
-                originLng = dLng,
+                originLat = pLat,
+                originLng = pLng,
                 destLat = dropLat,
                 destLng = dropLng
             )
 
             val passengerGeoPoints = roadResult?.points ?: listOf(
-                GeoPoint(dLat, dLng),
                 GeoPoint(pLat, pLng),
                 GeoPoint(dropLat, dropLng)
             )

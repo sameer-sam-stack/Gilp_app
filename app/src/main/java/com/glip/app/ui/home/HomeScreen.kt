@@ -13,6 +13,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -51,6 +53,17 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    // User requirement: When ride is REQUESTED / searching, Top Ad size enlarges downwards and Map shrinks!
+    val isSearchingDriver = uiState.rideBookingStatus == "REQUESTED"
+    val animatedAdHeight by animateDpAsState(
+        targetValue = if (isSearchingDriver) 240.dp else 150.dp,
+        label = "adHeight"
+    )
+    val animatedMapWeight by animateFloatAsState(
+        targetValue = if (isSearchingDriver) 0.60f else 1f,
+        label = "mapWeight"
+    )
+
     // Sync search query if passed from search card
     LaunchedEffect(pickupLocation, dropLocation) {
         if (pickupLocation.isNotBlank()) viewModel.onPickupQueryChange(pickupLocation)
@@ -64,21 +77,21 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(6.dp))
 
-        // 1. Top AD Banner Box: Enlarged height from bottom per user requirement
+        // 1. Top AD Banner Box: Enlarged height from bottom while waiting for driver acceptance
         AdBannerBox(
             slotId = AdConfig.SLOT_HOME_TOP_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 6.dp, end = 6.dp, bottom = 8.dp)
-                .height(150.dp),
+                .height(animatedAdHeight),
             shape = RoundedCornerShape(8.dp)
         )
 
-        // Map Area (Directly under Top AD per user requirement)
+        // Map Area (Directly under Top AD per user requirement; shrinks when searching)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1f)
+                .weight(animatedMapWeight)
                 .padding(horizontal = 14.dp)
                 .clip(RoundedCornerShape(16.dp))
                 .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
@@ -281,6 +294,9 @@ fun HomeScreen(
                     }
                 }
             }
+        } else if (uiState.rideBookingStatus == "REQUESTED") {
+            // SEARCHING IN PROGRESS: Pipeline yellow progress line only under map (no text per user requirement!)
+            SearchingInProgressCard()
         } else {
             val isSearchingRoute = uiState.isSearchingRouteVehicles && uiState.filteredVehicles.isEmpty()
             val isPersonalMode = uiState.isPersonalRideMode || (!uiState.isSearchingRouteVehicles && uiState.filteredVehicles.isEmpty())
@@ -672,6 +688,42 @@ fun PersonalRideOptionsCard(
                     color = Color.Black
                 )
             }
+        }
+    }
+}
+
+/**
+ * Searching In Progress Card.
+ * Shown under the map while waiting for driver acceptance.
+ * Contains ONLY the yellow animated progress line (pipeline) per exact user requirement.
+ */
+@Composable
+fun SearchingInProgressCard(
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                color = Color(0xFFF5B838), // Yellow / Gold progress line
+                trackColor = Color(0xFFFEF3C7) // Light yellow track
+            )
         }
     }
 }
