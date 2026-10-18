@@ -503,11 +503,12 @@ fun HomeScreen(
                     }
                 }
             }
+        }
 
-            if (showSameLocationDialog) {
-                SameLocationAlertDialog(onDismiss = { showSameLocationDialog = false })
-            }
-        } else {
+        if (showSameLocationDialog) {
+            SameLocationAlertDialog(onDismiss = { showSameLocationDialog = false })
+        }
+    } else {
             // ROUTE CONFIRMED: Active OSM Map + Status Cards
             Box(
                 modifier = Modifier
@@ -1024,7 +1025,6 @@ fun HomeScreen(
         }
         }
     }
-}
 }
 
 /**
