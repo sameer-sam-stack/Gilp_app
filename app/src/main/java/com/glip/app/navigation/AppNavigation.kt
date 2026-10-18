@@ -17,7 +17,6 @@ import com.glip.app.data.repository.UserRepositoryImpl
 import com.glip.app.ui.home.HomeScreen
 import com.glip.app.ui.home.HomeViewModel
 import com.glip.app.ui.home.LocationPickerScreen
-import com.glip.app.ui.home.RideSearchScreen
 import com.glip.app.ui.profile.ProfileScreen
 import com.glip.app.ui.profile.ProfileViewModel
 import com.glip.app.ui.registration.RegistrationScreen
@@ -56,8 +55,8 @@ fun AppNavigation(
         isAppLoading = false
     }
 
-    // On app reopen / start, show the centered Ride Search screen first!
-    var hasSearchedRide by remember { mutableStateOf(false) }
+    // Route confirmed state: false = shows Pickup/Drop input card on HomeScreen, true = shows active route / radar / tracking
+    var hasConfirmedRoute by remember { mutableStateOf(false) }
     var selectedPickup by remember { mutableStateOf("") }
     var selectedDrop by remember { mutableStateOf("") }
     var selectedPickupLat by remember { mutableDoubleStateOf(0.0) }
@@ -83,7 +82,7 @@ fun AppNavigation(
             viewModel = regViewModel,
             onRegistrationSuccess = {
                 isRegistered = true
-                hasSearchedRide = false
+                hasConfirmedRoute = false
                 currentBottomTab = 0
             },
             modifier = modifier
@@ -143,14 +142,16 @@ fun AppNavigation(
                     selectedDropLat = lat
                     selectedDropLng = lng
                 }
-                homeViewModel.setTripCoordinates(
-                    pickup = selectedPickup,
-                    drop = selectedDrop,
-                    pLat = selectedPickupLat,
-                    pLng = selectedPickupLng,
-                    dLat = selectedDropLat,
-                    dLng = selectedDropLng
-                )
+                if (hasConfirmedRoute) {
+                    homeViewModel.setTripCoordinates(
+                        pickup = selectedPickup,
+                        drop = selectedDrop,
+                        pLat = selectedPickupLat,
+                        pLng = selectedPickupLng,
+                        dLat = selectedDropLat,
+                        dLng = selectedDropLng
+                    )
+                }
                 editingLocationMode = null
             },
             onDismiss = {
@@ -159,88 +160,68 @@ fun AppNavigation(
             modifier = modifier.fillMaxSize()
         )
     } else {
-        val homeUiState by homeViewModel.uiState.collectAsState()
-        val isTripActive = homeUiState.rideBookingStatus != "NONE"
-        val showBottomBar = currentBottomTab != 0 || hasSearchedRide || isTripActive
-
         Scaffold(
             modifier = modifier.fillMaxSize(),
             bottomBar = {
-                if (showBottomBar) {
-                    GlipCompactBottomBar(
-                        currentTab = currentBottomTab,
-                        onTabSelected = { currentBottomTab = it }
-                    )
-                }
+                GlipCompactBottomBar(
+                    currentTab = currentBottomTab,
+                    onTabSelected = { currentBottomTab = it }
+                )
             }
         ) { innerPadding ->
             val contentModifier = Modifier.padding(innerPadding)
             when (currentBottomTab) {
                 0 -> {
-                    if (!hasSearchedRide && !isTripActive) {
-                        RideSearchScreen(
-                            initialPickup = selectedPickup,
-                            initialDrop = selectedDrop,
-                            initialPickupLat = selectedPickupLat,
-                            initialPickupLng = selectedPickupLng,
-                            initialDropLat = selectedDropLat,
-                            initialDropLng = selectedDropLng,
-                            onConfirmRideSearch = { pickup, drop, pLat, pLng, dLat, dLng ->
-                                selectedPickup = pickup
-                                selectedDrop = drop
-                                selectedPickupLat = pLat
-                                selectedPickupLng = pLng
-                                selectedDropLat = dLat
-                                selectedDropLng = dLng
-                                hasSearchedRide = true
+                    val profile = userProfile ?: preferences.getUserProfile()
+                    HomeScreen(
+                        viewModel = homeViewModel,
+                        pickupLocation = selectedPickup,
+                        dropLocation = selectedDrop,
+                        pickupLat = selectedPickupLat,
+                        pickupLng = selectedPickupLng,
+                        dropLat = selectedDropLat,
+                        dropLng = selectedDropLng,
+                        hasConfirmedRoute = hasConfirmedRoute,
+                        isPersonalSearchFromServices = isPersonalSearchFromServices,
+                        userName = profile?.fullName ?: "",
+                        userPhone = profile?.phoneNumber ?: "",
+                        onConfirmRideSearch = { pickup, drop, pLat, pLng, dLat, dLng ->
+                            selectedPickup = pickup
+                            selectedDrop = drop
+                            selectedPickupLat = pLat
+                            selectedPickupLng = pLng
+                            selectedDropLat = dLat
+                            selectedDropLng = dLng
+                            hasConfirmedRoute = true
 
-                                // Pass selected route corridor coordinates to HomeViewModel so matching vehicles appear
-                                homeViewModel.setTripCoordinates(pickup, drop, pLat, pLng, dLat, dLng)
-                                if (isPersonalSearchFromServices) {
-                                    homeViewModel.skipRouteSearchAndOpenPersonal()
-                                    isPersonalSearchFromServices = false
-                                }
-                            },
-                            onNavigateToServices = {
-                                currentBottomTab = 1
-                            },
-                            onCancel = {
-                                if (isPersonalSearchFromServices) {
-                                    isPersonalSearchFromServices = false
-                                    currentBottomTab = 1
-                                }
-                            },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        val profile = userProfile ?: preferences.getUserProfile()
-                        HomeScreen(
-                            viewModel = homeViewModel,
-                            pickupLocation = selectedPickup,
-                            dropLocation = selectedDrop,
-                            userName = profile?.fullName ?: "",
-                            userPhone = profile?.phoneNumber ?: "",
-                            onChangeLocation = {
-                                homeViewModel.cancelCurrentRide()
-                                hasSearchedRide = false
-                            },
-                            onEditPickup = {
-                                editingLocationMode = "pickup"
-                            },
-                            onEditDrop = {
-                                editingLocationMode = "drop"
-                            },
-                            modifier = contentModifier
-                        )
-                    }
+                            // Pass selected route corridor coordinates to HomeViewModel so matching vehicles appear
+                            homeViewModel.setTripCoordinates(pickup, drop, pLat, pLng, dLat, dLng)
+                            if (isPersonalSearchFromServices) {
+                                homeViewModel.skipRouteSearchAndOpenPersonal()
+                                isPersonalSearchFromServices = false
+                            }
+                        },
+                        onChangeLocation = {
+                            homeViewModel.cancelCurrentRide()
+                            hasConfirmedRoute = false
+                        },
+                        onEditPickup = {
+                            editingLocationMode = "pickup"
+                        },
+                        onEditDrop = {
+                            editingLocationMode = "drop"
+                        },
+                        modifier = contentModifier
+                    )
                 }
                 1 -> {
                     val servicesViewModel = remember { ServicesViewModel(mobilityRepository) }
                     ServicesScreen(
                         viewModel = servicesViewModel,
                         onNavigateToHomePooling = {
+                            isPersonalSearchFromServices = false
+                            hasConfirmedRoute = false
                             currentBottomTab = 0
-                            hasSearchedRide = false
                         },
                         onNavigateToParcelBooking = {
                             isParcelBookingOpen = true
@@ -250,7 +231,7 @@ fun AppNavigation(
                         },
                         onNavigateToPersonalVehicle = {
                             isPersonalSearchFromServices = true
-                            hasSearchedRide = false
+                            hasConfirmedRoute = false
                             currentBottomTab = 0
                         },
                         modifier = contentModifier
@@ -262,7 +243,7 @@ fun AppNavigation(
                         viewModel = profileViewModel,
                         onLoggedOut = {
                             isRegistered = false
-                            hasSearchedRide = false
+                            hasConfirmedRoute = false
                         },
                         modifier = contentModifier
                     )

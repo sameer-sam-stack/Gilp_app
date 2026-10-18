@@ -36,7 +36,21 @@ import com.glip.app.ads.AdConfig
 import com.glip.app.ui.components.RouteLoader
 import com.glip.app.util.FareCalculationEngine
 import com.glip.app.util.PersonalFareEstimate
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.TextStyle
+import com.glip.app.data.places.AutocompletePlace
+import com.glip.app.data.places.PlacesConfig
+import com.glip.app.data.places.PlacesSearchService
+import com.glip.app.util.LocationTracker
 import com.glip.app.util.PersonalVehicleType
+import kotlinx.coroutines.delay
 import java.util.Locale
 import org.osmdroid.util.GeoPoint
 
@@ -45,8 +59,22 @@ fun HomeScreen(
     viewModel: HomeViewModel,
     pickupLocation: String = "",
     dropLocation: String = "",
+    pickupLat: Double = 0.0,
+    pickupLng: Double = 0.0,
+    dropLat: Double = 0.0,
+    dropLng: Double = 0.0,
+    hasConfirmedRoute: Boolean = false,
     userName: String = "",
     userPhone: String = "",
+    isPersonalSearchFromServices: Boolean = false,
+    onConfirmRideSearch: (
+        pickup: String,
+        drop: String,
+        pickupLat: Double,
+        pickupLng: Double,
+        dropLat: Double,
+        dropLng: Double
+    ) -> Unit = { _, _, _, _, _, _ -> },
     onChangeLocation: () -> Unit = {},
     onEditPickup: () -> Unit = {},
     onEditDrop: () -> Unit = {},
@@ -54,15 +82,94 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val liveAddress by LocationTracker.currentAddress.collectAsState()
+    val liveCoords by LocationTracker.currentCoordinates.collectAsState()
+
+    var pickup by remember(pickupLocation) { mutableStateOf(pickupLocation) }
+    var drop by remember(dropLocation) { mutableStateOf(dropLocation) }
+
+    var pickupCoordinates by remember(pickupLat, pickupLng) {
+        mutableStateOf<Pair<Double, Double>?>(
+            if (pickupLat != 0.0 && pickupLng != 0.0) Pair(pickupLat, pickupLng) else null
+        )
+    }
+    var dropCoordinates by remember(dropLat, dropLng) {
+        mutableStateOf<Pair<Double, Double>?>(
+            if (dropLat != 0.0 && dropLng != 0.0) Pair(dropLat, dropLng) else null
+        )
+    }
+
+    var isPickupSelected by remember(pickup, pickupCoordinates) {
+        mutableStateOf(pickup.isNotBlank() || pickupCoordinates != null)
+    }
+    var isDropSelected by remember(drop, dropCoordinates) {
+        mutableStateOf(drop.isNotBlank() || dropCoordinates != null)
+    }
+
+    // Auto-fill pickup with live GPS location as soon as detected if empty
+    LaunchedEffect(liveAddress, liveCoords) {
+        if (!liveAddress.isNullOrBlank() && pickup.isBlank()) {
+            pickup = liveAddress ?: ""
+            pickupCoordinates = liveCoords
+            isPickupSelected = true
+        }
+    }
+
+    var activeField by remember { mutableStateOf<String?>(null) }
+    var suggestions by remember { mutableStateOf<List<AutocompletePlace>>(emptyList()) }
+    var isSearchingPlaces by remember { mutableStateOf(false) }
+    var showSameLocationDialog by remember { mutableStateOf(false) }
+
+    val currentQuery = when (activeField) {
+        "pickup" -> pickup
+        "drop" -> drop
+        else -> ""
+    }
+
+    LaunchedEffect(currentQuery, activeField, liveCoords) {
+        if (activeField == null || currentQuery.trim().length < 2) {
+            suggestions = emptyList()
+            isSearchingPlaces = false
+            return@LaunchedEffect
+        }
+
+        isSearchingPlaces = true
+        delay(PlacesConfig.DEBOUNCE_MILLIS)
+
+        try {
+            val results = PlacesSearchService.searchNearbyPlaces(
+                context = context,
+                query = currentQuery,
+                userLat = liveCoords?.first,
+                userLng = liveCoords?.second
+            )
+            suggestions = results
+        } catch (e: Exception) {
+            suggestions = emptyList()
+        } finally {
+            isSearchingPlaces = false
+        }
+    }
 
     // User requirement: Enlarge Top Ad height downwards and make Map smaller from top
     val isSearchingDriver = uiState.rideBookingStatus == "REQUESTED"
     val animatedAdHeight by animateDpAsState(
-        targetValue = if (isSearchingDriver) 280.dp else 220.dp,
+        targetValue = when {
+            isSearchingDriver -> 280.dp
+            !hasConfirmedRoute -> 275.dp
+            else -> 240.dp
+        },
         label = "adHeight"
     )
     val animatedMapWeight by animateFloatAsState(
-        targetValue = if (isSearchingDriver) 0.55f else 0.85f,
+        targetValue = when {
+            isSearchingDriver -> 0.52f
+            !hasConfirmedRoute -> 0.58f
+            else -> 0.76f
+        },
         label = "mapWeight"
     )
 
@@ -71,6 +178,11 @@ fun HomeScreen(
         if (pickupLocation.isNotBlank()) viewModel.onPickupQueryChange(pickupLocation)
         if (dropLocation.isNotBlank()) viewModel.onDropQueryChange(dropLocation)
     }
+
+    val effectivePickupLat = pickupCoordinates?.first ?: if (uiState.pickupLat != 0.0) uiState.pickupLat else pickupLat
+    val effectivePickupLng = pickupCoordinates?.second ?: if (uiState.pickupLng != 0.0) uiState.pickupLng else pickupLng
+    val effectiveDropLat = dropCoordinates?.first ?: if (uiState.dropLat != 0.0) uiState.dropLat else dropLat
+    val effectiveDropLng = dropCoordinates?.second ?: if (uiState.dropLng != 0.0) uiState.dropLng else dropLng
 
     Column(
         modifier = modifier
@@ -84,9 +196,9 @@ fun HomeScreen(
             slotId = AdConfig.SLOT_HOME_TOP_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 6.dp, end = 6.dp, bottom = 10.dp)
+                .padding(start = 6.dp, end = 6.dp, bottom = 8.dp)
                 .height(animatedAdHeight),
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(12.dp)
         )
 
         // Map Area (Directly under Top AD per user requirement; shrinks when searching)
@@ -107,12 +219,18 @@ fun HomeScreen(
                     passengerRoutePoints = uiState.passengerRoutePoints,
                     isRideAccepted = uiState.rideBookingStatus == "ACCEPTED" || uiState.rideBookingStatus == "IN_PROGRESS",
                     rideBookingStatus = uiState.rideBookingStatus,
-                    pickupGeoPoint = if (uiState.pickupLat != 0.0) GeoPoint(uiState.pickupLat, uiState.pickupLng) else null,
-                    dropGeoPoint = if (uiState.dropLat != 0.0) GeoPoint(uiState.dropLat, uiState.dropLng) else null,
-                    pickupLocation = pickupLocation.ifBlank { uiState.pickupQuery },
-                    dropLocation = dropLocation.ifBlank { uiState.dropQuery },
-                    onEditPickup = onEditPickup,
-                    onEditDrop = onEditDrop
+                    pickupGeoPoint = if (effectivePickupLat != 0.0) GeoPoint(effectivePickupLat, effectivePickupLng) else null,
+                    dropGeoPoint = if (effectiveDropLat != 0.0) GeoPoint(effectiveDropLat, effectiveDropLng) else null,
+                    pickupLocation = pickup.ifBlank { pickupLocation.ifBlank { uiState.pickupQuery } },
+                    dropLocation = drop.ifBlank { dropLocation.ifBlank { uiState.dropQuery } },
+                    onEditPickup = {
+                        if (hasConfirmedRoute) onChangeLocation()
+                        onEditPickup()
+                    },
+                    onEditDrop = {
+                        if (hasConfirmedRoute) onChangeLocation()
+                        onEditDrop()
+                    }
                 )
             } else {
                 LazyColumn(
@@ -141,7 +259,321 @@ fun HomeScreen(
         Spacer(modifier = Modifier.height(4.dp))
 
         // 3. Bottom Cards Area
-        if (uiState.rideBookingStatus == "ACCEPTED") {
+        if (!hasConfirmedRoute) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 2.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp)
+                ) {
+                    // SCREENSHOT 1 PICKUP & DROP LOCATION SELECTOR
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White,
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Left Timeline Indicator: Green dot -> Vertical Line -> Red dot
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(vertical = 10.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(9.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF10B981))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .width(1.5.dp)
+                                        .height(34.dp)
+                                        .background(Color(0xFFCBD5E1))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .size(9.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFEF4444))
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            // Right Inputs: Pickup row -> Divider -> Drop row
+                            Column(modifier = Modifier.weight(1f)) {
+                                // 1. Top: Pickup Row
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(44.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier.weight(1f),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        BasicTextField(
+                                            value = pickup,
+                                            onValueChange = {
+                                                pickup = it
+                                                isPickupSelected = false
+                                                pickupCoordinates = null
+                                                activeField = "pickup"
+                                            },
+                                            singleLine = true,
+                                            textStyle = TextStyle(
+                                                fontSize = 14.5.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = Color(0xFF0F172A)
+                                            ),
+                                            decorationBox = { innerTextField ->
+                                                if (pickup.isEmpty()) {
+                                                    Text(
+                                                        text = "Enter Pickup Location",
+                                                        fontSize = 14.5.sp,
+                                                        fontWeight = FontWeight.Normal,
+                                                        color = Color(0xFF94A3B8)
+                                                    )
+                                                }
+                                                innerTextField()
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .onFocusChanged { focusState ->
+                                                    if (focusState.isFocused && activeField != "pickup") {
+                                                        activeField = "pickup"
+                                                    }
+                                                }
+                                        )
+                                    }
+
+                                    if (pickup.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = {
+                                                pickup = ""
+                                                pickupCoordinates = null
+                                                isPickupSelected = false
+                                                if (activeField == "pickup") suggestions = emptyList()
+                                            },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Clear",
+                                                tint = Color(0xFF94A3B8),
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                        }
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            activeField = null
+                                            onEditPickup()
+                                        },
+                                        modifier = Modifier.size(34.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.MyLocation,
+                                            contentDescription = "Pick Pickup on Map",
+                                            tint = Color(0xFF10B981),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+
+                                HorizontalDivider(
+                                    color = Color(0xFFF1F5F9),
+                                    thickness = 1.dp,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+
+                                // 2. Bottom: Drop Row
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(44.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier.weight(1f),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        BasicTextField(
+                                            value = drop,
+                                            onValueChange = {
+                                                drop = it
+                                                isDropSelected = false
+                                                dropCoordinates = null
+                                                activeField = "drop"
+                                            },
+                                            singleLine = true,
+                                            textStyle = TextStyle(
+                                                fontSize = 14.5.sp,
+                                                fontWeight = if (drop.isNotEmpty()) FontWeight.SemiBold else FontWeight.Normal,
+                                                color = Color(0xFF0F172A)
+                                            ),
+                                            decorationBox = { innerTextField ->
+                                                if (drop.isEmpty()) {
+                                                    Text(
+                                                        text = "Enter Drop Location",
+                                                        fontSize = 14.5.sp,
+                                                        fontWeight = FontWeight.Normal,
+                                                        color = Color(0xFF94A3B8)
+                                                    )
+                                                }
+                                                innerTextField()
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .onFocusChanged { focusState ->
+                                                    if (focusState.isFocused && activeField != "drop") {
+                                                        activeField = "drop"
+                                                    }
+                                                }
+                                        )
+                                    }
+
+                                    if (drop.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = {
+                                                drop = ""
+                                                dropCoordinates = null
+                                                isDropSelected = false
+                                                if (activeField == "drop") suggestions = emptyList()
+                                            },
+                                            modifier = Modifier.size(24.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Close,
+                                                contentDescription = "Clear",
+                                                tint = Color(0xFF94A3B8),
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                        }
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            activeField = null
+                                            onEditDrop()
+                                        },
+                                        modifier = Modifier.size(34.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.MyLocation,
+                                            contentDescription = "Pick Drop on Map",
+                                            tint = Color(0xFFEF4444),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Real-time Autocomplete Suggestions Dropdown
+                    if (activeField != null && (currentQuery.trim().length >= 2 || isSearchingPlaces || suggestions.isNotEmpty())) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        PlaceAutocompleteDropdown(
+                            suggestions = suggestions,
+                            isLoading = isSearchingPlaces,
+                            searchQuery = currentQuery,
+                            activeField = activeField!!,
+                            onPlaceSelected = { place ->
+                                if (activeField == "pickup") {
+                                    pickup = place.primaryText
+                                    pickupCoordinates = Pair(place.latitude, place.longitude)
+                                    isPickupSelected = true
+                                } else {
+                                    drop = place.primaryText
+                                    dropCoordinates = Pair(place.latitude, place.longitude)
+                                    isDropSelected = true
+                                }
+                                activeField = null
+                                suggestions = emptyList()
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val isRideEnabled = isPickupSelected && isDropSelected && pickup.isNotBlank() && drop.isNotBlank()
+
+                    // RIDE BUTTON (Clickable ONLY when both valid pickup and drop locations are selected)
+                    Button(
+                        onClick = {
+                            if (isRideEnabled) {
+                                activeField = null
+                                suggestions = emptyList()
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                                if (isSameLocation(pickup, drop, pickupCoordinates, dropCoordinates)) {
+                                    showSameLocationDialog = true
+                                } else {
+                                    val pLat = pickupCoordinates?.first ?: if (pickupLat != 0.0) pickupLat else (liveCoords?.first ?: 28.6139)
+                                    val pLng = pickupCoordinates?.second ?: if (pickupLng != 0.0) pickupLng else (liveCoords?.second ?: 77.2090)
+                                    val dLat = dropCoordinates?.first ?: if (dropLat != 0.0) dropLat else 28.5355
+                                    val dLng = dropCoordinates?.second ?: if (dropLng != 0.0) dropLng else 77.3910
+                                    onConfirmRideSearch(pickup.trim(), drop.trim(), pLat, pLng, dLat, dLng)
+                                }
+                            }
+                        },
+                        enabled = isRideEnabled,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF18181B),
+                            disabledContainerColor = Color(0xFF94A3B8).copy(alpha = 0.5f),
+                            contentColor = Color.White,
+                            disabledContentColor = Color.White.copy(alpha = 0.6f)
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Ride",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isRideEnabled) Color.White else Color.White.copy(alpha = 0.6f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                tint = if (isRideEnabled) GlipGreenPrimary else Color.White.copy(alpha = 0.6f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (showSameLocationDialog) {
+                SameLocationAlertDialog(onDismiss = { showSameLocationDialog = false })
+            }
+        } else if (uiState.rideBookingStatus == "ACCEPTED") {
             // ACCEPTED RIDE: Show dedicated single driver card with live ETA and Call
             val driverVeh = uiState.acceptedVehicle ?: uiState.selectedVehicle
             Card(
