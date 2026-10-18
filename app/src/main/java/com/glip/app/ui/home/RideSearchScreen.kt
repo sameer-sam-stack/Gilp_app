@@ -203,9 +203,7 @@ fun RideSearchScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(vertical = 12.dp),
+                .padding(vertical = 6.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -215,7 +213,7 @@ fun RideSearchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 6.dp)
-                    .height(285.dp),
+                    .height(270.dp),
                 shape = RoundedCornerShape(18.dp)
             )
 
@@ -541,17 +539,17 @@ fun RideSearchScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp)
-                    .height(64.dp)
+                    .height(66.dp)
                     .clickable { onNavigateToServices?.invoke() },
                 shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(1.5.dp, Color(0xFF2563EB)),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -560,30 +558,47 @@ fun RideSearchScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Surface(
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(12.dp),
                             color = Color(0xFFEFF6FF),
-                            modifier = Modifier.size(38.dp)
+                            border = BorderStroke(1.dp, Color(0xFFDBEAFE)),
+                            modifier = Modifier.size(42.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.GridView,
                                     contentDescription = null,
                                     tint = Color(0xFF2563EB),
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text(
-                                text = "Our Other Services",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Our Other Services",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = Color(0xFFDBEAFE)
+                                ) {
+                                    Text(
+                                        text = "Explore",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF1D4ED8),
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Parcel • School Van • Personal Ride",
-                                fontSize = 11.5.sp,
+                                fontSize = 12.sp,
                                 color = Color(0xFF64748B),
                                 fontWeight = FontWeight.Medium
                             )
@@ -592,14 +607,14 @@ fun RideSearchScreen(
 
                     Surface(
                         shape = CircleShape,
-                        color = Color(0xFFF1F5F9),
-                        modifier = Modifier.size(30.dp)
+                        color = Color(0xFF2563EB),
+                        modifier = Modifier.size(32.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = "Open All Services",
-                                tint = Color(0xFF2563EB),
+                                tint = Color.White,
                                 modifier = Modifier.size(16.dp)
                             )
                         }
