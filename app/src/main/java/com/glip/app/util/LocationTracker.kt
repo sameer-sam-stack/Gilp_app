@@ -103,9 +103,14 @@ object LocationTracker {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val executor = ContextCompat.getMainExecutor(context)
                     try {
-                        lm.getCurrentLocation(provider, null, executor) { loc ->
-                            if (loc != null) updateLocationAndAddress(context, loc)
-                        }
+                        lm.getCurrentLocation(
+                            provider,
+                            null as android.os.CancellationSignal?,
+                            executor,
+                            java.util.function.Consumer { loc ->
+                                if (loc != null) updateLocationAndAddress(context, loc)
+                            }
+                        )
                     } catch (_: Exception) {}
                 } else {
                     try {
