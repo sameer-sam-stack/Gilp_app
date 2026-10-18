@@ -93,7 +93,11 @@ fun HomeScreen(
                     isRideAccepted = uiState.rideBookingStatus == "ACCEPTED",
                     rideBookingStatus = uiState.rideBookingStatus,
                     pickupGeoPoint = if (uiState.pickupLat != 0.0) GeoPoint(uiState.pickupLat, uiState.pickupLng) else null,
-                    dropGeoPoint = if (uiState.dropLat != 0.0) GeoPoint(uiState.dropLat, uiState.dropLng) else null
+                    dropGeoPoint = if (uiState.dropLat != 0.0) GeoPoint(uiState.dropLat, uiState.dropLng) else null,
+                    pickupLocation = pickupLocation.ifBlank { uiState.pickupLocationName },
+                    dropLocation = dropLocation.ifBlank { uiState.dropLocationName },
+                    onEditPickup = { onChangeLocation() },
+                    onEditDrop = { onChangeLocation() }
                 )
             } else {
                 LazyColumn(

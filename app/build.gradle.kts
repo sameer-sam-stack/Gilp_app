@@ -11,8 +11,8 @@ android {
         applicationId = "com.glip.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 35
-        versionName = "4.2"
+        versionCode = 36
+        versionName = "4.3"
 
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))

@@ -234,30 +234,6 @@ fun RideSearchScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    // Close button if dismissible
-                    if (onCancel != null) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 6.dp),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            IconButton(
-                                onClick = { onCancel() },
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFF1F5F9))
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Close",
-                                    tint = Color(0xFF64748B),
-                                    modifier = Modifier.size(15.dp)
-                                )
-                            }
-                        }
-                    }
 
                     // SCREENSHOT 1 PICKUP & DROP LOCATION SELECTOR
                     Surface(

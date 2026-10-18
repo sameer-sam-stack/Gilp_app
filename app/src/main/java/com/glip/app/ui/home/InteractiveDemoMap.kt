@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.BitmapDrawable
@@ -56,6 +57,10 @@ fun InteractiveDemoMap(
     rideBookingStatus: String = "NONE",
     pickupGeoPoint: GeoPoint? = null,
     dropGeoPoint: GeoPoint? = null,
+    pickupLocation: String = "",
+    dropLocation: String = "",
+    onEditPickup: () -> Unit = {},
+    onEditDrop: () -> Unit = {},
     isInteractive: Boolean = true,
     isBlurred: Boolean = false,
     modifier: Modifier = Modifier
@@ -208,24 +213,32 @@ fun InteractiveDemoMap(
                         }
                         view.overlays.add(coreLine)
 
-                        // Pickup Pin 'A' (Green)
+                        // Pickup Pin (Green) with Address Pill and Edit Pencil Icon
                         pickupGeoPoint?.let { pt ->
                             val pMarker = Marker(view).apply {
                                 position = pt
-                                icon = createPinDrawable(context, "A", "#10B981")
+                                icon = createAddressPinDrawable(context, pickupLocation, "#10B981", "Pickup Point")
                                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                                title = "Your Pickup Point"
+                                title = "Pickup: ${pickupLocation.ifBlank { "Pickup Point" }}"
+                                setOnMarkerClickListener { _, _ ->
+                                    onEditPickup()
+                                    true
+                                }
                             }
                             view.overlays.add(pMarker)
                         }
 
-                        // Dropoff Pin 'B' (Red)
+                        // Dropoff Pin (Red) with Address Pill and Edit Pencil Icon
                         dropGeoPoint?.let { pt ->
                             val dMarker = Marker(view).apply {
                                 position = pt
-                                icon = createPinDrawable(context, "B", "#EF4444")
+                                icon = createAddressPinDrawable(context, dropLocation, "#EF4444", "Drop Location")
                                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                                title = "Your Destination"
+                                title = "Drop: ${dropLocation.ifBlank { "Drop Location" }}"
+                                setOnMarkerClickListener { _, _ ->
+                                    onEditDrop()
+                                    true
+                                }
                             }
                             view.overlays.add(dMarker)
                         }
@@ -480,46 +493,184 @@ fun createVehicleMarkerDrawable(
 }
 
 /**
- * Origin ('A' - Green) or Destination ('B' - Red) Pin.
+ * Origin (Green) or Destination (Red) Pin with floating Address Bubble and Edit Pencil Icon.
+ * Matches Screenshot 1:
+ * - Top floating white pill with address text and pencil edit icon
+ * - Below pill: Green/Red circular bullseye ring (with white center)
+ * - Below ring: Vertical stem anchoring to the exact map point
  */
-fun createPinDrawable(context: Context, label: String, pinColorHex: String): Drawable {
-    val cacheKey = "${label}_$pinColorHex"
+fun createAddressPinDrawable(
+    context: Context,
+    address: String,
+    pinColorHex: String,
+    defaultLabel: String
+): Drawable {
+    val cleanAddress = address.trim().ifEmpty { defaultLabel }
+    val cacheKey = "${cleanAddress}_$pinColorHex"
     pinDrawableCache[cacheKey]?.let { return it }
 
     val density = context.resources.displayMetrics.density
-    val w = (30 * density).toInt()
-    val h = (40 * density).toInt()
-    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-    val cx = w / 2f
-    val headRadius = 11 * density
 
-    val colorInt = android.graphics.Color.parseColor(pinColorHex)
-    val pinPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = colorInt
+    // Smartly format address like in Screenshot 1 ("208, Sankar ..." or "MGM School...")
+    val firstPart = cleanAddress.split(",").firstOrNull()?.trim() ?: cleanAddress
+    val displayAddress = if (cleanAddress.length <= 15) {
+        cleanAddress
+    } else if (firstPart.length in 4..16) {
+        "$firstPart..."
+    } else {
+        cleanAddress.take(14).trimEnd() + "..."
+    }
+
+    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.parseColor("#0F172A") // Deep Slate text
+        textSize = 12.5f * density
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+    val textWidth = textPaint.measureText(displayAddress)
+
+    // Pill geometry
+    val padHorizontal = 10f * density
+    val pencilBtnRadius = 10.5f * density
+    val gapTextIcon = 7f * density
+    val bubbleWidth = (padHorizontal * 2f + textWidth + gapTextIcon + pencilBtnRadius * 2f).coerceAtLeast(80f * density)
+    val bubbleHeight = 32f * density
+    val bubbleCornerRadius = 12f * density
+
+    // Pin geometry below bubble
+    val gapBubbleRing = 4f * density
+    val ringOuterRadius = 9f * density
+    val ringHoleRadius = 4f * density
+    val stemHeight = 6.5f * density
+    val stemWidth = 2.4f * density
+
+    val totalWidth = (bubbleWidth + 16f * density).toInt()
+    val totalHeight = (2f * density + bubbleHeight + gapBubbleRing + (ringOuterRadius * 2f) + stemHeight + 4f * density).toInt()
+
+    val bitmap = Bitmap.createBitmap(totalWidth, totalHeight, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val cx = totalWidth / 2f
+
+    // 1. Drop shadow for floating address bubble
+    val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.parseColor("#22000000") // 13% black
         style = Paint.Style.FILL
     }
-    val path = android.graphics.Path().apply {
-        arcTo(cx - headRadius, 2 * density, cx + headRadius, 2 * density + (headRadius * 2), 180f, 180f, true)
-        lineTo(cx, h - (2 * density))
-        close()
-    }
-    canvas.drawPath(path, pinPaint)
+    val bubbleRect = RectF(
+        cx - (bubbleWidth / 2f),
+        2f * density,
+        cx + (bubbleWidth / 2f),
+        2f * density + bubbleHeight
+    )
+    val shadowRect = RectF(
+        bubbleRect.left,
+        bubbleRect.top + (1.5f * density),
+        bubbleRect.right,
+        bubbleRect.bottom + (2.5f * density)
+    )
+    canvas.drawRoundRect(shadowRect, bubbleCornerRadius, bubbleCornerRadius, shadowPaint)
 
-    val whitePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    // 2. Pure White Bubble Background
+    val bubblePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = android.graphics.Color.WHITE
         style = Paint.Style.FILL
     }
-    canvas.drawCircle(cx, 2 * density + headRadius, 8 * density, whitePaint)
+    canvas.drawRoundRect(bubbleRect, bubbleCornerRadius, bubbleCornerRadius, bubblePaint)
 
-    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = colorInt
-        textSize = 10 * density
-        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-        textAlign = Paint.Align.CENTER
+    // 3. Subtle Border for Bubble
+    val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.parseColor("#E2E8F0")
+        style = Paint.Style.STROKE
+        strokeWidth = 1f * density
     }
-    val textY = 2 * density + headRadius - ((textPaint.descent() + textPaint.ascent()) / 2)
-    canvas.drawText(label, cx, textY, textPaint)
+    canvas.drawRoundRect(bubbleRect, bubbleCornerRadius, bubbleCornerRadius, borderPaint)
+
+    // 4. Address Text
+    val textX = bubbleRect.left + padHorizontal
+    val textY = bubbleRect.centerY() - ((textPaint.descent() + textPaint.ascent()) / 2f)
+    canvas.drawText(displayAddress, textX, textY, textPaint)
+
+    // 5. Circular Pencil Button Background
+    val pencilBtnCx = bubbleRect.right - padHorizontal / 1.5f - pencilBtnRadius
+    val pencilBtnCy = bubbleRect.centerY()
+    val pencilBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.parseColor("#F1F5F9") // Soft slate background
+        style = Paint.Style.FILL
+    }
+    canvas.drawCircle(pencilBtnCx, pencilBtnCy, pencilBtnRadius, pencilBgPaint)
+
+    // 6. Tilted Pencil Icon inside button
+    val pencilPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.parseColor("#475569") // Slate-600
+        style = Paint.Style.FILL
+        strokeCap = Paint.Cap.ROUND
+    }
+    canvas.save()
+    canvas.translate(pencilBtnCx, pencilBtnCy)
+    canvas.rotate(-45f)
+    val pw = 1.8f * density
+    val ph = 4.2f * density
+    val pencilBody = RectF(-pw, -ph + (1.8f * density), pw, ph)
+    canvas.drawRoundRect(pencilBody, 0.7f * density, 0.7f * density, pencilPaint)
+
+    // Pencil tip
+    val tipPath = Path().apply {
+        moveTo(-pw, -ph + (1.8f * density))
+        lineTo(pw, -ph + (1.8f * density))
+        lineTo(0f, -ph - (1.5f * density))
+        close()
+    }
+    canvas.drawPath(tipPath, pencilPaint)
+
+    // Pencil top cap
+    val capPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.parseColor("#94A3B8")
+        style = Paint.Style.FILL
+    }
+    val capRect = RectF(-pw, ph - (1.2f * density), pw, ph + (0.8f * density))
+    canvas.drawRoundRect(capRect, 0.8f * density, 0.8f * density, capPaint)
+    canvas.restore()
+
+    // 7. Ground shadow at the base of the stem
+    val ringCy = bubbleRect.bottom + gapBubbleRing + ringOuterRadius
+    val stemTopY = ringCy + ringOuterRadius
+    val stemBottomY = stemTopY + stemHeight
+
+    val groundShadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.parseColor("#33000000")
+        style = Paint.Style.FILL
+    }
+    canvas.drawOval(
+        RectF(cx - (4f * density), stemBottomY - (1.5f * density), cx + (4f * density), stemBottomY + (1.5f * density)),
+        groundShadowPaint
+    )
+
+    // 8. Dark Vertical Stem
+    val stemPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.parseColor("#0F172A")
+        style = Paint.Style.STROKE
+        strokeWidth = stemWidth
+        strokeCap = Paint.Cap.ROUND
+    }
+    canvas.drawLine(cx, stemTopY - (1f * density), cx, stemBottomY, stemPaint)
+
+    // 9. Outer Color Ring (Green or Red)
+    val pinColor = try {
+        android.graphics.Color.parseColor(pinColorHex)
+    } catch (_: Exception) {
+        android.graphics.Color.parseColor("#10B981")
+    }
+    val ringOuterPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = pinColor
+        style = Paint.Style.FILL
+    }
+    canvas.drawCircle(cx, ringCy, ringOuterRadius, ringOuterPaint)
+
+    // 10. Inner White Hole
+    val ringHolePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = android.graphics.Color.WHITE
+        style = Paint.Style.FILL
+    }
+    canvas.drawCircle(cx, ringCy, ringHoleRadius, ringHolePaint)
 
     val drawable = BitmapDrawable(context.resources, bitmap)
     pinDrawableCache[cacheKey] = drawable
