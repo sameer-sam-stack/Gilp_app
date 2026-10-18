@@ -207,13 +207,13 @@ fun RideSearchScreen(
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // TOP SECTION: Top Hero Ad Banner (Minimized left/right gap per user requirement)
+            // TOP SECTION: Top Hero Ad Banner (Enlarged downwards per user requirement)
             AdBannerBox(
                 slotId = AdConfig.SLOT_FIRST_SCREEN_TOP_BANNER,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 6.dp)
-                    .height(245.dp),
+                    .height(285.dp),
                 shape = RoundedCornerShape(18.dp)
             )
 

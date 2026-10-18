@@ -55,14 +55,14 @@ fun HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
-    // User requirement: When ride is REQUESTED / searching, Top Ad size enlarges downwards and Map shrinks!
+    // User requirement: Enlarge Top Ad height downwards and make Map smaller from top
     val isSearchingDriver = uiState.rideBookingStatus == "REQUESTED"
     val animatedAdHeight by animateDpAsState(
-        targetValue = if (isSearchingDriver) 240.dp else 165.dp,
+        targetValue = if (isSearchingDriver) 280.dp else 220.dp,
         label = "adHeight"
     )
     val animatedMapWeight by animateFloatAsState(
-        targetValue = if (isSearchingDriver) 0.60f else 1f,
+        targetValue = if (isSearchingDriver) 0.55f else 0.85f,
         label = "mapWeight"
     )
 
