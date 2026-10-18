@@ -666,16 +666,8 @@ fun PersonalRideOptionsCard(
                 enabled = !isRequested
             ) {
                 Text(
-                    text = when {
-                        isRequested -> "Requesting Driver..."
-                        else -> "Book ${when (effectiveSel?.type) {
-                            PersonalVehicleType.BIKE -> "Bike"
-                            PersonalVehicleType.E_RICKSHAW -> "Personal E Rickshaw"
-                            PersonalVehicleType.AUTO -> "Auto"
-                            else -> effectiveSel?.type?.displayName ?: "Vehicle"
-                        }} • ₹${effectiveSel?.fareAmount}"
-                    },
-                    fontSize = 13.5.sp,
+                    text = if (isRequested) "Requesting Driver..." else "Book",
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.Black
                 )
@@ -753,75 +745,6 @@ fun RouteVehicleSearchingCard(
 
             Spacer(modifier = Modifier.height(5.dp))
 
-            // Pickup and drop and change (Compact)
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(30.dp),
-                shape = RoundedCornerShape(7.dp),
-                color = Color(0xFFF8FAFC),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(5.dp)
-                                .clip(CircleShape)
-                                .background(GlipGreenPrimary)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = pickupLocation.ifBlank { "Pickup" },
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF0F172A),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(text = "➔", fontSize = 9.sp, color = Color(0xFF94A3B8))
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Box(
-                            modifier = Modifier
-                                .size(5.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFEF4444))
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = dropLocation.ifBlank { "Drop" },
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF0F172A),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                    }
-                    Text(
-                        text = "Change",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = GlipGreenPrimary,
-                        modifier = Modifier
-                            .clickable { onChangeLocation() }
-                            .padding(start = 5.dp, top = 2.dp, bottom = 2.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(5.dp))
 
             // Yellow Progress Bar (Pila line jo aage badte rahta hai)
             LinearProgressIndicator(
