@@ -296,6 +296,112 @@ fun HomeScreen(
                     }
                 }
             }
+        } else if (uiState.rideBookingStatus == "IN_PROGRESS") {
+            // ON TRIP / REACHING DROP LOCATION (Matches user screenshot exactly)
+            val driverVeh = uiState.acceptedVehicle ?: uiState.selectedVehicle
+            val etaMins = if (uiState.liveEtaMinutes > 0) uiState.liveEtaMinutes else (driverVeh?.etaMinutes ?: 6)
+            val distKm = if (uiState.liveTripDistanceKm > 0.0) uiState.liveTripDistanceKm else (uiState.tripDistanceKm.takeIf { it > 0 } ?: 2.6)
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF10B981)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Reaching drop location in ",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                                Text(
+                                    text = "$etaMins mins",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF15803D)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Destination is $distKm km away",
+                                fontSize = 13.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+
+                        if (uiState.isRidePooled) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFFDCFCE7),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC))
+                            ) {
+                                Text(
+                                    text = "Pooled ₹${uiState.liveFareAmount.toInt()}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF166534),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Divider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = driverVeh?.driver?.fullName ?: "Driver Partner",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+                            Text(
+                                text = "${driverVeh?.licensePlateMasked ?: "DL 01"} • ${driverVeh?.modelName ?: "Vehicle"}",
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFFEF2F2),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFECACA)),
+                            modifier = Modifier.clickable {
+                                val dialIntent = Intent(Intent.ACTION_DIAL).apply {
+                                    data = Uri.parse("tel:112")
+                                }
+                                context.startActivity(dialIntent)
+                            }
+                        ) {
+                            Text(
+                                text = "🚨 SOS / Help",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFDC2626),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                }
+            }
         } else if (uiState.rideBookingStatus == "REQUESTED") {
             // SEARCHING IN PROGRESS: Pipeline yellow progress line with (X) cancel button on right
             SearchingInProgressCard(

@@ -16,6 +16,7 @@ import com.glip.app.util.OsrmRoutingHelper
 import com.glip.app.util.PersonalFareEstimate
 import com.glip.app.util.PersonalVehicleType
 import com.glip.app.util.PoolingFareEstimate
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,7 +40,7 @@ data class HomeUiState(
     val isMapInitialized: Boolean = true,
     val isFallbackListVisible: Boolean = false,
     val activeRequestId: String? = null,
-    val rideBookingStatus: String = "NONE", // NONE, REQUESTED, ACCEPTED, CANCELLED
+    val rideBookingStatus: String = "NONE", // NONE, REQUESTED, ACCEPTED, IN_PROGRESS, CANCELLED
     val acceptedVehicle: Vehicle? = null,
     val passengerRoutePoints: List<GeoPoint> = emptyList(),
     val bookingError: String? = null,
@@ -52,7 +53,11 @@ data class HomeUiState(
     val isSearchingRouteVehicles: Boolean = false,
     val routeSearchSecondsRemaining: Int = 120,
     val hasRouteSearchTimedOut: Boolean = false,
-    val rideOtp: String = ""
+    val rideOtp: String = "",
+    val liveTripDistanceKm: Double = 0.0,
+    val liveEtaMinutes: Int = 0,
+    val isRidePooled: Boolean = false,
+    val liveFareAmount: Double = 0.0
 )
 
 class HomeViewModel(
@@ -749,8 +754,9 @@ class HomeViewModel(
         driverTrackingJob?.cancel()
         driverTrackingJob = viewModelScope.launch {
             while (true) {
-                delay(3000L)
-                if (_uiState.value.rideBookingStatus != "ACCEPTED") break
+                delay(2500L)
+                val currentStatus = _uiState.value.rideBookingStatus
+                if (currentStatus != "ACCEPTED" && currentStatus != "IN_PROGRESS") break
                 try {
                     val reqId = _uiState.value.activeRequestId ?: ""
                     val updatedStatus = RideRequestClient.pollRideStatus(reqId)
@@ -764,6 +770,9 @@ class HomeViewModel(
                                     acceptedVehicle = null,
                                     selectedVehicle = null,
                                     passengerRoutePoints = emptyList(),
+                                    liveTripDistanceKm = 0.0,
+                                    liveEtaMinutes = 0,
+                                    isRidePooled = false,
                                     bookingError = "Aapki ride safaltapoorvak poori ho gayi hai. Dhanyawad!"
                                 )
                             }
@@ -781,6 +790,9 @@ class HomeViewModel(
                                     acceptedVehicle = null,
                                     selectedVehicle = null,
                                     passengerRoutePoints = emptyList(),
+                                    liveTripDistanceKm = 0.0,
+                                    liveEtaMinutes = 0,
+                                    isRidePooled = false,
                                     bookingError = "Driver dwara ride cancel kar di gayi hai."
                                 )
                             }
@@ -789,18 +801,52 @@ class HomeViewModel(
                             break
                         }
 
+                        val isNowInProgress = updatedStatus.status.equals("IN_PROGRESS", ignoreCase = true)
+
                         if (updatedStatus.driverLat != 0.0) {
+                            val dropLat = _uiState.value.dropLat.takeIf { it != 0.0 } ?: 21.12
+                            val dropLng = _uiState.value.dropLng.takeIf { it != 0.0 } ?: 81.03
+
+                            // Calculate distance from driver live location to dropoff
+                            val distResults = FloatArray(1)
+                            Location.distanceBetween(
+                                updatedStatus.driverLat,
+                                updatedStatus.driverLng,
+                                dropLat,
+                                dropLng,
+                                distResults
+                            )
+                            val remainingDistKm = (distResults[0] / 1000.0 * 10.0).roundToInt() / 10.0
+                            val remainingEtaMins = ((remainingDistKm / 28.0) * 60).roundToInt().coerceAtLeast(1)
+
                             _uiState.update { current ->
                                 val currentAcc = current.acceptedVehicle ?: return@update current
                                 val updatedAcc = currentAcc.copy(
                                     currentLat = updatedStatus.driverLat,
                                     currentLng = updatedStatus.driverLng,
-                                    headingDegrees = updatedStatus.driverBearing
+                                    headingDegrees = updatedStatus.driverBearing,
+                                    farePerKmEstimate = if (updatedStatus.fareAmount > 0.0) updatedStatus.fareAmount else currentAcc.farePerKmEstimate
                                 )
+                                val isPooled = updatedStatus.fareAmount > 0.0 && updatedStatus.fareAmount < currentAcc.farePerKmEstimate
+
                                 current.copy(
+                                    rideBookingStatus = if (isNowInProgress) "IN_PROGRESS" else current.rideBookingStatus,
                                     acceptedVehicle = updatedAcc,
                                     selectedVehicle = updatedAcc,
-                                    filteredVehicles = listOf(updatedAcc)
+                                    filteredVehicles = listOf(updatedAcc),
+                                    liveTripDistanceKm = remainingDistKm,
+                                    liveEtaMinutes = remainingEtaMins,
+                                    liveFareAmount = if (updatedStatus.fareAmount > 0.0) updatedStatus.fareAmount else current.liveFareAmount,
+                                    isRidePooled = isPooled
+                                )
+                            }
+                        } else if (isNowInProgress) {
+                            _uiState.update { current ->
+                                current.copy(
+                                    rideBookingStatus = "IN_PROGRESS",
+                                    liveTripDistanceKm = if (current.tripDistanceKm > 0) current.tripDistanceKm else 2.6,
+                                    liveEtaMinutes = if (current.liveEtaMinutes > 0) current.liveEtaMinutes else 6,
+                                    liveFareAmount = if (updatedStatus.fareAmount > 0.0) updatedStatus.fareAmount else current.liveFareAmount
                                 )
                             }
                         }
@@ -826,7 +872,10 @@ class HomeViewModel(
                     acceptedVehicle = null,
                     selectedVehicle = null,
                     bookingError = null,
-                    isSearchingRouteVehicles = false
+                    isSearchingRouteVehicles = false,
+                    liveTripDistanceKm = 0.0,
+                    liveEtaMinutes = 0,
+                    isRidePooled = false
                 )
             }
             applyRealDriverSearch()

@@ -62,14 +62,15 @@ data class RemoteDriverRoute(
 
 data class RideStatusResult(
     val requestId: String,
-    val status: String, // PENDING, ACCEPTED, DECLINED, CANCELLED
+    val status: String, // PENDING, ACCEPTED, IN_PROGRESS, COMPLETED, DECLINED, CANCELLED
     val driverId: String?,
     val driverName: String? = null,
     val driverPhone: String? = null,
     val vehicleNumber: String? = null,
     val driverLat: Double = 0.0,
     val driverLng: Double = 0.0,
-    val driverBearing: Float = 0f
+    val driverBearing: Float = 0f,
+    val fareAmount: Double = 0.0
 )
 
 /**
@@ -191,6 +192,7 @@ object RideRequestClient {
                     val obj = arr.getJSONObject(0)
                     val status = obj.optString("status", "PENDING")
                     val driverId = obj.optString("driver_id", "").ifBlank { null }
+                    val fareAmount = obj.optDouble("fare_amount", 0.0)
 
                     var dName = "Driver"
                     var dPhone = driverId ?: ""
@@ -199,8 +201,8 @@ object RideRequestClient {
                     var dLng = 0.0
                     var dAngle = 0f
 
-                    // If accepted and driverId is present, fetch live driver location & details
-                    if (status.equals("ACCEPTED", ignoreCase = true) && driverId != null) {
+                    // If accepted or in-progress and driverId is present, fetch live driver location & details
+                    if ((status.equals("ACCEPTED", ignoreCase = true) || status.equals("IN_PROGRESS", ignoreCase = true)) && driverId != null) {
                         val driverDetails = fetchDriverByIdOrMobile(driverId)
                         if (driverDetails != null) {
                             dName = driverDetails.fullName
@@ -221,7 +223,8 @@ object RideRequestClient {
                         vehicleNumber = vNum,
                         driverLat = dLat,
                         driverLng = dLng,
-                        driverBearing = dAngle
+                        driverBearing = dAngle,
+                        fareAmount = fareAmount
                     )
                 }
             }
