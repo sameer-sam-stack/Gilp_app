@@ -48,6 +48,8 @@ fun HomeScreen(
     userName: String = "",
     userPhone: String = "",
     onChangeLocation: () -> Unit = {},
+    onEditPickup: () -> Unit = {},
+    onEditDrop: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -109,8 +111,8 @@ fun HomeScreen(
                     dropGeoPoint = if (uiState.dropLat != 0.0) GeoPoint(uiState.dropLat, uiState.dropLng) else null,
                     pickupLocation = pickupLocation.ifBlank { uiState.pickupQuery },
                     dropLocation = dropLocation.ifBlank { uiState.dropQuery },
-                    onEditPickup = { onChangeLocation() },
-                    onEditDrop = { onChangeLocation() }
+                    onEditPickup = onEditPickup,
+                    onEditDrop = onEditDrop
                 )
             } else {
                 LazyColumn(

@@ -16,6 +16,7 @@ import com.glip.app.data.repository.DemoMobilityRepositoryImpl
 import com.glip.app.data.repository.UserRepositoryImpl
 import com.glip.app.ui.home.HomeScreen
 import com.glip.app.ui.home.HomeViewModel
+import com.glip.app.ui.home.LocationPickerScreen
 import com.glip.app.ui.home.RideSearchScreen
 import com.glip.app.ui.profile.ProfileScreen
 import com.glip.app.ui.profile.ProfileViewModel
@@ -72,6 +73,7 @@ fun AppNavigation(
     var isSchoolVehicleOpen by remember { mutableStateOf(false) }
     var isPersonalVehicleOpen by remember { mutableStateOf(false) }
     var isPersonalSearchFromServices by remember { mutableStateOf(false) }
+    var editingLocationMode by remember { mutableStateOf<String?>(null) } // "pickup" or "drop"
 
     if (isAppLoading) {
         AppLoadingSplashScreen(modifier = modifier)
@@ -102,6 +104,58 @@ fun AppNavigation(
         PersonalVehicleScreen(
             userProfile = userProfile ?: preferences.getUserProfile(),
             onNavigateBack = { isPersonalVehicleOpen = false },
+            modifier = modifier.fillMaxSize()
+        )
+    } else if (editingLocationMode != null) {
+        // Direct Map Location Picker: "Select Pickup on Map" / "Select Drop on Map"
+        val isPickup = editingLocationMode == "pickup"
+        val title = if (isPickup) "Select Pickup on Map" else "Select Drop on Map"
+        val currentLat = if (isPickup) {
+            if (selectedPickupLat != 0.0) selectedPickupLat else null
+        } else {
+            if (selectedDropLat != 0.0) selectedDropLat else null
+        }
+        val currentLng = if (isPickup) {
+            if (selectedPickupLng != 0.0) selectedPickupLng else null
+        } else {
+            if (selectedDropLng != 0.0) selectedDropLng else null
+        }
+        val otherAddress = if (isPickup) selectedDrop else selectedPickup
+        val otherCoords = if (isPickup) {
+            if (selectedDropLat != 0.0 && selectedDropLng != 0.0) Pair(selectedDropLat, selectedDropLng) else null
+        } else {
+            if (selectedPickupLat != 0.0 && selectedPickupLng != 0.0) Pair(selectedPickupLat, selectedPickupLng) else null
+        }
+
+        LocationPickerScreen(
+            title = title,
+            initialLat = currentLat,
+            initialLng = currentLng,
+            otherLocationAddress = otherAddress,
+            otherLocationCoords = otherCoords,
+            onLocationConfirmed = { newAddress, lat, lng ->
+                if (isPickup) {
+                    selectedPickup = newAddress
+                    selectedPickupLat = lat
+                    selectedPickupLng = lng
+                } else {
+                    selectedDrop = newAddress
+                    selectedDropLat = lat
+                    selectedDropLng = lng
+                }
+                homeViewModel.setTripCoordinates(
+                    pickup = selectedPickup,
+                    drop = selectedDrop,
+                    pLat = selectedPickupLat,
+                    pLng = selectedPickupLng,
+                    dLat = selectedDropLat,
+                    dLng = selectedDropLng
+                )
+                editingLocationMode = null
+            },
+            onDismiss = {
+                editingLocationMode = null
+            },
             modifier = modifier.fillMaxSize()
         )
     } else if (!hasSearchedRide) {
@@ -164,6 +218,12 @@ fun AppNavigation(
                         onChangeLocation = {
                             homeViewModel.cancelCurrentRide()
                             hasSearchedRide = false
+                        },
+                        onEditPickup = {
+                            editingLocationMode = "pickup"
+                        },
+                        onEditDrop = {
+                            editingLocationMode = "drop"
                         },
                         modifier = contentModifier
                     )
