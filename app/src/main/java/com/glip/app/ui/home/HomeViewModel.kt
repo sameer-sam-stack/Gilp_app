@@ -789,7 +789,6 @@ class HomeViewModel(
                     activeRequestId = null,
                     acceptedVehicle = null,
                     selectedVehicle = null,
-                    passengerRoutePoints = emptyList(),
                     bookingError = null,
                     isSearchingRouteVehicles = false
                 )

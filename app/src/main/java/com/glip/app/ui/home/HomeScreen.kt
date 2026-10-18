@@ -297,8 +297,10 @@ fun HomeScreen(
                 }
             }
         } else if (uiState.rideBookingStatus == "REQUESTED") {
-            // SEARCHING IN PROGRESS: Pipeline yellow progress line only under map (no text per user requirement!)
-            SearchingInProgressCard()
+            // SEARCHING IN PROGRESS: Pipeline yellow progress line with (X) cancel button on right
+            SearchingInProgressCard(
+                onCancel = { viewModel.cancelCurrentRide() }
+            )
         } else {
             val isSearchingRoute = uiState.isSearchingRouteVehicles && uiState.filteredVehicles.isEmpty()
             val isPersonalMode = uiState.isPersonalRideMode || (!uiState.isSearchingRouteVehicles && uiState.filteredVehicles.isEmpty())
@@ -681,10 +683,12 @@ fun PersonalRideOptionsCard(
 /**
  * Searching In Progress Card.
  * Shown under the map while waiting for driver acceptance.
- * Contains ONLY the yellow animated progress line (pipeline) per exact user requirement.
+ * Contains the yellow animated progress line (pipeline) with an (X) button on the right
+ * to cancel the searching request and return back to the booking options card.
  */
 @Composable
 fun SearchingInProgressCard(
+    onCancel: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -696,20 +700,48 @@ fun SearchingInProgressCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            LinearProgressIndicator(
+            // Yellow animated progress line (pipeline)
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp)),
-                color = Color(0xFFF5B838), // Yellow / Gold progress line
-                trackColor = Color(0xFFFEF3C7) // Light yellow track
-            )
+                    .weight(1f)
+                    .padding(end = 12.dp)
+            ) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = Color(0xFFF5B838), // Yellow / Gold progress line
+                    trackColor = Color(0xFFFEF3C7) // Light yellow track
+                )
+            }
+
+            // (X) Cancel icon button to go 1 step back to booking card
+            Surface(
+                onClick = onCancel,
+                shape = CircleShape,
+                color = Color(0xFFF1F5F9),
+                modifier = Modifier.size(28.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cancel Search",
+                        tint = Color(0xFF64748B),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }
