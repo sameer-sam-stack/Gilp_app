@@ -269,12 +269,13 @@ fun GlipCompactBottomBar(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(top = 4.dp)
                 .navigationBarsPadding()
         ) {
             NavigationBar(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
+                    .height(52.dp),
                 tonalElevation = 0.dp,
                 containerColor = Color(0xFFFFFFFF),
                 windowInsets = WindowInsets(0.dp)

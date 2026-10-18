@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glip.app.domain.model.Vehicle
 import com.glip.app.domain.model.VehicleCategory
+import com.glip.app.ui.theme.GlipBrandYellow
 import com.glip.app.ui.theme.GlipGreenDark
 import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.theme.GlipOrangeAccent
@@ -476,10 +477,10 @@ fun HomeScreen(
                             .height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF18181B),
-                            disabledContainerColor = Color(0xFF94A3B8).copy(alpha = 0.5f),
-                            contentColor = Color.White,
-                            disabledContentColor = Color.White.copy(alpha = 0.6f)
+                            containerColor = GlipBrandYellow,
+                            disabledContainerColor = GlipBrandYellow.copy(alpha = 0.5f),
+                            contentColor = Color(0xFF0F172A),
+                            disabledContentColor = Color(0xFF0F172A).copy(alpha = 0.5f)
                         )
                     ) {
                         Row(
@@ -490,13 +491,13 @@ fun HomeScreen(
                                 text = "Ride",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isRideEnabled) Color.White else Color.White.copy(alpha = 0.6f)
+                                color = if (isRideEnabled) Color(0xFF0F172A) else Color(0xFF0F172A).copy(alpha = 0.5f)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = null,
-                                tint = if (isRideEnabled) GlipGreenPrimary else Color.White.copy(alpha = 0.6f),
+                                tint = if (isRideEnabled) Color(0xFF0F172A) else Color(0xFF0F172A).copy(alpha = 0.5f),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
