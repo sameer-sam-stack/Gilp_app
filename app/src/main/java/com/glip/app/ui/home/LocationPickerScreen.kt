@@ -1,6 +1,7 @@
 package com.glip.app.ui.home
 
 import android.content.Context
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -108,6 +109,15 @@ fun LocationPickerScreen(
     var suggestions by remember { mutableStateOf<List<SearchPlace>>(emptyList()) }
     var showSuggestions by remember { mutableStateOf(false) }
     var showSameLocationAlert by remember { mutableStateOf(false) }
+
+    // Intercept hardware / system back button or gesture
+    BackHandler(enabled = true) {
+        when {
+            showSameLocationAlert -> showSameLocationAlert = false
+            showSuggestions -> showSuggestions = false
+            else -> onDismiss()
+        }
+    }
 
     // Live Reverse-geocode whenever map center stabilizes
     LaunchedEffect(centerLat, centerLng) {
@@ -495,7 +505,7 @@ fun LocationPickerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(start = 14.dp, end = 14.dp, bottom = 64.dp)
+                .padding(start = 14.dp, end = 14.dp, bottom = 12.dp)
                 .align(Alignment.BottomCenter),
             horizontalAlignment = Alignment.End
         ) {
