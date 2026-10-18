@@ -56,7 +56,7 @@ fun HomeScreen(
     // User requirement: When ride is REQUESTED / searching, Top Ad size enlarges downwards and Map shrinks!
     val isSearchingDriver = uiState.rideBookingStatus == "REQUESTED"
     val animatedAdHeight by animateDpAsState(
-        targetValue = if (isSearchingDriver) 240.dp else 150.dp,
+        targetValue = if (isSearchingDriver) 240.dp else 165.dp,
         label = "adHeight"
     )
     val animatedMapWeight by animateFloatAsState(
@@ -77,12 +77,12 @@ fun HomeScreen(
     ) {
         Spacer(modifier = Modifier.height(6.dp))
 
-        // 1. Top AD Banner Box: Enlarged height from bottom while waiting for driver acceptance
+        // 1. Top AD Banner Box: Enlarged height from bottom
         AdBannerBox(
             slotId = AdConfig.SLOT_HOME_TOP_BANNER,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 6.dp, end = 6.dp, bottom = 8.dp)
+                .padding(start = 6.dp, end = 6.dp, bottom = 10.dp)
                 .height(animatedAdHeight),
             shape = RoundedCornerShape(8.dp)
         )
@@ -483,23 +483,7 @@ fun HomeScreen(
                         }
                     }
 
-                    // Fallback shortcut link to Personal Ride
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "Want a private auto/cab? Book Personal Vehicle ➔",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFFD97706),
-                            modifier = Modifier
-                                .clickable { viewModel.setPersonalRideMode(true) }
-                                .padding(vertical = 2.dp)
-                        )
-                    }
+
                 }
             }
             }

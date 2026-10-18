@@ -70,6 +70,38 @@ fun InteractiveDemoMap(
     var locationOverlay by remember { mutableStateOf<GlipLocationOverlay?>(null) }
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
     var lastZoomedBookingStatus by remember { mutableStateOf("NONE") }
+    var lastFramedTripKey by remember { mutableStateOf<String?>(null) }
+
+    // Auto-frame Pickup & Drop pins when trip route is loaded, so both points are visible to user
+    LaunchedEffect(pickupGeoPoint, dropGeoPoint, mapViewRef) {
+        val map = mapViewRef ?: return@LaunchedEffect
+        val p = pickupGeoPoint
+        val d = dropGeoPoint
+        if (p != null && d != null) {
+            val tripKey = "${p.latitude},${p.longitude}->${d.latitude},${d.longitude}"
+            if (lastFramedTripKey != tripKey) {
+                lastFramedTripKey = tripKey
+                val midLat = (p.latitude + d.latitude) / 2.0
+                val midLng = (p.longitude + d.longitude) / 2.0
+                val results = FloatArray(1)
+                android.location.Location.distanceBetween(p.latitude, p.longitude, d.latitude, d.longitude, results)
+                val distMeters = results[0]
+                val optimalZoom = when {
+                    distMeters <= 800f -> 15.5
+                    distMeters <= 2000f -> 14.5
+                    distMeters <= 4000f -> 13.8
+                    distMeters <= 8000f -> 13.0
+                    distMeters <= 15000f -> 12.0
+                    distMeters <= 30000f -> 11.0
+                    else -> 10.0
+                }
+                map.controller.setZoom(optimalZoom)
+                map.controller.animateTo(GeoPoint(midLat, midLng))
+            }
+        } else if (p == null && d == null) {
+            lastFramedTripKey = null
+        }
+    }
 
     // Smooth camera zoom and focus when ride is booked or accepted
     LaunchedEffect(rideBookingStatus, isRideAccepted, mapViewRef, selectedVehicle) {
@@ -287,8 +319,7 @@ fun InteractiveDemoMap(
                 onClick = {
                     val targetLat = userCoords?.first ?: 28.6139
                     val targetLng = userCoords?.second ?: 77.2090
-                    val isBookedOrAccepted = rideBookingStatus == "REQUESTED" || rideBookingStatus == "ACCEPTED"
-                    mapViewRef?.controller?.setZoom(if (isBookedOrAccepted) 16.8 else 15.0)
+                    mapViewRef?.controller?.setZoom(17.0)
                     mapViewRef?.controller?.animateTo(GeoPoint(targetLat, targetLng))
                     onRecenter()
                 },
@@ -332,9 +363,9 @@ private val markerDrawableCache = java.util.concurrent.ConcurrentHashMap<String,
 private val pinDrawableCache = java.util.concurrent.ConcurrentHashMap<String, Drawable>()
 
 /**
- * Programmatic realistic top-down Auto Rickshaw / E-Rickshaw vehicle silhouette
- * rendered directly on Canvas. Matches vehicle route color with dual glowing radar halo,
- * 3-wheel architecture, canopy, windshield, and headlight indicator.
+ * Programmatic realistic top-down vehicle silhouette rendered directly on Canvas.
+ * Supports Bike, Auto Rickshaw, E-Rickshaw, and Car/Cab with realistic proportions,
+ * chassis drop shadow, wheels, windshield, and head/tail lamps (no cartoon radar halos).
  */
 fun createVehicleMarkerDrawable(
     context: Context,
@@ -357,135 +388,335 @@ fun createVehicleMarkerDrawable(
         android.graphics.Color.parseColor("#10B981")
     }
 
-    // 1. Dual Soft Pulsing Radar Halo in vehicle's light route color
-    val outerHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = colorInt
-        alpha = 38
-        style = Paint.Style.FILL
-    }
-    canvas.drawCircle(cx, cy, 21 * density, outerHaloPaint)
+    when (category) {
+        VehicleCategory.BIKE -> {
+            // Realistic top-down Motorcycle/Scooter with Rider
+            // 1. Soft subtle chassis shadow (no cartoon radar halos)
+            val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0x40000000
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(
+                RectF(cx - 3.5f * density, cy - 13.0f * density, cx + 3.5f * density, cy + 14.0f * density),
+                3.5f * density, 3.5f * density, shadowPaint
+            )
 
-    val innerHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = colorInt
-        alpha = 75
-        style = Paint.Style.FILL
-    }
-    canvas.drawCircle(cx, cy, 16.5f * density, innerHaloPaint)
+            // Front Tire
+            val tirePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#1E293B")
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(
+                RectF(cx - 1.5f * density, cy - 14.0f * density, cx + 1.5f * density, cy - 8.0f * density),
+                1.2f * density, 1.2f * density, tirePaint
+            )
 
-    // 2. Drop Shadow for vehicle body
-    val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0x55000000
-        style = Paint.Style.FILL
-    }
-    canvas.drawRoundRect(
-        RectF(cx - 7.5f * density, cy - 9.5f * density, cx + 7.5f * density, cy + 12.5f * density),
-        4.5f * density, 4.5f * density, shadowPaint
-    )
+            // Rear Tire
+            canvas.drawRoundRect(
+                RectF(cx - 1.8f * density, cy + 7.0f * density, cx + 1.8f * density, cy + 13.0f * density),
+                1.2f * density, 1.2f * density, tirePaint
+            )
 
-    // 3. Three Wheels (Classic Indian 3-wheeler architecture)
-    val wheelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.parseColor("#0F172A") // Deep Slate / Graphite
-        style = Paint.Style.FILL
-    }
-    // Front wheel (centered at front, extending slightly past nose)
-    canvas.drawRoundRect(
-        RectF(cx - 1.8f * density, cy - 13.5f * density, cx + 1.8f * density, cy - 8.5f * density),
-        1.5f * density, 1.5f * density, wheelPaint
-    )
-    // Left rear wheel
-    canvas.drawRoundRect(
-        RectF(cx - 8.8f * density, cy + 4.5f * density, cx - 6.0f * density, cy + 11.5f * density),
-        1.5f * density, 1.5f * density, wheelPaint
-    )
-    // Right rear wheel
-    canvas.drawRoundRect(
-        RectF(cx + 6.0f * density, cy + 4.5f * density, cx + 8.8f * density, cy + 11.5f * density),
-        1.5f * density, 1.5f * density, wheelPaint
-    )
+            // Handlebar & Mirrors
+            val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#334155")
+                style = Paint.Style.STROKE
+                strokeWidth = 2.0f * density
+                strokeCap = Paint.Cap.ROUND
+            }
+            canvas.drawLine(cx - 7.0f * density, cy - 7.5f * density, cx + 7.0f * density, cy - 7.5f * density, barPaint)
 
-    // 4. Vehicle Body Shell (Curved Auto / E-Rickshaw Silhouette)
-    val bodyPath = android.graphics.Path().apply {
-        moveTo(cx - 3.5f * density, cy - 9.5f * density)
-        quadTo(cx, cy - 12.5f * density, cx + 3.5f * density, cy - 9.5f * density)
-        lineTo(cx + 7.0f * density, cy - 3.5f * density)
-        lineTo(cx + 7.0f * density, cy + 9.5f * density)
-        quadTo(cx + 7.0f * density, cy + 11.5f * density, cx + 5.0f * density, cy + 11.5f * density)
-        lineTo(cx - 5.0f * density, cy + 11.5f * density)
-        quadTo(cx - 7.0f * density, cy + 11.5f * density, cx - 7.0f * density, cy + 9.5f * density)
-        lineTo(cx - 7.0f * density, cy - 3.5f * density)
-        close()
-    }
+            // Bike Body & Fuel Tank
+            val bikeBody = android.graphics.Path().apply {
+                moveTo(cx - 2.5f * density, cy - 8.0f * density)
+                lineTo(cx + 2.5f * density, cy - 8.0f * density)
+                lineTo(cx + 3.5f * density, cy + 7.0f * density)
+                lineTo(cx - 3.5f * density, cy + 7.0f * density)
+                close()
+            }
+            val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorInt
+                style = Paint.Style.FILL
+            }
+            canvas.drawPath(bikeBody, bodyPaint)
 
-    // Body Fill with Vehicle's Route Color
-    val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = colorInt
-        style = Paint.Style.FILL
-    }
-    canvas.drawPath(bodyPath, bodyPaint)
+            // Rider Torso / Jacket
+            val riderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#0F172A")
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(
+                RectF(cx - 4.5f * density, cy - 2.5f * density, cx + 4.5f * density, cy + 4.5f * density),
+                2.5f * density, 2.5f * density, riderPaint
+            )
 
-    // Crisp high-contrast white outline for map visibility
-    val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.WHITE
-        style = Paint.Style.STROKE
-        strokeWidth = 1.6f * density
-    }
-    canvas.drawPath(bodyPath, borderPaint)
+            // Rider Helmet (top-down circle with visor)
+            val helmetPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#F8FAFC")
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx, cy - 1.0f * density, 3.2f * density, helmetPaint)
 
-    // 5. Front Windshield (Dark Tinted Glass Arc)
-    val windshieldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.parseColor("#1E293B")
-        style = Paint.Style.FILL
-    }
-    val windshieldPath = android.graphics.Path().apply {
-        moveTo(cx - 4.5f * density, cy - 5.5f * density)
-        quadTo(cx, cy - 8.5f * density, cx + 4.5f * density, cy - 5.5f * density)
-        lineTo(cx + 4.0f * density, cy - 3.2f * density)
-        quadTo(cx, cy - 5.5f * density, cx - 4.0f * density, cy - 3.2f * density)
-        close()
-    }
-    canvas.drawPath(windshieldPath, windshieldPaint)
+            val visorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#0F172A")
+                style = Paint.Style.FILL
+            }
+            canvas.drawArc(
+                RectF(cx - 3.2f * density, cy - 4.2f * density, cx + 3.2f * density, cy + 2.2f * density),
+                200f, 140f, true, visorPaint
+            )
 
-    // 6. Cockpit / Steering Console Dot
-    val dashPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.parseColor("#334155")
-        style = Paint.Style.FILL
-    }
-    canvas.drawCircle(cx, cy - 1.8f * density, 1.8f * density, dashPaint)
+            // Headlight
+            val headlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#FEF08A")
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx, cy - 12.5f * density, 1.4f * density, headlightPaint)
 
-    // 7. Rear Passenger Bench Seat
-    val seatPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.parseColor("#0F172A")
-        alpha = 180
-        style = Paint.Style.FILL
-    }
-    canvas.drawRoundRect(
-        RectF(cx - 5.2f * density, cy + 4.5f * density, cx + 5.2f * density, cy + 9.5f * density),
-        2.0f * density, 2.0f * density, seatPaint
-    )
+            // Taillight
+            val taillightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#EF4444")
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx, cy + 12.0f * density, 1.2f * density, taillightPaint)
+        }
 
-    // 8. Canopy Rib Lines (Gives real vehicle 3D depth)
-    val ribPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.WHITE
-        alpha = 90
-        style = Paint.Style.STROKE
-        strokeWidth = 1.0f * density
-    }
-    canvas.drawLine(cx - 4.5f * density, cy + 1.5f * density, cx + 4.5f * density, cy + 1.5f * density, ribPaint)
+        VehicleCategory.AUTO_RICKSHAW, VehicleCategory.E_RICKSHAW -> {
+            // Realistic 3-Wheeler Auto Rickshaw / E-Rickshaw
+            // 1. Soft Drop Shadow
+            val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0x45000000
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(
+                RectF(cx - 7.5f * density, cy - 9.5f * density, cx + 7.5f * density, cy + 12.5f * density),
+                4.5f * density, 4.5f * density, shadowPaint
+            )
 
-    // 9. Twin Rear Red Tail Lights
-    val tailLightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.parseColor("#EF4444")
-        style = Paint.Style.FILL
-    }
-    canvas.drawCircle(cx - 5.0f * density, cy + 11.2f * density, 1.2f * density, tailLightPaint)
-    canvas.drawCircle(cx + 5.0f * density, cy + 11.2f * density, 1.2f * density, tailLightPaint)
+            // 2. Wheels
+            val wheelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#0F172A")
+                style = Paint.Style.FILL
+            }
+            // Front wheel
+            canvas.drawRoundRect(
+                RectF(cx - 1.8f * density, cy - 13.5f * density, cx + 1.8f * density, cy - 8.5f * density),
+                1.5f * density, 1.5f * density, wheelPaint
+            )
+            // Rear wheels
+            canvas.drawRoundRect(
+                RectF(cx - 8.8f * density, cy + 4.5f * density, cx - 6.0f * density, cy + 11.5f * density),
+                1.5f * density, 1.5f * density, wheelPaint
+            )
+            canvas.drawRoundRect(
+                RectF(cx + 6.0f * density, cy + 4.5f * density, cx + 8.8f * density, cy + 11.5f * density),
+                1.5f * density, 1.5f * density, wheelPaint
+            )
 
-    // 10. Forward Headlight Directional Pointer
-    val headlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = android.graphics.Color.parseColor("#FDE047") // Soft warm yellow
-        style = Paint.Style.FILL
+            // 3. Body Shell (Tapered 3-wheeler contour)
+            val bodyPath = android.graphics.Path().apply {
+                moveTo(cx - 3.5f * density, cy - 9.5f * density)
+                quadTo(cx, cy - 12.5f * density, cx + 3.5f * density, cy - 9.5f * density)
+                lineTo(cx + 7.0f * density, cy - 3.5f * density)
+                lineTo(cx + 7.0f * density, cy + 9.5f * density)
+                quadTo(cx + 7.0f * density, cy + 11.5f * density, cx + 5.0f * density, cy + 11.5f * density)
+                lineTo(cx - 5.0f * density, cy + 11.5f * density)
+                quadTo(cx - 7.0f * density, cy + 11.5f * density, cx - 7.0f * density, cy + 9.5f * density)
+                lineTo(cx - 7.0f * density, cy - 3.5f * density)
+                close()
+            }
+            val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorInt
+                style = Paint.Style.FILL
+            }
+            canvas.drawPath(bodyPath, bodyPaint)
+
+            // White high-contrast outline
+            val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.WHITE
+                style = Paint.Style.STROKE
+                strokeWidth = 1.4f * density
+            }
+            canvas.drawPath(bodyPath, borderPaint)
+
+            // Windshield
+            val windshieldPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#1E293B")
+                style = Paint.Style.FILL
+            }
+            val windshieldPath = android.graphics.Path().apply {
+                moveTo(cx - 4.2f * density, cy - 5.5f * density)
+                quadTo(cx, cy - 8.2f * density, cx + 4.2f * density, cy - 5.5f * density)
+                lineTo(cx + 3.8f * density, cy - 3.2f * density)
+                quadTo(cx, cy - 5.2f * density, cx - 3.8f * density, cy - 3.2f * density)
+                close()
+            }
+            canvas.drawPath(windshieldPath, windshieldPaint)
+
+            // Cockpit & Dashboard
+            val dashPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#334155")
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx, cy - 1.8f * density, 1.6f * density, dashPaint)
+
+            // Rear passenger bench
+            val seatPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#0F172A")
+                alpha = 180
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(
+                RectF(cx - 5.2f * density, cy + 4.5f * density, cx + 5.2f * density, cy + 9.5f * density),
+                2.0f * density, 2.0f * density, seatPaint
+            )
+
+            // Canopy rib line
+            val ribPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.WHITE
+                alpha = 80
+                style = Paint.Style.STROKE
+                strokeWidth = 0.9f * density
+            }
+            canvas.drawLine(cx - 4.5f * density, cy + 1.5f * density, cx + 4.5f * density, cy + 1.5f * density, ribPaint)
+
+            // Tail lights
+            val tailLightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#EF4444")
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx - 5.0f * density, cy + 11.2f * density, 1.2f * density, tailLightPaint)
+            canvas.drawCircle(cx + 5.0f * density, cy + 11.2f * density, 1.2f * density, tailLightPaint)
+
+            // Headlight
+            val headlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#FEF08A")
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx, cy - 11.0f * density, 1.3f * density, headlightPaint)
+        }
+
+        else -> {
+            // Realistic top-down Car (Cab / Sedan / SUV / Van)
+            // 1. Soft Drop Shadow
+            val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0x45000000
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(
+                RectF(cx - 7.5f * density, cy - 12.0f * density, cx + 7.5f * density, cy + 13.0f * density),
+                4.5f * density, 4.5f * density, shadowPaint
+            )
+
+            // 2. Wheels
+            val wheelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#0F172A")
+                style = Paint.Style.FILL
+            }
+            // Front left & right wheels
+            canvas.drawRoundRect(
+                RectF(cx - 8.2f * density, cy - 8.0f * density, cx - 6.0f * density, cy - 2.5f * density),
+                1.5f * density, 1.5f * density, wheelPaint
+            )
+            canvas.drawRoundRect(
+                RectF(cx + 6.0f * density, cy - 8.0f * density, cx + 8.2f * density, cy - 2.5f * density),
+                1.5f * density, 1.5f * density, wheelPaint
+            )
+            // Rear left & right wheels
+            canvas.drawRoundRect(
+                RectF(cx - 8.2f * density, cy + 4.5f * density, cx - 6.0f * density, cy + 10.0f * density),
+                1.5f * density, 1.5f * density, wheelPaint
+            )
+            canvas.drawRoundRect(
+                RectF(cx + 6.0f * density, cy + 4.5f * density, cx + 8.2f * density, cy + 10.0f * density),
+                1.5f * density, 1.5f * density, wheelPaint
+            )
+
+            // 3. Car Body Chassis
+            val carBody = android.graphics.Path().apply {
+                moveTo(cx - 5.5f * density, cy - 12.0f * density)
+                quadTo(cx, cy - 13.5f * density, cx + 5.5f * density, cy - 12.0f * density)
+                quadTo(cx + 7.2f * density, cy - 10.0f * density, cx + 7.2f * density, cy + 9.5f * density)
+                quadTo(cx + 7.0f * density, cy + 12.5f * density, cx + 4.5f * density, cy + 12.5f * density)
+                lineTo(cx - 4.5f * density, cy + 12.5f * density)
+                quadTo(cx - 7.0f * density, cy + 12.5f * density, cx - 7.2f * density, cy + 9.5f * density)
+                quadTo(cx - 7.2f * density, cy - 10.0f * density, cx - 5.5f * density, cy - 12.0f * density)
+                close()
+            }
+            val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorInt
+                style = Paint.Style.FILL
+            }
+            canvas.drawPath(carBody, bodyPaint)
+
+            // Crisp white outline
+            val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.WHITE
+                style = Paint.Style.STROKE
+                strokeWidth = 1.4f * density
+            }
+            canvas.drawPath(carBody, borderPaint)
+
+            // Side Mirrors
+            val mirrorPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorInt
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx - 7.8f * density, cy - 5.0f * density, 1.2f * density, mirrorPaint)
+            canvas.drawCircle(cx + 7.8f * density, cy - 5.0f * density, 1.2f * density, mirrorPaint)
+
+            // Front Windshield (Dark Glass)
+            val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#1E293B")
+                style = Paint.Style.FILL
+            }
+            val frontWindshield = android.graphics.Path().apply {
+                moveTo(cx - 5.0f * density, cy - 6.5f * density)
+                quadTo(cx, cy - 8.5f * density, cx + 5.0f * density, cy - 6.5f * density)
+                lineTo(cx + 4.5f * density, cy - 2.5f * density)
+                quadTo(cx, cy - 4.0f * density, cx - 4.5f * density, cy - 2.5f * density)
+                close()
+            }
+            canvas.drawPath(frontWindshield, glassPaint)
+
+            // Car Roof (Slightly darker/lighter tone)
+            val roofPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#334155")
+                alpha = 80
+                style = Paint.Style.FILL
+            }
+            canvas.drawRoundRect(
+                RectF(cx - 4.5f * density, cy - 2.5f * density, cx + 4.5f * density, cy + 5.5f * density),
+                1.5f * density, 1.5f * density, roofPaint
+            )
+
+            // Rear Windshield
+            val rearWindshield = android.graphics.Path().apply {
+                moveTo(cx - 4.5f * density, cy + 5.5f * density)
+                lineTo(cx + 4.5f * density, cy + 5.5f * density)
+                lineTo(cx + 4.8f * density, cy + 8.5f * density)
+                lineTo(cx - 4.8f * density, cy + 8.5f * density)
+                close()
+            }
+            canvas.drawPath(rearWindshield, glassPaint)
+
+            // Headlights (Warm yellow)
+            val headlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#FEF08A")
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx - 4.5f * density, cy - 11.5f * density, 1.2f * density, headlightPaint)
+            canvas.drawCircle(cx + 4.5f * density, cy - 11.5f * density, 1.2f * density, headlightPaint)
+
+            // Tail lights (Vibrant red)
+            val tailLightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = android.graphics.Color.parseColor("#EF4444")
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(cx - 4.8f * density, cy + 12.0f * density, 1.2f * density, tailLightPaint)
+            canvas.drawCircle(cx + 4.8f * density, cy + 12.0f * density, 1.2f * density, tailLightPaint)
+        }
     }
-    canvas.drawCircle(cx, cy - 11.0f * density, 1.3f * density, headlightPaint)
 
     val drawable = BitmapDrawable(context.resources, bitmap)
     markerDrawableCache[cacheKey] = drawable
