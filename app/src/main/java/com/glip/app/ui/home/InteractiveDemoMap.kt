@@ -106,19 +106,19 @@ fun InteractiveDemoMap(
     // Smooth camera zoom and focus when ride is booked or accepted
     LaunchedEffect(rideBookingStatus, isRideAccepted, mapViewRef, selectedVehicle) {
         val map = mapViewRef ?: return@LaunchedEffect
-        val isBookedOrAccepted = rideBookingStatus == "REQUESTED" || rideBookingStatus == "ACCEPTED"
+        val isBookedOrAccepted = rideBookingStatus == "REQUESTED" || rideBookingStatus == "ACCEPTED" || rideBookingStatus == "IN_PROGRESS"
 
         if (isBookedOrAccepted && lastZoomedBookingStatus != rideBookingStatus) {
             lastZoomedBookingStatus = rideBookingStatus
             val targetVehicle = selectedVehicle ?: vehicles.firstOrNull()
-            val pGeo = pickupGeoPoint
+            val pGeo = if (rideBookingStatus == "IN_PROGRESS") dropGeoPoint else pickupGeoPoint
             val vGeo = targetVehicle?.let { GeoPoint(it.currentLat, it.currentLng) }
 
             if (pGeo != null && vGeo != null) {
-                // Focus on mid-point between pickup and incoming vehicle
+                // Focus on mid-point between pickup/drop and incoming/trip vehicle
                 val midLat = (pGeo.latitude + vGeo.latitude) / 2.0
                 val midLng = (pGeo.longitude + vGeo.longitude) / 2.0
-                map.controller.setZoom(16.8)
+                map.controller.setZoom(16.5)
                 map.controller.animateTo(GeoPoint(midLat, midLng))
             } else if (pGeo != null) {
                 map.controller.setZoom(17.0)

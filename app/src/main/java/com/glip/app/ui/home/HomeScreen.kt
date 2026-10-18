@@ -100,12 +100,12 @@ fun HomeScreen(
         ) {
             if (!uiState.isFallbackListVisible) {
                 InteractiveDemoMap(
-                    vehicles = if (uiState.rideBookingStatus == "ACCEPTED") listOfNotNull(uiState.acceptedVehicle) else uiState.filteredVehicles,
+                    vehicles = if (uiState.rideBookingStatus == "ACCEPTED" || uiState.rideBookingStatus == "IN_PROGRESS") listOfNotNull(uiState.acceptedVehicle) else uiState.filteredVehicles,
                     selectedVehicle = uiState.selectedVehicle,
                     onVehicleSelect = { viewModel.selectVehicle(it) },
                     onRecenter = { viewModel.recenterDemoArea() },
                     passengerRoutePoints = uiState.passengerRoutePoints,
-                    isRideAccepted = uiState.rideBookingStatus == "ACCEPTED",
+                    isRideAccepted = uiState.rideBookingStatus == "ACCEPTED" || uiState.rideBookingStatus == "IN_PROGRESS",
                     rideBookingStatus = uiState.rideBookingStatus,
                     pickupGeoPoint = if (uiState.pickupLat != 0.0) GeoPoint(uiState.pickupLat, uiState.pickupLng) else null,
                     dropGeoPoint = if (uiState.dropLat != 0.0) GeoPoint(uiState.dropLat, uiState.dropLng) else null,
