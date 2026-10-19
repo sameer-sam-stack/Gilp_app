@@ -6,14 +6,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.TwoWheeler
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -97,6 +100,34 @@ fun ServicesScreen(
             )
         }
 
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Row 2: Pay (Coming Soon)
+        val context = LocalContext.current
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // 4. Pay (Same box format with Coming Soon badge)
+            ServiceTile(
+                title = "Pay",
+                icon = Icons.Default.AccountBalanceWallet,
+                iconColor = Color(0xFF6366F1),
+                backgroundColor = Color(0xFFEEF2FF),
+                badgeText = "Coming Soon",
+                onClick = {
+                    Toast.makeText(context, "Glip Pay is coming soon!", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.weight(1f)
+            )
+
+            // Empty placeholders so Pay maintains exact same 1/3 grid width
+            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.weight(1f))
+        }
+
         Spacer(modifier = Modifier.height(20.dp))
 
         // Fixed-size AD Banner on Services Screen with reduced horizontal margins and less rounded corners
@@ -147,7 +178,8 @@ fun ServiceTile(
     iconColor: Color,
     backgroundColor: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    badgeText: String? = null
 ) {
     Column(
         modifier = modifier.clickable { onClick() },
@@ -173,6 +205,22 @@ fun ServiceTile(
                     tint = iconColor,
                     modifier = Modifier.size(38.dp)
                 )
+
+                if (badgeText != null) {
+                    Surface(
+                        shape = RoundedCornerShape(bottomStart = 8.dp),
+                        color = Color(0xFFF59E0B),
+                        modifier = Modifier.align(Alignment.TopEnd)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            fontSize = 8.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
         }
 
