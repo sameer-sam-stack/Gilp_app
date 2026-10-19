@@ -72,8 +72,8 @@ fun AppNavigation(
             if (!phone.isNullOrBlank()) {
                 val activeRide = homeViewModel.checkAndRestoreActiveRide(phone)
                 if (activeRide != null) {
-                    if (activeRide.pickupName?.isNotBlank() == true) selectedPickup = activeRide.pickupName
-                    if (activeRide.dropName?.isNotBlank() == true) selectedDrop = activeRide.dropName
+                    activeRide.pickupName?.takeIf { it.isNotBlank() }?.let { selectedPickup = it }
+                    activeRide.dropName?.takeIf { it.isNotBlank() }?.let { selectedDrop = it }
                     if (activeRide.pickupLat != 0.0) selectedPickupLat = activeRide.pickupLat
                     if (activeRide.pickupLng != 0.0) selectedPickupLng = activeRide.pickupLng
                     if (activeRide.dropLat != 0.0) selectedDropLat = activeRide.dropLat
