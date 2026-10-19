@@ -26,6 +26,7 @@ import com.glip.app.ui.services.ServicesViewModel
 import com.glip.app.ui.parcel.ParcelBookingScreen
 import com.glip.app.ui.school.SchoolVehicleScreen
 import com.glip.app.ui.personal.PersonalVehicleScreen
+import com.glip.app.ui.wallet.WalletScreen
 
 import androidx.compose.ui.text.font.FontWeight
 import com.glip.app.ui.theme.GlipGreenPrimary
@@ -89,6 +90,7 @@ fun AppNavigation(
     var isParcelBookingOpen by remember { mutableStateOf(false) }
     var isSchoolVehicleOpen by remember { mutableStateOf(false) }
     var isPersonalVehicleOpen by remember { mutableStateOf(false) }
+    var isWalletOpen by remember { mutableStateOf(false) }
     var isPersonalSearchFromServices by remember { mutableStateOf(false) }
     var editingLocationMode by remember { mutableStateOf<String?>(null) } // "pickup" or "drop"
 
@@ -104,6 +106,11 @@ fun AppNavigation(
                 currentBottomTab = 0
             },
             modifier = modifier
+        )
+    } else if (isWalletOpen) {
+        WalletScreen(
+            onBack = { isWalletOpen = false },
+            modifier = modifier.fillMaxSize()
         )
     } else if (isParcelBookingOpen) {
         ParcelBookingScreen(
@@ -251,6 +258,9 @@ fun AppNavigation(
                             isPersonalSearchFromServices = true
                             hasConfirmedRoute = false
                             currentBottomTab = 0
+                        },
+                        onNavigateToWallet = {
+                            isWalletOpen = true
                         },
                         modifier = contentModifier
                     )

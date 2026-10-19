@@ -39,6 +39,7 @@ fun ServicesScreen(
     onNavigateToParcelBooking: () -> Unit = {},
     onNavigateToSchoolVehicle: () -> Unit = {},
     onNavigateToPersonalVehicle: () -> Unit = {},
+    onNavigateToWallet: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -102,7 +103,7 @@ fun ServicesScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Row 2: Pay (Coming Soon)
+        // Row 2: Pay (Opens Wallet Screen matching driver app)
         val context = LocalContext.current
         Row(
             modifier = Modifier
@@ -110,16 +111,13 @@ fun ServicesScreen(
                 .padding(horizontal = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // 4. Pay (Same box format with Coming Soon badge)
+            // 4. Pay (Navigates directly to Wallet Screen)
             ServiceTile(
                 title = "Pay",
                 icon = Icons.Default.AccountBalanceWallet,
                 iconColor = Color(0xFF6366F1),
                 backgroundColor = Color(0xFFEEF2FF),
-                badgeText = "Coming Soon",
-                onClick = {
-                    Toast.makeText(context, "Glip Pay is coming soon!", Toast.LENGTH_SHORT).show()
-                },
+                onClick = onNavigateToWallet,
                 modifier = Modifier.weight(1f)
             )
 
