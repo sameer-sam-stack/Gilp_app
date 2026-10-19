@@ -912,7 +912,7 @@ class HomeViewModel(
             val mockDriver = Vehicle(
                 vehicleId = activeRide.driverId ?: "drv-active",
                 licensePlateMasked = activeRide.vehicleNumber ?: "Auto",
-                category = VehicleCategory.AUTO,
+                category = VehicleCategory.AUTO_RICKSHAW,
                 modelName = "Glip Partner",
                 currentLat = activeRide.driverLat,
                 currentLng = activeRide.driverLng,
