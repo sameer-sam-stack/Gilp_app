@@ -66,6 +66,24 @@ fun AppNavigation(
 
     val homeViewModel = remember { HomeViewModel(mobilityRepository) }
 
+    LaunchedEffect(userProfile, isRegistered) {
+        if (isRegistered) {
+            val phone = userProfile?.phoneNumber ?: preferences.getUserProfile()?.phoneNumber
+            if (!phone.isNullOrBlank()) {
+                val activeRide = homeViewModel.checkAndRestoreActiveRide(phone)
+                if (activeRide != null) {
+                    if (activeRide.pickupName?.isNotBlank() == true) selectedPickup = activeRide.pickupName
+                    if (activeRide.dropName?.isNotBlank() == true) selectedDrop = activeRide.dropName
+                    if (activeRide.pickupLat != 0.0) selectedPickupLat = activeRide.pickupLat
+                    if (activeRide.pickupLng != 0.0) selectedPickupLng = activeRide.pickupLng
+                    if (activeRide.dropLat != 0.0) selectedDropLat = activeRide.dropLat
+                    if (activeRide.dropLng != 0.0) selectedDropLng = activeRide.dropLng
+                    hasConfirmedRoute = true
+                }
+            }
+        }
+    }
+
     // Bottom Navigation Tab: 0 = Ride, 1 = All Services, 2 = Profile
     var currentBottomTab by remember { mutableIntStateOf(0) }
     var isParcelBookingOpen by remember { mutableStateOf(false) }

@@ -272,21 +272,32 @@ class RegistrationViewModel(
                     }
                 }
             } else {
-                // New User Registration: create profile with entered Name & Phone and sync to Supabase
-                val newProfile = UserProfile(
-                    userId = "USR-${UUID.randomUUID().toString().take(8).uppercase()}",
-                    fullName = state.fullName.trim(),
-                    phoneNumber = cleanPhone,
-                    email = null
-                )
+                // New User Registration: Check if this phone number is already registered in Supabase
+                val searchResult = UserSupabaseClient.findUserByPhone(cleanPhone)
+                val existingProfile = searchResult.getOrNull()
+
+                val resolvedProfile = if (existingProfile != null) {
+                    val finalName = if (state.fullName.trim().isNotBlank()) state.fullName.trim() else existingProfile.fullName
+                    existingProfile.copy(fullName = finalName)
+                } else {
+                    UserProfile(
+                        userId = "USR-${UUID.randomUUID().toString().take(8).uppercase()}",
+                        fullName = state.fullName.trim().ifBlank { "Glip Rider" },
+                        phoneNumber = cleanPhone,
+                        email = null
+                    )
+                }
+
                 // Save locally and sync to Supabase
-                UserSupabaseClient.saveUserToSupabase(newProfile)
-                userRepository.saveUserProfile(newProfile)
+                UserSupabaseClient.saveUserToSupabase(resolvedProfile)
+                userRepository.saveUserProfile(resolvedProfile)
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        isRegistrationSuccess = true
+                        isRegistrationSuccess = true,
+                        restoredUserName = resolvedProfile.fullName,
+                        generalMessage = if (existingProfile != null) "Welcome back, ${resolvedProfile.fullName}!" else null
                     )
                 }
             }

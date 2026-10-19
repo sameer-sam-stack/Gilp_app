@@ -28,17 +28,17 @@ object UserSupabaseClient {
             val cleanPhone = phoneNumber.replace(Regex("[^0-9]"), "").takeLast(10)
             if (cleanPhone.length < 10) return@withContext Result.success(null)
 
-            // PostgREST filter: match clean phone or with +91
-            val queryFilter = "or=(phone.eq.$cleanPhone,phone.eq.%2B91$cleanPhone,phone.ilike.*$cleanPhone*)"
-            val endpoint = "${SupabaseConfig.SUPABASE_URL}/rest/v1/users?$queryFilter&select=*"
+            // PostgREST filter: match clean phone or with +91 across phone_number and phone columns
+            val queryFilter = "or=(phone_number.eq.$cleanPhone,phone_number.eq.%2B91$cleanPhone,phone_number.ilike.*$cleanPhone*,phone.eq.$cleanPhone,phone.ilike.*$cleanPhone*)"
+            val endpoint = "${SupabaseConfig.USER_SUPABASE_URL}/rest/v1/users?$queryFilter&select=*"
             val url = URL(endpoint)
 
             connection = (url.openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
                 connectTimeout = 8000
                 readTimeout = 8000
-                setRequestProperty("apikey", SupabaseConfig.SUPABASE_ANON_KEY)
-                setRequestProperty("Authorization", "Bearer ${SupabaseConfig.SUPABASE_ANON_KEY}")
+                setRequestProperty("apikey", SupabaseConfig.USER_SUPABASE_ANON_KEY)
+                setRequestProperty("Authorization", "Bearer ${SupabaseConfig.USER_SUPABASE_ANON_KEY}")
                 setRequestProperty("Content-Type", "application/json")
             }
 
@@ -49,11 +49,28 @@ object UserSupabaseClient {
                 val jsonArray = JSONArray(responseText)
                 if (jsonArray.length() > 0) {
                     val userObj = jsonArray.getJSONObject(0)
+                    val id = userObj.optString("id", "user-${System.currentTimeMillis()}")
+                    val name = if (userObj.has("full_name") && !userObj.isNull("full_name") && userObj.getString("full_name").isNotBlank()) {
+                        userObj.getString("full_name")
+                    } else if (userObj.has("name") && !userObj.isNull("name") && userObj.getString("name").isNotBlank()) {
+                        userObj.getString("name")
+                    } else {
+                        "Glip Rider"
+                    }
+                    val phone = if (userObj.has("phone_number") && !userObj.isNull("phone_number") && userObj.getString("phone_number").isNotBlank()) {
+                        userObj.getString("phone_number")
+                    } else if (userObj.has("phone") && !userObj.isNull("phone") && userObj.getString("phone").isNotBlank()) {
+                        userObj.getString("phone")
+                    } else {
+                        cleanPhone
+                    }
+                    val email = if (userObj.has("email") && !userObj.isNull("email")) userObj.getString("email") else null
+
                     val profile = UserProfile(
-                        userId = userObj.optString("id", "user-${System.currentTimeMillis()}"),
-                        fullName = userObj.optString("name", "Glip Rider"),
-                        phoneNumber = userObj.optString("phone", cleanPhone),
-                        email = if (userObj.has("email") && !userObj.isNull("email")) userObj.getString("email") else null,
+                        userId = id,
+                        fullName = name,
+                        phoneNumber = phone,
+                        email = email,
                         createdAtTimestamp = System.currentTimeMillis()
                     )
                     Log.d(TAG, "Found existing user in Supabase: ${profile.fullName} (${profile.phoneNumber})")
@@ -81,7 +98,7 @@ object UserSupabaseClient {
     suspend fun saveUserToSupabase(profile: UserProfile): Result<Unit> = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
-            val endpoint = "${SupabaseConfig.SUPABASE_URL}/rest/v1/users"
+            val endpoint = "${SupabaseConfig.USER_SUPABASE_URL}/rest/v1/users"
             val url = URL(endpoint)
 
             connection = (url.openConnection() as HttpURLConnection).apply {
@@ -89,8 +106,8 @@ object UserSupabaseClient {
                 connectTimeout = 8000
                 readTimeout = 8000
                 doOutput = true
-                setRequestProperty("apikey", SupabaseConfig.SUPABASE_ANON_KEY)
-                setRequestProperty("Authorization", "Bearer ${SupabaseConfig.SUPABASE_ANON_KEY}")
+                setRequestProperty("apikey", SupabaseConfig.USER_SUPABASE_ANON_KEY)
+                setRequestProperty("Authorization", "Bearer ${SupabaseConfig.USER_SUPABASE_ANON_KEY}")
                 setRequestProperty("Content-Type", "application/json")
                 setRequestProperty("Prefer", "resolution=merge-duplicates")
             }
@@ -98,7 +115,9 @@ object UserSupabaseClient {
             val cleanPhone = profile.phoneNumber.replace(Regex("[^0-9]"), "").takeLast(10)
             val jsonPayload = JSONObject().apply {
                 put("id", profile.userId)
+                put("full_name", profile.fullName)
                 put("name", profile.fullName)
+                put("phone_number", cleanPhone)
                 put("phone", cleanPhone)
                 put("email", profile.email ?: "${cleanPhone}@glipgo.com")
                 put("status", "active")

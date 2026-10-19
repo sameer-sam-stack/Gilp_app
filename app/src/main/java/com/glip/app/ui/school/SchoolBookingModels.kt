@@ -13,6 +13,7 @@ import java.util.UUID
  */
 data class SchoolBookingItem(
     val id: String = UUID.randomUUID().toString(),
+    val requestCode: String = (100000..999999).random().toString(),
     val userId: String = "",
     val parentName: String = "",
     val parentPhone: String = "",
@@ -29,6 +30,7 @@ data class SchoolBookingItem(
     val bookingDate: String = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date()),
     val status: String = "Requested",
     val fareEstimate: Double = 80.0,
+    val driverId: String? = null,
     val driverName: String? = null,
     val driverPhone: String? = null,
     val vehicleNumber: String? = null
@@ -49,9 +51,13 @@ object SchoolBookingRepository {
             val jsonArray = JSONArray(jsonString)
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
+                val id = obj.optString("id", UUID.randomUUID().toString())
+                if (id == "sch-demo-1" || id.startsWith("sch-demo")) continue
+
                 list.add(
                     SchoolBookingItem(
-                        id = obj.optString("id", UUID.randomUUID().toString()),
+                        id = id,
+                        requestCode = obj.optString("requestCode", (100000..999999).random().toString()),
                         userId = obj.optString("userId", ""),
                         parentName = obj.optString("parentName", ""),
                         parentPhone = obj.optString("parentPhone", ""),
@@ -68,6 +74,7 @@ object SchoolBookingRepository {
                         bookingDate = obj.optString("bookingDate", "Today"),
                         status = obj.optString("status", "Requested"),
                         fareEstimate = obj.optDouble("fareEstimate", 80.0),
+                        driverId = if (obj.has("driverId") && !obj.isNull("driverId")) obj.getString("driverId") else null,
                         driverName = if (obj.has("driverName") && !obj.isNull("driverName")) obj.getString("driverName") else null,
                         driverPhone = if (obj.has("driverPhone") && !obj.isNull("driverPhone")) obj.getString("driverPhone") else null,
                         vehicleNumber = if (obj.has("vehicleNumber") && !obj.isNull("vehicleNumber")) obj.getString("vehicleNumber") else null
@@ -77,7 +84,7 @@ object SchoolBookingRepository {
         } catch (e: Exception) {
             return defaultBookings()
         }
-        return if (list.isEmpty()) defaultBookings() else list
+        return list
     }
 
     fun saveBooking(context: Context, item: SchoolBookingItem) {
@@ -90,8 +97,10 @@ object SchoolBookingRepository {
     fun saveBookingsList(context: Context, items: List<SchoolBookingItem>) {
         val jsonArray = JSONArray()
         for (b in items) {
+            if (b.id == "sch-demo-1" || b.id.startsWith("sch-demo")) continue
             val obj = JSONObject().apply {
                 put("id", b.id)
+                put("requestCode", b.requestCode)
                 put("userId", b.userId)
                 put("parentName", b.parentName)
                 put("parentPhone", b.parentPhone)
@@ -108,6 +117,7 @@ object SchoolBookingRepository {
                 put("bookingDate", b.bookingDate)
                 put("status", b.status)
                 put("fareEstimate", b.fareEstimate)
+                if (b.driverId != null) put("driverId", b.driverId)
                 if (b.driverName != null) put("driverName", b.driverName)
                 if (b.driverPhone != null) put("driverPhone", b.driverPhone)
                 if (b.vehicleNumber != null) put("vehicleNumber", b.vehicleNumber)
@@ -119,20 +129,7 @@ object SchoolBookingRepository {
     }
 
     private fun defaultBookings(): List<SchoolBookingItem> {
-        return listOf(
-            SchoolBookingItem(
-                id = "sch-demo-1",
-                studentName = "Aarav Sharma",
-                studentClass = "KG 2 (UKG)",
-                pickupLocation = "SH5, Gol Bazar, Mamta Nagar",
-                dropoffLocation = "Delhi Public School (DPS), Rajnandgaon",
-                pickupTime = "06:00 AM",
-                dropTime = "08:00 AM",
-                bookingDate = "Today, 06:15 AM",
-                status = "Driver Assigned",
-                fareEstimate = 85.0
-            )
-        )
+        return emptyList()
     }
 }
 

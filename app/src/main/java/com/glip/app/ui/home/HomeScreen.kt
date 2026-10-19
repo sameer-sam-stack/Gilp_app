@@ -668,6 +668,45 @@ fun HomeScreen(
                             onEditDrop()
                         }
                     )
+
+                    // Rapido-style Floating "Active Order" Pill (matching media_1792370698775_970cba94.png)
+                    if (uiState.rideBookingStatus in listOf("REQUESTED", "ACCEPTED", "IN_PROGRESS")) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(top = 14.dp),
+                            shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp, topStart = 0.dp, bottomStart = 0.dp),
+                            color = Color(0xFF0F172A),
+                            border = BorderStroke(2.dp, Color(0xFFF59E0B)),
+                            shadowElevation = 6.dp
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.padding(start = 12.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .background(Color.White, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "1",
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                                Text(
+                                    text = "Active Order",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    }
                 } else {
                     LazyColumn(
                         modifier = Modifier

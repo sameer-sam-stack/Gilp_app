@@ -4,9 +4,10 @@
 -- Run this script in your Supabase SQL Editor (https://supabase.com/dashboard)
 -- ==============================================================================
 
--- 1. Create the school_bookings table
+-- 1. Create the school_bookings table with 6-digit request_code and complete driver assignment fields
 CREATE TABLE IF NOT EXISTS public.school_bookings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    request_code VARCHAR(10) NOT NULL,
     user_id TEXT NOT NULL,
     parent_name TEXT NOT NULL,
     parent_phone TEXT NOT NULL,
@@ -30,9 +31,21 @@ CREATE TABLE IF NOT EXISTS public.school_bookings (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. Fast querying indexes for Parent history and Driver assignment
-CREATE INDEX IF NOT EXISTS idx_school_bookings_user_id ON public.school_bookings(user_id);
+-- In case table already exists without request_code, add it safely
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' AND table_name = 'school_bookings' AND column_name = 'request_code'
+    ) THEN
+        ALTER TABLE public.school_bookings ADD COLUMN request_code VARCHAR(10) DEFAULT LPAD(FLOOR(RANDOM() * 900000 + 100000)::TEXT, 6, '0');
+    END IF;
+END $$;
+
+-- 2. Fast querying indexes for Parent history, Phone lookup, and Driver assignment
+CREATE INDEX IF NOT EXISTS idx_school_bookings_request_code ON public.school_bookings(request_code);
 CREATE INDEX IF NOT EXISTS idx_school_bookings_parent_phone ON public.school_bookings(parent_phone);
+CREATE INDEX IF NOT EXISTS idx_school_bookings_user_id ON public.school_bookings(user_id);
 CREATE INDEX IF NOT EXISTS idx_school_bookings_status ON public.school_bookings(status);
 CREATE INDEX IF NOT EXISTS idx_school_bookings_created_at ON public.school_bookings(created_at DESC);
 
@@ -51,13 +64,13 @@ CREATE POLICY "Allow public select on school_bookings"
 ON public.school_bookings FOR SELECT 
 USING (true);
 
--- Allow public / anon client to update bookings (e.g. status cancellation or driver updates)
+-- Allow public / anon client to update bookings (status cancellation or driver assignment)
 DROP POLICY IF EXISTS "Allow public update on school_bookings" ON public.school_bookings;
 CREATE POLICY "Allow public update on school_bookings" 
 ON public.school_bookings FOR UPDATE 
 USING (true);
 
--- 4. Enable Supabase Realtime for instant updates
+-- 4. Enable Supabase Realtime for instant Driver & Parent sync
 DO $$
 BEGIN
     IF NOT EXISTS (

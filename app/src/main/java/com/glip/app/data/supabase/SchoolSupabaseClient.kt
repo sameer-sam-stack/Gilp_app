@@ -54,7 +54,8 @@ object SchoolSupabaseClient {
         dropoffLng: Double,
         pickupTime: String,
         dropTime: String,
-        fareEstimate: Double = 80.0
+        fareEstimate: Double = 80.0,
+        requestCode: String = (100000..999999).random().toString()
     ): Result<SchoolBookingItem> = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
@@ -66,6 +67,7 @@ object SchoolSupabaseClient {
             val cleanPhone = parentPhone.replace(Regex("[^0-9]"), "").takeLast(10).ifBlank { "9876543210" }
 
             val payload = JSONObject().apply {
+                put("request_code", requestCode)
                 put("user_id", userId)
                 put("parent_name", parentName.ifBlank { "Parent" })
                 put("parent_phone", cleanPhone)
@@ -100,6 +102,7 @@ object SchoolSupabaseClient {
                 } else {
                     Result.success(
                         SchoolBookingItem(
+                            requestCode = requestCode,
                             studentName = studentName,
                             studentClass = studentClass,
                             pickupLocation = pickupLocation,
@@ -199,9 +202,16 @@ object SchoolSupabaseClient {
     private fun parseBookingJsonObject(obj: JSONObject): SchoolBookingItem {
         val rawDate = obj.optString("created_at", "")
         val formattedDate = formatIsoTimestamp(rawDate)
+        val reqCode = if (obj.has("request_code") && !obj.isNull("request_code")) {
+            obj.getString("request_code")
+        } else {
+            val id = obj.optString("id", "")
+            if (id.length >= 6) id.take(6) else (100000..999999).random().toString()
+        }
 
         return SchoolBookingItem(
             id = obj.optString("id", ""),
+            requestCode = reqCode,
             userId = obj.optString("user_id", ""),
             parentName = obj.optString("parent_name", ""),
             parentPhone = obj.optString("parent_phone", ""),
@@ -218,6 +228,7 @@ object SchoolSupabaseClient {
             bookingDate = formattedDate.ifBlank { "Today" },
             status = obj.optString("status", "Requested"),
             fareEstimate = obj.optDouble("fare_estimate", 80.0),
+            driverId = if (obj.has("driver_id") && !obj.isNull("driver_id")) obj.getString("driver_id") else null,
             driverName = if (obj.has("driver_name") && !obj.isNull("driver_name")) obj.getString("driver_name") else null,
             driverPhone = if (obj.has("driver_phone") && !obj.isNull("driver_phone")) obj.getString("driver_phone") else null,
             vehicleNumber = if (obj.has("vehicle_number") && !obj.isNull("vehicle_number")) obj.getString("vehicle_number") else null

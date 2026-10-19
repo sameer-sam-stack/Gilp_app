@@ -70,7 +70,14 @@ data class RideStatusResult(
     val driverLat: Double = 0.0,
     val driverLng: Double = 0.0,
     val driverBearing: Float = 0f,
-    val fareAmount: Double = 0.0
+    val fareAmount: Double = 0.0,
+    val pickupName: String? = null,
+    val dropName: String? = null,
+    val pickupLat: Double = 0.0,
+    val pickupLng: Double = 0.0,
+    val dropLat: Double = 0.0,
+    val dropLng: Double = 0.0,
+    val otp: String? = null
 )
 
 /**
@@ -230,6 +237,84 @@ object RideRequestClient {
             }
             null
         } catch (e: Exception) {
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    /**
+     * Looks up an active ride request in Supabase for the given passenger's phone number.
+     * Matches rides with status PENDING, ACCEPTED, or IN_PROGRESS.
+     */
+    suspend fun fetchActiveRideForPassenger(phoneNumber: String): RideStatusResult? = withContext(Dispatchers.IO) {
+        val cleanPhone = phoneNumber.replace(Regex("[^0-9]"), "").takeLast(10)
+        if (cleanPhone.length < 10) return@withContext null
+        var connection: HttpURLConnection? = null
+        try {
+            val endpoint = "/${SupabaseConfig.TABLE_RIDE_REQUESTS}?passenger_mobile=ilike.*$cleanPhone*&status=in.(PENDING,ACCEPTED,IN_PROGRESS)&order=created_at.desc&limit=1"
+            connection = openConnection(endpoint, "GET")
+            val code = connection.responseCode
+            if (code in 200..299) {
+                val body = BufferedReader(InputStreamReader(connection.inputStream)).use { it.readText() }
+                val arr = JSONArray(body)
+                if (arr.length() > 0) {
+                    val obj = arr.getJSONObject(0)
+                    val reqId = obj.optString("id")
+                    val status = obj.optString("status", "PENDING")
+                    val driverId = obj.optString("driver_id", "").ifBlank { null }
+                    val fareAmount = obj.optDouble("fare_amount", 0.0)
+                    val pName = obj.optString("pickup_name", "")
+                    val dName = obj.optString("drop_name", "")
+                    val pLat = obj.optDouble("pickup_lat", 0.0)
+                    val pLng = obj.optDouble("pickup_lng", 0.0)
+                    val dLat = obj.optDouble("drop_lat", 0.0)
+                    val dLng = obj.optDouble("drop_lng", 0.0)
+                    val otpVal = obj.optString("otp", "")
+
+                    var dNameStr = "Driver"
+                    var dPhoneStr = driverId ?: ""
+                    var vNumStr = "Auto"
+                    var drvLat = 0.0
+                    var drvLng = 0.0
+                    var drvAngle = 0f
+
+                    if ((status.equals("ACCEPTED", ignoreCase = true) || status.equals("IN_PROGRESS", ignoreCase = true)) && driverId != null) {
+                        val driverDetails = fetchDriverByIdOrMobile(driverId)
+                        if (driverDetails != null) {
+                            dNameStr = driverDetails.fullName
+                            dPhoneStr = driverDetails.mobileNumber
+                            vNumStr = driverDetails.vehicleNumber.ifBlank { "Auto" }
+                            drvLat = driverDetails.currentLat
+                            drvLng = driverDetails.currentLng
+                            drvAngle = driverDetails.bearing
+                        }
+                    }
+
+                    return@withContext RideStatusResult(
+                        requestId = reqId,
+                        status = status,
+                        driverId = driverId,
+                        driverName = dNameStr,
+                        driverPhone = dPhoneStr,
+                        vehicleNumber = vNumStr,
+                        driverLat = drvLat,
+                        driverLng = drvLng,
+                        driverBearing = drvAngle,
+                        fareAmount = fareAmount,
+                        pickupName = pName,
+                        dropName = dName,
+                        pickupLat = pLat,
+                        pickupLng = pLng,
+                        dropLat = dLat,
+                        dropLng = dLng,
+                        otp = otpVal
+                    )
+                }
+            }
+            null
+        } catch (e: Exception) {
+            Log.w(TAG, "fetchActiveRideForPassenger failed: ${e.message}")
             null
         } finally {
             connection?.disconnect()

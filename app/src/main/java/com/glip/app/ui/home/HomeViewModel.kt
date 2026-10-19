@@ -883,6 +883,105 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * Checks Supabase for active ride if passenger killed/closed the app during a ride.
+     * Restores state so the ride tracker, map polyline, and driver details immediately resume.
+     */
+    suspend fun checkAndRestoreActiveRide(userPhone: String): RideStatusResult? {
+        if (_uiState.value.rideBookingStatus != "NONE" && _uiState.value.activeRequestId != null) {
+            return null // Already tracking an active ride
+        }
+        val cleanPhone = userPhone.replace(Regex("[^0-9]"), "").takeLast(10)
+        if (cleanPhone.length < 10) return null
+
+        val activeRide = RideRequestClient.fetchActiveRideForPassenger(cleanPhone)
+        if (activeRide != null) {
+            Log.d(TAG, "Restoring active ride from Supabase for passenger $cleanPhone: ${activeRide.requestId} (${activeRide.status})")
+            val pLat = activeRide.pickupLat
+            val pLng = activeRide.pickupLng
+            val dLat = activeRide.dropLat
+            val dLng = activeRide.dropLng
+
+            val bookingStatus = when (activeRide.status.uppercase()) {
+                "PENDING" -> "REQUESTED"
+                "ACCEPTED" -> "ACCEPTED"
+                "IN_PROGRESS" -> "IN_PROGRESS"
+                else -> "NONE"
+            }
+
+            val mockDriver = Vehicle(
+                vehicleId = activeRide.driverId ?: "drv-active",
+                licensePlateMasked = activeRide.vehicleNumber ?: "Auto",
+                category = VehicleCategory.AUTO,
+                modelName = "Glip Partner",
+                currentLat = activeRide.driverLat,
+                currentLng = activeRide.driverLng,
+                headingDegrees = activeRide.driverBearing,
+                route = Route(
+                    routeId = "rt_${activeRide.requestId}",
+                    originName = activeRide.pickupName ?: "",
+                    originLat = pLat,
+                    originLng = pLng,
+                    destinationName = activeRide.dropName ?: "",
+                    destinationLat = dLat,
+                    destinationLng = dLng,
+                    polylinePoints = emptyList(),
+                    totalDistanceKm = 3.0,
+                    estimatedDurationMinutes = 8
+                ),
+                routeStatus = RouteStatus.EN_ROUTE,
+                seatAvailability = SeatAvailability(
+                    totalSeats = 4,
+                    occupiedSeats = 1
+                ),
+                driver = DriverProfile(
+                    driverId = activeRide.driverId ?: "active",
+                    fullName = activeRide.driverName ?: "Driver Partner",
+                    rating = 4.9,
+                    totalRidesCompleted = 120,
+                    isVerified = true
+                ),
+                farePerKmEstimate = activeRide.fareAmount,
+                isDemoSimulated = false,
+                routeColorHex = "#10B981",
+                etaMinutes = 4,
+                driverPhone = activeRide.driverPhone ?: ""
+            )
+
+            val passengerGeoPoints = if (pLat != 0.0 && dLat != 0.0) {
+                listOf(GeoPoint(pLat, pLng), GeoPoint(dLat, dLng))
+            } else emptyList()
+
+            _uiState.update {
+                it.copy(
+                    activeRequestId = activeRide.requestId,
+                    rideBookingStatus = bookingStatus,
+                    rideOtp = activeRide.otp ?: "1234",
+                    pickupQuery = activeRide.pickupName ?: "",
+                    dropQuery = activeRide.dropName ?: "",
+                    pickupLat = pLat,
+                    pickupLng = pLng,
+                    dropLat = dLat,
+                    dropLng = dLng,
+                    acceptedVehicle = mockDriver,
+                    selectedVehicle = mockDriver,
+                    liveFareAmount = activeRide.fareAmount,
+                    passengerRoutePoints = passengerGeoPoints,
+                    filteredVehicles = listOf(mockDriver),
+                    isSearchingRouteVehicles = false
+                )
+            }
+
+            if (bookingStatus == "REQUESTED") {
+                startRideStatusPolling(activeRide.requestId, mockDriver)
+            } else if (bookingStatus == "ACCEPTED" || bookingStatus == "IN_PROGRESS") {
+                startDriverLiveTracking(activeRide.driverPhone ?: "")
+            }
+            return activeRide
+        }
+        return null
+    }
+
     override fun onCleared() {
         super.onCleared()
         pollJob?.cancel()

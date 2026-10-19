@@ -784,6 +784,8 @@ fun SchoolVehicleScreen(
                                     isSubmitting = true
 
                                     coroutineScope.launch {
+                                        val newBookingCode = (100000..999999).random().toString()
+
                                         // 1. Submit ride request to DEDICATED School Supabase Database
                                         val createResult = SchoolSupabaseClient.createSchoolBooking(
                                             userId = uId,
@@ -799,11 +801,13 @@ fun SchoolVehicleScreen(
                                             dropoffLng = dropLng,
                                             pickupTime = pickupTime,
                                             dropTime = dropTime,
-                                            fareEstimate = 80.0
+                                            fareEstimate = 80.0,
+                                            requestCode = newBookingCode
                                         )
 
                                         // 2. Save into local bookings repository (Offline cache)
                                         val newBooking = createResult.getOrNull() ?: SchoolBookingItem(
+                                            requestCode = newBookingCode,
                                             userId = uId,
                                             parentName = parentName,
                                             parentPhone = parentPhone,
@@ -1239,13 +1243,34 @@ fun SchoolVehicleScreen(
 }
 
 /**
+ * Formats long address to short readable string (first 1-2 key components or school name)
+ */
+fun formatShortAddress(address: String): String {
+    val clean = address.trim()
+    if (clean.isBlank()) return ""
+    val parts = clean.split(",")
+    return if (parts.size >= 2) {
+        val p1 = parts[0].trim()
+        val p2 = parts[1].trim()
+        if (p1.length <= 6 && p2.isNotEmpty()) "$p1, $p2" else p1
+    } else {
+        parts[0].trim()
+    }
+}
+
+/**
  * Booking History Card
  */
 @Composable
 fun SchoolBookingCard(item: SchoolBookingItem) {
+    val context = LocalContext.current
+    val isAssigned = item.status.equals("Driver Assigned", ignoreCase = true) ||
+                     item.status.equals("Accepted", ignoreCase = true) ||
+                     !item.driverName.isNullOrBlank()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -1255,132 +1280,318 @@ fun SchoolBookingCard(item: SchoolBookingItem) {
                 .fillMaxWidth()
                 .padding(16.dp)
         ) {
-            // Header Row: Student name, class and status badge
+            // 1. Top Row: Request ID (6 Digit) & Status Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(34.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFFEF3C7)),
-                        contentAlignment = Alignment.Center
+                    Text(
+                        text = "Request ID: ",
+                        fontSize = 13.sp,
+                        color = Color(0xFF64748B),
+                        fontWeight = FontWeight.Medium
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFF0F9FF),
+                        border = BorderStroke(1.dp, Color(0xFFBAE6FD))
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.DirectionsBus,
-                            contentDescription = null,
-                            tint = Color(0xFFD97706),
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
                         Text(
-                            text = item.studentName,
-                            fontSize = 15.sp,
+                            text = "#${item.requestCode}",
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
-                        )
-                        Text(
-                            text = item.studentClass,
-                            fontSize = 12.sp,
                             color = Color(0xFF0284C7),
-                            fontWeight = FontWeight.Medium
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
                 }
 
+                // Status Badge
+                val badgeBg = if (isAssigned) Color(0xFFDCFCE7) else Color(0xFFFEF3C7)
+                val badgeText = if (isAssigned) Color(0xFF166534) else Color(0xFF92400E)
+                val statusTitle = if (isAssigned) "Driver Assigned" else "Pending"
+
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = if (item.status == "Driver Assigned") Color(0xFFDCFCE7) else Color(0xFFFEF3C7)
+                    color = badgeBg
                 ) {
                     Text(
-                        text = item.status,
+                        text = statusTitle,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (item.status == "Driver Assigned") Color(0xFF166534) else Color(0xFF92400E),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        color = badgeText,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 2. Student Name & Class
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFE0F2FE)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Student",
+                        tint = Color(0xFF0284C7),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = item.studentName,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                    Text(
+                        text = item.studentClass,
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B),
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
-            Spacer(modifier = Modifier.height(10.dp))
 
-            // Route Details
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF10B981)))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Pickup: ${item.pickupLocation}",
-                    fontSize = 13.sp,
-                    color = Color(0xFF334155),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFFEF4444)))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Drop: ${item.dropoffLocation}",
-                    fontSize = 13.sp,
-                    color = Color(0xFF334155),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Timings & Booking timestamp
+            // 3. Pickup Row: Short Location on Left, Pickup Time on Right (Side by side)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = "Pickup: ${item.pickupTime} • Drop: ${item.dropTime}",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF0284C7)
-                )
-                Text(
-                    text = item.bookingDate,
-                    fontSize = 11.sp,
-                    color = Color(0xFF94A3B8)
-                )
-            }
-
-            // Driver details if assigned
-            if (!item.driverName.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFF0FDF4))
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Driver",
-                        tint = Color(0xFF16A34A),
-                        modifier = Modifier.size(16.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF10B981))
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Driver: ${item.driverName}${if (!item.vehicleNumber.isNullOrBlank()) " (${item.vehicleNumber})" else ""}${if (!item.driverPhone.isNullOrBlank()) " • ${item.driverPhone}" else ""}",
-                        fontSize = 12.sp,
+                        text = formatShortAddress(item.pickupLocation),
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF166534)
+                        color = Color(0xFF334155),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = "Pickup Time",
+                        tint = Color(0xFF0284C7),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = item.pickupTime,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF0284C7)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 4. Drop Row: Short Location / School Name on Left, Drop Time on Right (Side by side)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFEF4444))
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = formatShortAddress(item.dropoffLocation),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF334155),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = "Drop Time",
+                        tint = Color(0xFF0284C7),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = item.dropTime,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF0284C7)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 5. Box ke Bottom me: Your Request Is Pending OR Driver Details
+            if (!isAssigned) {
+                // Pending Box
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFFFFBEB),
+                    border = BorderStroke(1.dp, Color(0xFFFDE68A))
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = Color(0xFFD97706),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text(
+                                text = "Your Request Is Pending..",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF92400E)
+                            )
+                            Text(
+                                text = "We are assigning a verified driver to your school ride.",
+                                fontSize = 11.sp,
+                                color = Color(0xFFB45309)
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Driver Details Box
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFF0FDF4),
+                    border = BorderStroke(1.dp, Color(0xFFBBF7D0))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "Assigned",
+                                tint = Color(0xFF16A34A),
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(
+                                text = "Driver Details",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF166534)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Driver Name & Driver Number (side me hi)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = item.driverName ?: "Assigned Driver",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+
+                            if (!item.driverPhone.isNullOrBlank()) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.clickable {
+                                        try {
+                                            val intent = android.content.Intent(
+                                                android.content.Intent.ACTION_DIAL,
+                                                android.net.Uri.parse("tel:${item.driverPhone}")
+                                            )
+                                            context.startActivity(intent)
+                                        } catch (_: Exception) {}
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Phone,
+                                        contentDescription = "Call Driver",
+                                        tint = Color(0xFF16A34A),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = item.driverPhone,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Vehicle Number Plate
+                        if (!item.vehicleNumber.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.DirectionsCar,
+                                    contentDescription = "Vehicle",
+                                    tint = Color(0xFF64748B),
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Vehicle No: ${item.vehicleNumber}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF334155)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
