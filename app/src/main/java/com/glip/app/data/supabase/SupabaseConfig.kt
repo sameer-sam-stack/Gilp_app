@@ -25,4 +25,11 @@ object SupabaseConfig {
     const val TABLE_DRIVERS: String = "drivers"
     const val TABLE_DRIVER_ROUTES: String = "driver_routes"
     const val TABLE_USERS: String = "users"
+
+    /**
+     * Dedicated School Vehicle Supabase Database URL & Anon Key
+     */
+    const val SCHOOL_SUPABASE_URL: String = "https://uugzolriwmbhssgfjbap.supabase.co"
+    const val SCHOOL_SUPABASE_ANON_KEY: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1Z3pvbHJpd21iaHNzZ2ZqYmFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNTYzMTQsImV4cCI6MjEwNzkzMjMxNH0.rVBGf5CDhLSevaXbZrMptk0-w1xU4YOl2UIsr5FzeP8"
+    const val TABLE_SCHOOL_BOOKINGS: String = "school_bookings"
 }

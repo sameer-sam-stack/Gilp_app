@@ -1,7 +1,13 @@
 package com.glip.app.ui.home
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -110,9 +116,44 @@ fun HomeScreen(
         mutableStateOf(drop.isNotBlank() || dropCoordinates != null)
     }
 
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { perms ->
+        val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                      perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (granted) {
+            LocationTracker.refreshLocation(context) { loc ->
+                if (pickup.isBlank()) {
+                    pickupCoordinates = Pair(loc.latitude, loc.longitude)
+                    pickup = LocationTracker.currentAddress.value ?: "Current Location"
+                    isPickupSelected = true
+                }
+            }
+        }
+    }
+
+    // Auto-detect location on initial composition
+    LaunchedEffect(Unit) {
+        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+        val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+        if (fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED) {
+            LocationTracker.refreshLocation(context) { loc ->
+                if (pickup.isBlank()) {
+                    pickupCoordinates = Pair(loc.latitude, loc.longitude)
+                    pickup = LocationTracker.currentAddress.value ?: "Current Location"
+                    isPickupSelected = true
+                }
+            }
+        } else {
+            locationPermissionLauncher.launch(
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+            )
+        }
+    }
+
     // Auto-fill pickup with live GPS location as soon as detected if empty
     LaunchedEffect(liveAddress, liveCoords) {
-        if (!liveAddress.isNullOrBlank() && pickup.isBlank()) {
+        if (!liveAddress.isNullOrBlank() && (pickup.isBlank() || pickup == "Detecting your location...")) {
             pickup = liveAddress ?: ""
             pickupCoordinates = liveCoords
             isPickupSelected = true
@@ -316,6 +357,53 @@ fun HomeScreen(
                                         }
                                     }
 
+                                    // 1. Green GPS Crosshair (Instantly fetches & sets live current location)
+                                    IconButton(
+                                        onClick = {
+                                            activeField = null
+                                            val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                                            val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+                                            if (fine != PackageManager.PERMISSION_GRANTED && coarse != PackageManager.PERMISSION_GRANTED) {
+                                                locationPermissionLauncher.launch(
+                                                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                                                )
+                                                return@IconButton
+                                            }
+                                            if (!LocationTracker.isGpsEnabled(context)) {
+                                                Toast.makeText(context, "Please enable GPS/Location in Settings", Toast.LENGTH_SHORT).show()
+                                                LocationTracker.promptEnableGps(context)
+                                                return@IconButton
+                                            }
+                                            val curCoords = LocationTracker.currentCoordinates.value
+                                            val curAddr = LocationTracker.currentAddress.value
+                                            if (curCoords != null && !curAddr.isNullOrBlank()) {
+                                                pickup = curAddr
+                                                pickupCoordinates = curCoords
+                                                isPickupSelected = true
+                                                Toast.makeText(context, "Pickup set to: $curAddr", Toast.LENGTH_SHORT).show()
+                                            } else {
+                                                Toast.makeText(context, "Detecting your live location...", Toast.LENGTH_SHORT).show()
+                                                pickup = "Detecting your location..."
+                                                LocationTracker.refreshLocation(context) { loc ->
+                                                    pickupCoordinates = Pair(loc.latitude, loc.longitude)
+                                                    val resolved = LocationTracker.currentAddress.value ?: "Current Location"
+                                                    pickup = resolved
+                                                    isPickupSelected = true
+                                                    Toast.makeText(context, "Pickup set to: $resolved", Toast.LENGTH_SHORT).show()
+                                                }
+                                            }
+                                        },
+                                        modifier = Modifier.size(34.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.MyLocation,
+                                            contentDescription = "Use My Current Location",
+                                            tint = Color(0xFF10B981),
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+
+                                    // 2. Map Pin Icon (Opens interactive map picker)
                                     IconButton(
                                         onClick = {
                                             activeField = null
@@ -324,9 +412,9 @@ fun HomeScreen(
                                         modifier = Modifier.size(34.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.MyLocation,
+                                            imageVector = Icons.Default.Map,
                                             contentDescription = "Pick Pickup on Map",
-                                            tint = Color(0xFF10B981),
+                                            tint = Color(0xFF64748B),
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
@@ -411,7 +499,7 @@ fun HomeScreen(
                                         modifier = Modifier.size(34.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.MyLocation,
+                                            imageVector = Icons.Default.Map,
                                             contentDescription = "Pick Drop on Map",
                                             tint = Color(0xFFEF4444),
                                             modifier = Modifier.size(20.dp)
@@ -423,13 +511,52 @@ fun HomeScreen(
                     }
 
                     // Real-time Autocomplete Suggestions Dropdown
-                    if (activeField != null && (currentQuery.trim().length >= 2 || isSearchingPlaces || suggestions.isNotEmpty())) {
+                    if (activeField != null) {
                         Spacer(modifier = Modifier.height(8.dp))
                         PlaceAutocompleteDropdown(
                             suggestions = suggestions,
                             isLoading = isSearchingPlaces,
                             searchQuery = currentQuery,
                             activeField = activeField!!,
+                            onUseCurrentLocation = {
+                                val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                                val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+                                if (fine != PackageManager.PERMISSION_GRANTED && coarse != PackageManager.PERMISSION_GRANTED) {
+                                    locationPermissionLauncher.launch(
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                                    )
+                                    return@PlaceAutocompleteDropdown
+                                }
+                                val curCoords = LocationTracker.currentCoordinates.value
+                                val curAddr = LocationTracker.currentAddress.value
+                                if (curCoords != null && !curAddr.isNullOrBlank()) {
+                                    pickup = curAddr
+                                    pickupCoordinates = curCoords
+                                    isPickupSelected = true
+                                    activeField = null
+                                    Toast.makeText(context, "Pickup set to: $curAddr", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    pickup = "Detecting your location..."
+                                    Toast.makeText(context, "Detecting your live location...", Toast.LENGTH_SHORT).show()
+                                    LocationTracker.refreshLocation(context) { loc ->
+                                        pickupCoordinates = Pair(loc.latitude, loc.longitude)
+                                        val resolved = LocationTracker.currentAddress.value ?: "Current Location"
+                                        pickup = resolved
+                                        isPickupSelected = true
+                                        activeField = null
+                                        Toast.makeText(context, "Pickup set to: $resolved", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            onSelectOnMap = {
+                                if (activeField == "pickup") {
+                                    activeField = null
+                                    onEditPickup()
+                                } else {
+                                    activeField = null
+                                    onEditDrop()
+                                }
+                            },
                             onPlaceSelected = { place ->
                                 if (activeField == "pickup") {
                                     pickup = place.primaryText

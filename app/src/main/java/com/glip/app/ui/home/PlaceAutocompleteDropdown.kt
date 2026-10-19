@@ -10,6 +10,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -34,6 +36,8 @@ fun PlaceAutocompleteDropdown(
     searchQuery: String,
     activeField: String, // "pickup" or "drop"
     onPlaceSelected: (AutocompletePlace) -> Unit,
+    onUseCurrentLocation: (() -> Unit)? = null,
+    onSelectOnMap: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -48,6 +52,87 @@ fun PlaceAutocompleteDropdown(
                 .fillMaxWidth()
                 .padding(vertical = 4.dp)
         ) {
+            // Quick Action 1: Use Current Location (for pickup)
+            if (activeField == "pickup" && onUseCurrentLocation != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onUseCurrentLocation() }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFDCFCE7)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MyLocation,
+                            contentDescription = null,
+                            tint = Color(0xFF16A34A),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Use Current Location",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "Detect and set your live GPS position",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
+                }
+                HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+            }
+
+            // Quick Action 2: Select on Map
+            if (onSelectOnMap != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelectOnMap() }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(if (activeField == "pickup") Color(0xFFEFF6FF) else Color(0xFFFEE2E2)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Map,
+                            contentDescription = null,
+                            tint = if (activeField == "pickup") Color(0xFF2563EB) else Color(0xFFDC2626),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = if (activeField == "pickup") "Select Pickup on Map" else "Select Drop on Map",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "Pin exact spot on interactive map",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF64748B)
+                        )
+                    }
+                }
+                HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+            }
             if (isLoading) {
                 Row(
                     modifier = Modifier

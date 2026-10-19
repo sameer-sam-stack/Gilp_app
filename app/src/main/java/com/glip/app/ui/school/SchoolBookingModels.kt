@@ -13,19 +13,29 @@ import java.util.UUID
  */
 data class SchoolBookingItem(
     val id: String = UUID.randomUUID().toString(),
+    val userId: String = "",
+    val parentName: String = "",
+    val parentPhone: String = "",
     val studentName: String,
     val studentClass: String,
     val pickupLocation: String,
+    val pickupLat: Double = 0.0,
+    val pickupLng: Double = 0.0,
     val dropoffLocation: String,
+    val dropoffLat: Double = 0.0,
+    val dropoffLng: Double = 0.0,
     val pickupTime: String,
     val dropTime: String,
     val bookingDate: String = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date()),
     val status: String = "Requested",
-    val fareEstimate: Double = 80.0
+    val fareEstimate: Double = 80.0,
+    val driverName: String? = null,
+    val driverPhone: String? = null,
+    val vehicleNumber: String? = null
 )
 
 /**
- * Local repository to persist and retrieve School Vehicle bookings.
+ * Local repository to persist and retrieve School Vehicle bookings (Offline Cache).
  */
 object SchoolBookingRepository {
     private const val PREFS_NAME = "glip_school_vehicle_bookings"
@@ -42,15 +52,25 @@ object SchoolBookingRepository {
                 list.add(
                     SchoolBookingItem(
                         id = obj.optString("id", UUID.randomUUID().toString()),
+                        userId = obj.optString("userId", ""),
+                        parentName = obj.optString("parentName", ""),
+                        parentPhone = obj.optString("parentPhone", ""),
                         studentName = obj.optString("studentName", ""),
                         studentClass = obj.optString("studentClass", ""),
                         pickupLocation = obj.optString("pickupLocation", ""),
+                        pickupLat = obj.optDouble("pickupLat", 0.0),
+                        pickupLng = obj.optDouble("pickupLng", 0.0),
                         dropoffLocation = obj.optString("dropoffLocation", ""),
+                        dropoffLat = obj.optDouble("dropoffLat", 0.0),
+                        dropoffLng = obj.optDouble("dropoffLng", 0.0),
                         pickupTime = obj.optString("pickupTime", "06:00 AM"),
                         dropTime = obj.optString("dropTime", "08:00 AM"),
                         bookingDate = obj.optString("bookingDate", "Today"),
                         status = obj.optString("status", "Requested"),
-                        fareEstimate = obj.optDouble("fareEstimate", 80.0)
+                        fareEstimate = obj.optDouble("fareEstimate", 80.0),
+                        driverName = if (obj.has("driverName") && !obj.isNull("driverName")) obj.getString("driverName") else null,
+                        driverPhone = if (obj.has("driverPhone") && !obj.isNull("driverPhone")) obj.getString("driverPhone") else null,
+                        vehicleNumber = if (obj.has("vehicleNumber") && !obj.isNull("vehicleNumber")) obj.getString("vehicleNumber") else null
                     )
                 )
             }
@@ -62,20 +82,35 @@ object SchoolBookingRepository {
 
     fun saveBooking(context: Context, item: SchoolBookingItem) {
         val current = getBookings(context).toMutableList()
+        current.removeAll { it.id == item.id }
         current.add(0, item)
+        saveBookingsList(context, current)
+    }
+
+    fun saveBookingsList(context: Context, items: List<SchoolBookingItem>) {
         val jsonArray = JSONArray()
-        for (b in current) {
+        for (b in items) {
             val obj = JSONObject().apply {
                 put("id", b.id)
+                put("userId", b.userId)
+                put("parentName", b.parentName)
+                put("parentPhone", b.parentPhone)
                 put("studentName", b.studentName)
                 put("studentClass", b.studentClass)
                 put("pickupLocation", b.pickupLocation)
+                put("pickupLat", b.pickupLat)
+                put("pickupLng", b.pickupLng)
                 put("dropoffLocation", b.dropoffLocation)
+                put("dropoffLat", b.dropoffLat)
+                put("dropoffLng", b.dropoffLng)
                 put("pickupTime", b.pickupTime)
                 put("dropTime", b.dropTime)
                 put("bookingDate", b.bookingDate)
                 put("status", b.status)
                 put("fareEstimate", b.fareEstimate)
+                if (b.driverName != null) put("driverName", b.driverName)
+                if (b.driverPhone != null) put("driverPhone", b.driverPhone)
+                if (b.vehicleNumber != null) put("vehicleNumber", b.vehicleNumber)
             }
             jsonArray.put(obj)
         }

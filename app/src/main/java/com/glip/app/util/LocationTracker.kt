@@ -20,6 +20,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Locale
 
 object LocationTracker {
@@ -50,9 +54,10 @@ object LocationTracker {
         }
     }
 
-    private fun updateLocationAndAddress(context: Context, location: Location) {
+    fun updateLocationAndAddress(context: Context, location: Location) {
         _currentCoordinates.value = Pair(location.latitude, location.longitude)
         scope.launch {
+            // 1. Try Android Native Geocoder
             try {
                 val geocoder = Geocoder(context, Locale.getDefault())
                 val list = geocoder.getFromLocation(location.latitude, location.longitude, 1)
@@ -63,60 +68,97 @@ object LocationTracker {
                     _currentAddress.value = when {
                         !shortLoc.isNullOrBlank() -> shortLoc
                         !fullLine.isNullOrBlank() -> fullLine.split(",").take(2).joinToString(",").trim()
-                        else -> "My Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"
+                        else -> "Current Location"
                     }
                     return@launch
                 }
             } catch (_: Exception) {}
+
+            // 2. HTTP Fallback: OpenStreetMap Nominatim reverse geocode
+            try {
+                val url = URL("https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}&zoom=18&addressdetails=1")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.setRequestProperty("User-Agent", "GlipGoApp/1.0 (contact@glipgo.com)")
+                conn.connectTimeout = 3500
+                conn.readTimeout = 3500
+                if (conn.responseCode == 200) {
+                    val text = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(text)
+                    val name = json.optString("name")
+                    val displayName = json.optString("display_name")
+                    val parts = displayName.split(",")
+                    val readable = if (name.isNotBlank()) name else parts.take(2).joinToString(",").trim()
+                    if (readable.isNotBlank()) {
+                        _currentAddress.value = readable
+                        return@launch
+                    }
+                }
+                conn.disconnect()
+            } catch (_: Exception) {}
+
             if (_currentAddress.value == null) {
-                _currentAddress.value = "My Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"
+                _currentAddress.value = "Current Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"
             }
         }
     }
 
     @SuppressLint("MissingPermission")
-    fun refreshLocation(context: Context) {
+    fun refreshLocation(context: Context, onLocationFound: ((Location) -> Unit)? = null) {
         try {
             val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return
 
-            // 1. Instant check from last known GPS/Network location
-            val lastLocation: Location? = when {
-                try { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) } catch (_: Exception) { false } ->
-                    try { lm.getLastKnownLocation(LocationManager.GPS_PROVIDER) } catch (_: Exception) { null }
-                try { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } catch (_: Exception) { false } ->
-                    try { lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) } catch (_: Exception) { null }
-                else -> null
+            // 1. Search all providers for the best cached last known location
+            val providers = listOfNotNull(
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) LocationManager.FUSED_PROVIDER else null,
+                LocationManager.NETWORK_PROVIDER,
+                LocationManager.GPS_PROVIDER,
+                LocationManager.PASSIVE_PROVIDER
+            )
+
+            var bestLocation: Location? = null
+            for (p in providers) {
+                try {
+                    val loc = lm.getLastKnownLocation(p)
+                    if (loc != null) {
+                        if (bestLocation == null || loc.time > bestLocation.time) {
+                            bestLocation = loc
+                        }
+                    }
+                } catch (_: Exception) {}
             }
 
-            if (lastLocation != null) {
-                updateLocationAndAddress(context, lastLocation)
+            if (bestLocation != null) {
+                updateLocationAndAddress(context, bestLocation)
+                onLocationFound?.invoke(bestLocation)
             }
 
-            // 2. Request a fresh real-time single fix from GPS/Network provider
-            val provider = when {
-                try { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) } catch (_: Exception) { false } -> LocationManager.GPS_PROVIDER
-                try { lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER) } catch (_: Exception) { false } -> LocationManager.NETWORK_PROVIDER
-                else -> null
+            // 2. Request fresh real-time single fix from ALL active providers simultaneously
+            val activeProviders = providers.filter { p ->
+                try { lm.isProviderEnabled(p) } catch (_: Exception) { false }
             }
 
-            if (provider != null) {
+            for (p in activeProviders) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val executor = ContextCompat.getMainExecutor(context)
                     try {
                         lm.getCurrentLocation(
-                            provider,
+                            p,
                             null as android.os.CancellationSignal?,
                             executor,
                             java.util.function.Consumer { loc ->
-                                if (loc != null) updateLocationAndAddress(context, loc)
+                                if (loc != null) {
+                                    updateLocationAndAddress(context, loc)
+                                    onLocationFound?.invoke(loc)
+                                }
                             }
                         )
                     } catch (_: Exception) {}
                 } else {
                     try {
-                        lm.requestSingleUpdate(provider, object : LocationListener {
+                        lm.requestSingleUpdate(p, object : LocationListener {
                             override fun onLocationChanged(location: Location) {
                                 updateLocationAndAddress(context, location)
+                                onLocationFound?.invoke(location)
                             }
                             @Deprecated("Deprecated in Java")
                             override fun onStatusChanged(p: String?, s: Int, e: Bundle?) {}
@@ -134,30 +176,50 @@ object LocationTracker {
     /**
      * Reverse-geocodes given latitude and longitude into the most detailed readable address.
      */
-    fun reverseGeocode(context: Context, latitude: Double, longitude: Double): String {
-        try {
-            val geocoder = Geocoder(context, Locale.getDefault())
-            val list = geocoder.getFromLocation(latitude, longitude, 1)
-            val addr = list?.firstOrNull()
-            if (addr != null) {
-                val fullLine = addr.getAddressLine(0)
-                if (!fullLine.isNullOrBlank()) {
-                    return fullLine
+    suspend fun reverseGeocode(context: Context, latitude: Double, longitude: Double): String {
+        return withContext(Dispatchers.IO) {
+            // 1. Android Geocoder
+            try {
+                val geocoder = Geocoder(context, Locale.getDefault())
+                val list = geocoder.getFromLocation(latitude, longitude, 1)
+                val addr = list?.firstOrNull()
+                if (addr != null) {
+                    val fullLine = addr.getAddressLine(0)
+                    if (!fullLine.isNullOrBlank()) {
+                        return@withContext fullLine
+                    }
+                    val parts = listOfNotNull(
+                        addr.featureName,
+                        addr.subLocality,
+                        addr.locality,
+                        addr.subAdminArea,
+                        addr.adminArea
+                    ).distinct()
+                    if (parts.isNotEmpty()) {
+                        return@withContext parts.joinToString(", ")
+                    }
                 }
-                val parts = listOfNotNull(
-                    addr.featureName,
-                    addr.subLocality,
-                    addr.locality,
-                    addr.subAdminArea,
-                    addr.adminArea
-                ).distinct()
-                if (parts.isNotEmpty()) {
-                    return parts.joinToString(", ")
+            } catch (_: Exception) {}
+
+            // 2. OSM Nominatim Fallback
+            try {
+                val url = URL("https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude&zoom=18&addressdetails=1")
+                val conn = url.openConnection() as HttpURLConnection
+                conn.setRequestProperty("User-Agent", "GlipGoApp/1.0 (contact@glipgo.com)")
+                conn.connectTimeout = 3500
+                conn.readTimeout = 3500
+                if (conn.responseCode == 200) {
+                    val text = conn.inputStream.bufferedReader().use { it.readText() }
+                    val json = JSONObject(text)
+                    val displayName = json.optString("display_name")
+                    if (displayName.isNotBlank()) {
+                        return@withContext displayName
+                    }
                 }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Reverse geocode failed", e)
+                conn.disconnect()
+            } catch (_: Exception) {}
+
+            return@withContext "Pin Location (${String.format(Locale.US, "%.4f, %.4f", latitude, longitude)})"
         }
-        return "Pin Location (${String.format(Locale.US, "%.4f, %.4f", latitude, longitude)})"
     }
 }

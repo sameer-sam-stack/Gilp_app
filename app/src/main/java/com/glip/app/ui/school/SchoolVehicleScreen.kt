@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.glip.app.data.places.AutocompletePlace
 import com.glip.app.data.places.PlacesSearchService
 import com.glip.app.data.supabase.RideRequestClient
+import com.glip.app.data.supabase.SchoolSupabaseClient
 import com.glip.app.domain.model.UserProfile
 import com.glip.app.ui.home.PlaceAutocompleteDropdown
 import com.glip.app.ui.home.LocationPickerScreen
@@ -125,9 +126,24 @@ fun SchoolVehicleScreen(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var bookingErrorMessage by remember { mutableStateOf<String?>(null) }
 
+    val uId = userProfile?.userId ?: "user-${System.currentTimeMillis()}"
+    val parentName = userProfile?.fullName?.ifBlank { "Parent" } ?: "Parent"
+    val parentPhone = userProfile?.phoneNumber?.ifBlank { "+91 9876543210" } ?: "+91 9876543210"
+
     // Bookings history list
     var bookingsHistory by remember {
         mutableStateOf(SchoolBookingRepository.getBookings(context))
+    }
+
+    // Live sync school bookings from dedicated Supabase database
+    LaunchedEffect(Unit) {
+        val remoteRes = SchoolSupabaseClient.fetchSchoolBookings(uId, parentPhone)
+        remoteRes.onSuccess { remoteList ->
+            if (remoteList.isNotEmpty()) {
+                bookingsHistory = remoteList
+                SchoolBookingRepository.saveBookingsList(context, remoteList)
+            }
+        }
     }
 
     val classList = listOf(
@@ -240,6 +256,15 @@ fun SchoolVehicleScreen(
                             .clickable {
                                 bookingsHistory = SchoolBookingRepository.getBookings(context)
                                 selectedTab = 1
+                                coroutineScope.launch {
+                                    val remoteRes = SchoolSupabaseClient.fetchSchoolBookings(uId, parentPhone)
+                                    remoteRes.onSuccess { remoteList ->
+                                        if (remoteList.isNotEmpty()) {
+                                            bookingsHistory = remoteList
+                                            SchoolBookingRepository.saveBookingsList(context, remoteList)
+                                        }
+                                    }
+                                }
                             }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center
@@ -759,30 +784,37 @@ fun SchoolVehicleScreen(
                                     isSubmitting = true
 
                                     coroutineScope.launch {
-                                        val uId = userProfile?.userId ?: "user-${System.currentTimeMillis()}"
-                                        val parentName = userProfile?.fullName?.ifBlank { "Parent" } ?: "Parent"
-                                        val parentPhone = userProfile?.phoneNumber?.ifBlank { "+91 9876543210" } ?: "+91 9876543210"
-
-                                        // 1. Submit ride request to Supabase
-                                        RideRequestClient.createRideRequest(
+                                        // 1. Submit ride request to DEDICATED School Supabase Database
+                                        val createResult = SchoolSupabaseClient.createSchoolBooking(
                                             userId = uId,
-                                            userName = "$studentName ($selectedClass) - Parent: $parentName",
-                                            userPhone = parentPhone,
-                                            pickupAddress = pickupLocation,
-                                            pickupLat = pickupLat,
-                                            pickupLng = pickupLng,
-                                            dropAddress = "[School Vehicle] $dropLocation (Pickup: $pickupTime, Drop: $dropTime)",
-                                            dropLat = dropLat,
-                                            dropLng = dropLng,
-                                            fare = 80.0
-                                        )
-
-                                        // 2. Save into local bookings repository
-                                        val newBooking = SchoolBookingItem(
+                                            parentName = parentName,
+                                            parentPhone = parentPhone,
                                             studentName = studentName.trim(),
                                             studentClass = selectedClass,
                                             pickupLocation = pickupLocation.trim(),
+                                            pickupLat = pickupLat,
+                                            pickupLng = pickupLng,
                                             dropoffLocation = dropLocation.trim(),
+                                            dropoffLat = dropLat,
+                                            dropoffLng = dropLng,
+                                            pickupTime = pickupTime,
+                                            dropTime = dropTime,
+                                            fareEstimate = 80.0
+                                        )
+
+                                        // 2. Save into local bookings repository (Offline cache)
+                                        val newBooking = createResult.getOrNull() ?: SchoolBookingItem(
+                                            userId = uId,
+                                            parentName = parentName,
+                                            parentPhone = parentPhone,
+                                            studentName = studentName.trim(),
+                                            studentClass = selectedClass,
+                                            pickupLocation = pickupLocation.trim(),
+                                            pickupLat = pickupLat,
+                                            pickupLng = pickupLng,
+                                            dropoffLocation = dropLocation.trim(),
+                                            dropoffLat = dropLat,
+                                            dropoffLng = dropLng,
                                             pickupTime = pickupTime,
                                             dropTime = dropTime,
                                             status = "Requested",
@@ -1323,6 +1355,33 @@ fun SchoolBookingCard(item: SchoolBookingItem) {
                     fontSize = 11.sp,
                     color = Color(0xFF94A3B8)
                 )
+            }
+
+            // Driver details if assigned
+            if (!item.driverName.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFF0FDF4))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Driver",
+                        tint = Color(0xFF16A34A),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Driver: ${item.driverName}${if (!item.vehicleNumber.isNullOrBlank()) " (${item.vehicleNumber})" else ""}${if (!item.driverPhone.isNullOrBlank()) " • ${item.driverPhone}" else ""}",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFF166534)
+                    )
+                }
             }
         }
     }

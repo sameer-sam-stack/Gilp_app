@@ -1,6 +1,7 @@
 package com.glip.app.ui.home
 
 import android.content.Context
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -109,6 +110,17 @@ fun LocationPickerScreen(
     var suggestions by remember { mutableStateOf<List<SearchPlace>>(emptyList()) }
     var showSuggestions by remember { mutableStateOf(false) }
     var showSameLocationAlert by remember { mutableStateOf(false) }
+
+    // Auto-refresh GPS location on picker open if no valid coordinates
+    LaunchedEffect(Unit) {
+        if (initialLat == null || initialLat == 0.0 || initialLat == 28.6139) {
+            LocationTracker.refreshLocation(context) { loc ->
+                centerLat = loc.latitude
+                centerLng = loc.longitude
+                mapViewRef?.controller?.animateTo(GeoPoint(loc.latitude, loc.longitude))
+            }
+        }
+    }
 
     // Intercept hardware / system back button or gesture
     BackHandler(enabled = true) {
@@ -521,11 +533,17 @@ fun LocationPickerScreen(
                         .size(46.dp)
                 ) {
                     IconButton(onClick = {
-                        val myCoords = LocationTracker.currentCoordinates.value
-                        if (myCoords != null) {
-                            mapViewRef?.controller?.animateTo(GeoPoint(myCoords.first, myCoords.second))
-                            centerLat = myCoords.first
-                            centerLng = myCoords.second
+                        val cachedCoords = LocationTracker.currentCoordinates.value
+                        if (cachedCoords != null) {
+                            mapViewRef?.controller?.animateTo(GeoPoint(cachedCoords.first, cachedCoords.second))
+                            centerLat = cachedCoords.first
+                            centerLng = cachedCoords.second
+                        }
+                        Toast.makeText(context, "Locating your position...", Toast.LENGTH_SHORT).show()
+                        LocationTracker.refreshLocation(context) { loc ->
+                            centerLat = loc.latitude
+                            centerLng = loc.longitude
+                            mapViewRef?.controller?.animateTo(GeoPoint(loc.latitude, loc.longitude))
                         }
                     }) {
                         Icon(
