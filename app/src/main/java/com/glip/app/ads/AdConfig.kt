@@ -14,6 +14,6 @@ object AdConfig {
     const val SLOT_HOME_TOP_BANNER = "home_top_banner" // HomeScreen: Top Hero Banner (Fixed 250dp, Shape 12dp, 1080x750px)
     const val SLOT_SERVICES_BOTTOM_BANNER = "services_bottom_banner" // ServicesScreen: Bottom Ad Banner (Fixed 250dp, Shape 10dp, 1080x750px)
 
-    // Ultra-fast polling refresh interval (3.5 seconds for instant live ad updates)
-    const val REFRESH_INTERVAL_MILLIS: Long = 3_500L
+    // Ultra-fast live sync refresh interval (2.0 seconds for near-instant ad updates)
+    const val REFRESH_INTERVAL_MILLIS: Long = 2_000L
 }

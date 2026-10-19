@@ -52,7 +52,10 @@ object AdManager {
     var lastSyncTimestamp: Long = 0L
         private set
 
-    fun isStale(): Boolean = (System.currentTimeMillis() - lastSyncTimestamp) > 6000L
+    fun isStale(): Boolean = (System.currentTimeMillis() - lastSyncTimestamp) > 3000L
+
+    // In-flight download tracker to avoid duplicate network fetches
+    private val inFlightDownloads = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
 
     /**
      * Initializes background sync for in-app ad placements
@@ -189,7 +192,7 @@ object AdManager {
     }
 
     /**
-     * Retrieves cached bitmap (memory -> disk) or downloads asynchronously
+     * Retrieves cached bitmap (memory -> disk) or downloads asynchronously with hardware acceleration
      */
     suspend fun loadBitmap(imageUrl: String): Bitmap? = withContext(Dispatchers.IO) {
         if (imageUrl.isBlank()) return@withContext null
@@ -197,19 +200,32 @@ object AdManager {
         // Fast return if already cached in memory or on disk
         getCachedBitmap(imageUrl)?.let { return@withContext it }
 
+        // Deduplicate in-flight downloads for the same image
+        if (inFlightDownloads.putIfAbsent(imageUrl, true) != null) {
+            // Another coroutine is already downloading this image, wait briefly
+            for (i in 0 until 10) {
+                delay(100)
+                getCachedBitmap(imageUrl)?.let { return@withContext it }
+            }
+        }
+
         try {
             val url = URL(imageUrl)
             val connection = (url.openConnection() as HttpURLConnection).apply {
-                connectTimeout = 4000
-                readTimeout = 4000
+                connectTimeout = 8000
+                readTimeout = 12000
                 doInput = true
+                useCaches = true
                 setRequestProperty("User-Agent", "GlipGo-Android-App/1.0")
             }
             connection.connect()
-            val bytes = connection.inputStream.use { it.readBytes() }
+            val bytes = connection.inputStream.buffered().use { it.readBytes() }
 
             if (bytes.isNotEmpty()) {
-                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                val opts = BitmapFactory.Options().apply {
+                    inPreferredConfig = Bitmap.Config.RGB_565
+                }
+                val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, opts)
                 if (bitmap != null) {
                     synchronized(memoryCache) {
                         memoryCache.put(imageUrl, bitmap)
@@ -229,6 +245,8 @@ object AdManager {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to download ad banner bitmap: $imageUrl", e)
             null
+        } finally {
+            inFlightDownloads.remove(imageUrl)
         }
     }
 
