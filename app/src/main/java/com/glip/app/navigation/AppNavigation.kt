@@ -27,6 +27,8 @@ import com.glip.app.ui.parcel.ParcelBookingScreen
 import com.glip.app.ui.school.SchoolVehicleScreen
 import com.glip.app.ui.personal.PersonalVehicleScreen
 import com.glip.app.ui.wallet.WalletScreen
+import com.glip.app.ui.travel.IntercityTravelScreen
+import com.glip.app.ui.travel.TravelServicesScreen
 
 import androidx.compose.ui.text.font.FontWeight
 import com.glip.app.ui.theme.GlipGreenPrimary
@@ -91,6 +93,8 @@ fun AppNavigation(
     var isSchoolVehicleOpen by remember { mutableStateOf(false) }
     var isPersonalVehicleOpen by remember { mutableStateOf(false) }
     var isWalletOpen by remember { mutableStateOf(false) }
+    var isIntercityTravelOpen by remember { mutableStateOf(false) }
+    var isTravelServicesOpen by remember { mutableStateOf(false) }
     var isPersonalSearchFromServices by remember { mutableStateOf(false) }
     var editingLocationMode by remember { mutableStateOf<String?>(null) } // "pickup" or "drop"
 
@@ -128,6 +132,18 @@ fun AppNavigation(
         PersonalVehicleScreen(
             userProfile = userProfile ?: preferences.getUserProfile(),
             onNavigateBack = { isPersonalVehicleOpen = false },
+            modifier = modifier.fillMaxSize()
+        )
+} else if (isIntercityTravelOpen) {
+        IntercityTravelScreen(
+            userProfile = userProfile ?: preferences.getUserProfile(),
+            onNavigateBack = { isIntercityTravelOpen = false },
+            modifier = modifier.fillMaxSize()
+        )
+    } else if (isTravelServicesOpen) {
+        TravelServicesScreen(
+            userProfile = userProfile ?: preferences.getUserProfile(),
+            onNavigateBack = { isTravelServicesOpen = false },
             modifier = modifier.fillMaxSize()
         )
     } else if (editingLocationMode != null) {
@@ -261,6 +277,12 @@ fun AppNavigation(
                         },
                         onNavigateToWallet = {
                             isWalletOpen = true
+                        },
+                        onNavigateToIntercityTravel = {
+                            isIntercityTravelOpen = true
+                        },
+                        onNavigateToTravelServices = {
+                            isTravelServicesOpen = true
                         },
                         modifier = contentModifier
                     )

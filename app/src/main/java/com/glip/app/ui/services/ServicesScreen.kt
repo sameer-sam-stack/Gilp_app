@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.DirectionsBus
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.TwoWheeler
+import androidx.compose.material.icons.filled.AirportShuttle
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
@@ -40,6 +41,8 @@ fun ServicesScreen(
     onNavigateToSchoolVehicle: () -> Unit = {},
     onNavigateToPersonalVehicle: () -> Unit = {},
     onNavigateToWallet: () -> Unit = {},
+    onNavigateToIntercityTravel: () -> Unit = {},
+    onNavigateToTravelServices: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -103,8 +106,7 @@ fun ServicesScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Row 2: Pay (Opens Wallet Screen matching driver app)
-        val context = LocalContext.current
+        // Row 2: Pay, Intercity Travels, Travel Services
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -121,12 +123,26 @@ fun ServicesScreen(
                 modifier = Modifier.weight(1f)
             )
 
-            // Empty placeholders so Pay maintains exact same 1/3 grid width
-            Spacer(modifier = Modifier.weight(1f))
-            Spacer(modifier = Modifier.weight(1f))
-        }
+            // 5. Intercity travels
+            ServiceTile(
+                title = "Intercity travels",
+                icon = Icons.Default.DirectionsBus,
+                iconColor = Color(0xFF0284C7),
+                backgroundColor = Color(0xFFF0F9FF),
+                onClick = onNavigateToIntercityTravel,
+                modifier = Modifier.weight(1f)
+            )
 
-        Spacer(modifier = Modifier.height(20.dp))
+            // 6. Travel services
+            ServiceTile(
+                title = "Travel services",
+                icon = Icons.Default.AirportShuttle,
+                iconColor = Color(0xFF8B5CF6),
+                backgroundColor = Color(0xFFF5F3FF),
+                onClick = onNavigateToTravelServices,
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         // Fixed-size AD Banner on Services Screen with reduced horizontal margins and less rounded corners
         AdBannerBox(
