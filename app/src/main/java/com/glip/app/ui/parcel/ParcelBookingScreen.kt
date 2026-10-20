@@ -91,6 +91,7 @@ fun ParcelBookingScreen(
     var dropSearchQuery by remember { mutableStateOf("") }
     var dropSuggestions by remember { mutableStateOf<List<AutocompletePlace>>(emptyList()) }
     var isSearchingDrop by remember { mutableStateOf(false) }
+    var isEditingDrop by remember { mutableStateOf(false) }
     var searchJob by remember { mutableStateOf<Job?>(null) }
 
     // Pickup edit state
@@ -205,7 +206,7 @@ fun ParcelBookingScreen(
                 }
             }
 
-            // 1. PICKUP CARD (Exact match to uploaded Screenshot 1 & 2)
+            // 1. PICKUP CARD
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
@@ -218,10 +219,10 @@ fun ParcelBookingScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    // Top Row: Green Location Marker + Pickup text + Edit icon
+                    // Top Row: Green Location Marker + "Pickup from" + Top-right Edit Icon (when not editing)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Top
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Green Pin Icon
                         Column(
@@ -244,48 +245,19 @@ fun ParcelBookingScreen(
 
                         Spacer(modifier = Modifier.width(12.dp))
 
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Pickup from current location",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = pickupAddress,
-                                fontSize = 13.sp,
-                                color = Color(0xFF475569),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                lineHeight = 18.sp
-                            )
-                        }
+                        Text(
+                            text = "Pickup from",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A),
+                            modifier = Modifier.weight(1f)
+                        )
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
+                        if (pickupAddress.isNotBlank() && !isEditingPickup) {
                             IconButton(
                                 onClick = {
-                                    selectingLocationMode = "pickup"
-                                },
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.MyLocation,
-                                    contentDescription = "Select Pickup on Map",
-                                    tint = Color(0xFF15803D), // Emerald green
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    isEditingPickup = !isEditingPickup
-                                    if (isEditingPickup) {
-                                        pickupSearchQuery = ""
-                                    }
+                                    isEditingPickup = true
+                                    pickupSearchQuery = ""
                                 },
                                 modifier = Modifier.size(32.dp)
                             ) {
@@ -299,9 +271,10 @@ fun ParcelBookingScreen(
                         }
                     }
 
-                    // Inline Search Box for Pickup when editing
-                    if (isEditingPickup) {
-                        Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    if (isEditingPickup || pickupAddress.isBlank()) {
+                        // Search input Box (Right side with Map icon to choose from map)
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(22.dp),
@@ -354,7 +327,7 @@ fun ParcelBookingScreen(
                                     decorationBox = { innerTextField ->
                                         if (pickupSearchQuery.isEmpty()) {
                                             Text(
-                                                text = "Search new pickup address...",
+                                                text = "Search pickup address...",
                                                 fontSize = 14.sp,
                                                 color = Color(0xFF94A3B8)
                                             )
@@ -386,10 +359,10 @@ fun ParcelBookingScreen(
                                     modifier = Modifier.size(28.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.MyLocation,
-                                        contentDescription = "Select on Map",
+                                        imageVector = Icons.Default.Map,
+                                        contentDescription = "Select Pickup on Map",
                                         tint = Color(0xFF15803D),
-                                        modifier = Modifier.size(19.dp)
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             }
@@ -411,6 +384,16 @@ fun ParcelBookingScreen(
                                 modifier = Modifier.padding(top = 8.dp)
                             )
                         }
+                    } else {
+                        Text(
+                            text = pickupAddress,
+                            fontSize = 13.sp,
+                            color = Color(0xFF475569),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            lineHeight = 18.sp,
+                            modifier = Modifier.padding(start = 36.dp)
+                        )
                     }
 
                     // Dashed Divider
@@ -431,12 +414,20 @@ fun ParcelBookingScreen(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Sender Contact Info
-                    Text(
-                        text = "$senderName ($senderPhone)",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
-                    )
+                    Column {
+                        Text(
+                            text = "Sender Details",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF64748B)
+                        )
+                        Text(
+                            text = "$senderName ($senderPhone)",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                    }
                 }
             }
 
@@ -471,6 +462,9 @@ fun ParcelBookingScreen(
                             dropLng = tempLng
                             receiverName = tempName
                             receiverPhone = tempPhone
+
+                            isEditingPickup = false
+                            isEditingDrop = false
                         }
                     }
                 ) {
@@ -495,7 +489,7 @@ fun ParcelBookingScreen(
                 }
             }
 
-            // 2. DROP CARD (Matches Screenshot 1 & 2)
+            // 2. DROP CARD
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
@@ -508,12 +502,12 @@ fun ParcelBookingScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                 ) {
-                    // Header Row: Red Concentric Pin + "Drop to"
+                    // Header Row: Red Concentric Pin + "Drop to" + Top-right Edit Icon (when not editing)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Concentric Red Target Pin (Matches Screenshot)
+                        // Concentric Red Target Pin
                         Box(
                             modifier = Modifier
                                 .size(22.dp)
@@ -539,48 +533,29 @@ fun ParcelBookingScreen(
                             modifier = Modifier.weight(1f)
                         )
 
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
+                        // If drop is selected and not editing, show edit button on top right
+                        if (dropAddress.isNotBlank() && !isEditingDrop) {
                             IconButton(
                                 onClick = {
-                                    selectingLocationMode = "drop"
+                                    isEditingDrop = true
+                                    dropSearchQuery = ""
                                 },
                                 modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.MyLocation,
-                                    contentDescription = "Select Drop on Map",
-                                    tint = Color(0xFFDC2626), // Red
-                                    modifier = Modifier.size(20.dp)
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit Drop",
+                                    tint = Color(0xFF334155),
+                                    modifier = Modifier.size(18.dp)
                                 )
-                            }
-
-                            // If drop is selected, show edit button on header
-                            if (dropAddress.isNotBlank()) {
-                                IconButton(
-                                    onClick = {
-                                        dropAddress = ""
-                                        dropSearchQuery = ""
-                                    },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Edit Drop",
-                                        tint = Color(0xFF334155),
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
                             }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    if (dropAddress.isBlank()) {
-                        // STATE 1: Search Box with Blue Border (Screenshot 1)
+                    if (dropAddress.isBlank() || isEditingDrop) {
+                        // Search Box with Blue Border
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(26.dp),
@@ -665,8 +640,8 @@ fun ParcelBookingScreen(
                                     modifier = Modifier.size(28.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.MyLocation,
-                                        contentDescription = "Select on Map",
+                                        imageVector = Icons.Default.Map,
+                                        contentDescription = "Select Drop on Map",
                                         tint = Color(0xFFDC2626), // Red
                                         modifier = Modifier.size(20.dp)
                                     )
@@ -686,13 +661,14 @@ fun ParcelBookingScreen(
                                     dropAddress = place.fullAddress
                                     dropLat = place.latitude
                                     dropLng = place.longitude
+                                    isEditingDrop = false
                                     dropSearchQuery = ""
                                     dropSuggestions = emptyList()
                                 }
                             )
                         }
                     } else {
-                        // STATE 2: Drop Address selected with receiver details (Screenshot 2)
+                        // Drop Address selected
                         Text(
                             text = dropAddress,
                             fontSize = 13.sp,
@@ -720,13 +696,57 @@ fun ParcelBookingScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Receiver Contact Info
-                        Text(
-                            text = "$receiverName ($receiverPhone)",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
-                        )
+                        // Receiver Contact Info (Clickable to edit receiver details)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    contactNameInput = receiverName
+                                    contactPhoneInput = receiverPhone
+                                    useMyContactChecked = (receiverName == senderName && receiverPhone == senderPhone)
+                                    showContactSheet = true
+                                },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Receiver Details",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF64748B)
+                                )
+                                Text(
+                                    text = "$receiverName ($receiverPhone)",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF1F5F9),
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Edit Receiver Contact",
+                                        tint = Color(0xFF2563EB),
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        text = "Edit",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF2563EB)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1210,6 +1230,7 @@ fun ParcelBookingScreen(
                         dropAddress = detailedAddress
                         dropLat = lat
                         dropLng = lng
+                        isEditingDrop = false
                         dropSuggestions = emptyList()
                     }
                     selectingLocationMode = null

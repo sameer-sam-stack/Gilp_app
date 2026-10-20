@@ -357,53 +357,7 @@ fun HomeScreen(
                                         }
                                     }
 
-                                    // 1. Green GPS Crosshair (Instantly fetches & sets live current location)
-                                    IconButton(
-                                        onClick = {
-                                            activeField = null
-                                            val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-                                            val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
-                                            if (fine != PackageManager.PERMISSION_GRANTED && coarse != PackageManager.PERMISSION_GRANTED) {
-                                                locationPermissionLauncher.launch(
-                                                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-                                                )
-                                                return@IconButton
-                                            }
-                                            if (!LocationTracker.isGpsEnabled(context)) {
-                                                Toast.makeText(context, "Please enable GPS/Location in Settings", Toast.LENGTH_SHORT).show()
-                                                LocationTracker.promptEnableGps(context)
-                                                return@IconButton
-                                            }
-                                            val curCoords = LocationTracker.currentCoordinates.value
-                                            val curAddr = LocationTracker.currentAddress.value
-                                            if (curCoords != null && !curAddr.isNullOrBlank()) {
-                                                pickup = curAddr
-                                                pickupCoordinates = curCoords
-                                                isPickupSelected = true
-                                                Toast.makeText(context, "Pickup set to: $curAddr", Toast.LENGTH_SHORT).show()
-                                            } else {
-                                                Toast.makeText(context, "Detecting your live location...", Toast.LENGTH_SHORT).show()
-                                                pickup = "Detecting your location..."
-                                                LocationTracker.refreshLocation(context) { loc ->
-                                                    pickupCoordinates = Pair(loc.latitude, loc.longitude)
-                                                    val resolved = LocationTracker.currentAddress.value ?: "Current Location"
-                                                    pickup = resolved
-                                                    isPickupSelected = true
-                                                    Toast.makeText(context, "Pickup set to: $resolved", Toast.LENGTH_SHORT).show()
-                                                }
-                                            }
-                                        },
-                                        modifier = Modifier.size(34.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.MyLocation,
-                                            contentDescription = "Use My Current Location",
-                                            tint = Color(0xFF10B981),
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-
-                                    // 2. Map Pin Icon (Opens interactive map picker)
+                                    // Map Pin Icon (Opens interactive map picker)
                                     IconButton(
                                         onClick = {
                                             activeField = null
