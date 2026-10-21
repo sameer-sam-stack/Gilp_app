@@ -144,6 +144,8 @@ fun ServicesScreen(
             )
         }
 
+        Spacer(modifier = Modifier.height(28.dp))
+
         // Fixed-size AD Banner on Services Screen with reduced horizontal margins and less rounded corners
         AdBannerBox(
             slotId = AdConfig.SLOT_SERVICES_BOTTOM_BANNER,
