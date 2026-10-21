@@ -70,8 +70,8 @@ fun PersonalVehicleScreen(
     var dropLat by remember { mutableDoubleStateOf(0.0) }
     var dropLng by remember { mutableDoubleStateOf(0.0) }
 
-    // Selected vehicle option: "auto", "bike", "erickshaw", "cab"
-    var selectedVehicleType by remember { mutableStateOf("auto") }
+    // Selected vehicle option: "erickshaw", "auto", "cab"
+    var selectedVehicleType by remember { mutableStateOf("erickshaw") }
 
     // Search autocomplete states
     var isEditingPickup by remember { mutableStateOf(false) }
@@ -99,40 +99,31 @@ fun PersonalVehicleScreen(
 
     val vehicleOptions = listOf(
         VehicleChoice(
-            id = "auto",
-            name = "Auto Rickshaw",
-            fare = 70.0,
-            etaMinutes = 3,
-            capacity = "3 Seats",
-            tag = "Most Popular",
-            description = "Private auto ride directly to your destination"
-        ),
-        VehicleChoice(
-            id = "bike",
-            name = "Bike Taxi",
-            fare = 40.0,
-            etaMinutes = 2,
-            capacity = "1 Seat",
-            tag = "Fastest",
-            description = "Beat traffic with a solo bike ride"
-        ),
-        VehicleChoice(
             id = "erickshaw",
-            name = "E-Rickshaw",
-            fare = 50.0,
+            name = "E - Rickshaw",
+            fare = 15.0,
             etaMinutes = 4,
             capacity = "4 Seats",
             tag = "Eco Friendly",
-            description = "Silent, smooth electric local ride"
+            description = "Silent, smooth 4-seater electric local ride"
+        ),
+        VehicleChoice(
+            id = "auto",
+            name = "Auto",
+            fare = 20.0,
+            etaMinutes = 3,
+            capacity = "5 Seats",
+            tag = "Most Popular",
+            description = "Private 5-seater auto ride directly to your destination"
         ),
         VehicleChoice(
             id = "cab",
-            name = "Mini Cab",
-            fare = 120.0,
+            name = "CAB",
+            fare = 25.0,
             etaMinutes = 5,
             capacity = "4 Seats",
             tag = "AC Comfort",
-            description = "Comfortable air-conditioned private car"
+            description = "Comfortable 4-seater air-conditioned private cab"
         )
     )
 

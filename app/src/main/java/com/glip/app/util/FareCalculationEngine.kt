@@ -16,39 +16,30 @@ enum class PersonalVehicleType(
     val iconEmoji: String,
     val description: String
 ) {
-    BIKE(
-        categoryId = "BIKE",
-        displayName = "Bike",
-        capacity = 1,
-        perKmRate = 16.0, // Exact user requirement: ₹16 - 1 KM, 1 Seat
-        minFare = 16.0,
-        iconEmoji = "🏍️",
-        description = "Quick 1-passenger bike ride"
-    ),
     E_RICKSHAW(
         categoryId = "E_RICKSHAW",
         displayName = "E - Rickshaw",
-        capacity = 5,
-        perKmRate = 22.0, // Exact user requirement: ₹22 - 1 KM, 5 Seats
-        minFare = 22.0,
+        capacity = 4,
+        perKmRate = 15.0, // Exact user requirement: ₹15 - 1 KM, 4 Seats
+        minFare = 15.0,
         iconEmoji = "🛺",
-        description = "5-Seater electric rickshaw"
+        description = "4-Seater electric rickshaw"
     ),
     AUTO(
         categoryId = "AUTO",
         displayName = "Auto",
-        capacity = 7,
-        perKmRate = 27.0, // Exact user requirement: ₹27 - 1 KM, 7 Seats
-        minFare = 27.0,
+        capacity = 5,
+        perKmRate = 20.0, // Exact user requirement: ₹20 - 1 KM, 5 Seats
+        minFare = 20.0,
         iconEmoji = "🛺",
-        description = "7-Seater auto rickshaw"
+        description = "5-Seater auto rickshaw"
     ),
     CAB(
         categoryId = "CAB",
         displayName = "CAB",
         capacity = 4,
-        perKmRate = 31.0, // Exact user requirement: ₹31 - 1 KM, 4 Seats
-        minFare = 31.0,
+        perKmRate = 25.0, // Exact user requirement: ₹25 - 1 KM, 4 Seats
+        minFare = 25.0,
         iconEmoji = "🚗",
         description = "Comfortable 4-wheeler AC cab"
     )
@@ -74,10 +65,10 @@ data class PoolingFareEstimate(
 /**
  * Intelligent Dynamic Pricing Engine for Glip Mobility.
  * Enforces exact user per-KM rates:
- * - Bike: ₹22/KM
- * - E-Rickshaw: ₹27/KM
- * - Auto: ₹30/KM
- * - Cab: ₹40/KM
+ * - E-Rickshaw: ₹15/KM (4 Seats)
+ * - Auto: ₹20/KM (5 Seats)
+ * - Cab: ₹25/KM (4 Seats)
+ * (Bike has been completely removed)
  *
  * Checks driver vehicle type and live online presence so only genuine available vehicles
  * can be booked.
@@ -105,7 +96,7 @@ object FareCalculationEngine {
             2 -> 0.48
             else -> 0.42
         }
-        val poolFare = (personalFare * discountFactor).roundToInt().coerceAtLeast(20)
+        val poolFare = (personalFare * discountFactor).roundToInt().coerceAtLeast(15)
         val savings = (personalFare - poolFare).coerceAtLeast(0)
         val discountPct = (((personalFare - poolFare).toDouble() / personalFare) * 100).roundToInt().coerceIn(15, 65)
 
@@ -140,7 +131,6 @@ object FareCalculationEngine {
         }
 
         return listOf(
-            PersonalVehicleType.BIKE,
             PersonalVehicleType.E_RICKSHAW,
             PersonalVehicleType.AUTO,
             PersonalVehicleType.CAB
@@ -168,7 +158,6 @@ object FareCalculationEngine {
                 (distKm * 2.5 + 2).roundToInt().coerceIn(2, 25)
             } else {
                 when (type) {
-                    PersonalVehicleType.BIKE -> (baseEtaMinutes - 1).coerceAtLeast(2)
                     PersonalVehicleType.E_RICKSHAW -> baseEtaMinutes.coerceAtLeast(3)
                     PersonalVehicleType.AUTO -> baseEtaMinutes.coerceAtLeast(3)
                     PersonalVehicleType.CAB -> (baseEtaMinutes + 2).coerceAtLeast(4)

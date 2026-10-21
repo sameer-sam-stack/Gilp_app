@@ -1066,7 +1066,7 @@ fun HomeScreen(
                 } else {
                     FareCalculationEngine.getPersonalOptions(effectiveKm)
                 }
-                val selectedPersonal = uiState.selectedPersonalOption ?: personalOptions.firstOrNull { it.type == PersonalVehicleType.BIKE } ?: personalOptions.firstOrNull()
+                val selectedPersonal = uiState.selectedPersonalOption ?: personalOptions.firstOrNull { it.type == PersonalVehicleType.E_RICKSHAW } ?: personalOptions.firstOrNull()
 
                 PersonalRideOptionsCard(
                     pickupLocation = pickupLocation,
@@ -1170,7 +1170,6 @@ fun PersonalRideOptionsCard(
     modifier: Modifier = Modifier
 ) {
     val displayTypes = listOf(
-        PersonalVehicleType.BIKE,
         PersonalVehicleType.E_RICKSHAW,
         PersonalVehicleType.AUTO,
         PersonalVehicleType.CAB
@@ -1226,12 +1225,12 @@ fun PersonalRideOptionsCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Vehicle Category Rows: Bike, Personal E Rickshaw, Auto matching Screenshot 1
+            // Vehicle Category Rows: E - Rickshaw, Auto, CAB
             Column(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 displayOptions.forEach { opt ->
-                    val isSelected = opt.type == (selectedOption?.type ?: PersonalVehicleType.BIKE)
+                    val isSelected = opt.type == (selectedOption?.type ?: PersonalVehicleType.E_RICKSHAW)
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1260,13 +1259,12 @@ fun PersonalRideOptionsCard(
                                         .size(38.dp)
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(
-                                            if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC)
+                                             if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC)
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
                                         imageVector = when (opt.type) {
-                                            PersonalVehicleType.BIKE -> Icons.Default.TwoWheeler
                                             PersonalVehicleType.E_RICKSHAW -> Icons.Default.ElectricRickshaw
                                             PersonalVehicleType.AUTO -> Icons.Default.ElectricRickshaw
                                             else -> Icons.Default.DirectionsCar
@@ -1281,9 +1279,9 @@ fun PersonalRideOptionsCard(
 
                                 Text(
                                     text = when (opt.type) {
-                                        PersonalVehicleType.BIKE -> "Bike"
-                                        PersonalVehicleType.E_RICKSHAW -> "Personal E Rickshaw"
+                                        PersonalVehicleType.E_RICKSHAW -> "E - Rickshaw"
                                         PersonalVehicleType.AUTO -> "Auto"
+                                        PersonalVehicleType.CAB -> "CAB"
                                         else -> opt.type.displayName
                                     },
                                     fontSize = 15.sp,
@@ -1292,7 +1290,7 @@ fun PersonalRideOptionsCard(
                                 )
                             }
 
-                            // Right: Upfront Fare Amount ONLY (e.g. ₹24, ₹48, ₹65)
+                            // Right: Upfront Fare Amount ONLY (e.g. ₹15, ₹20, ₹25)
                             Text(
                                 text = "₹${opt.fareAmount}",
                                 fontSize = 17.5.sp,

@@ -559,7 +559,6 @@ class HomeViewModel(
                     category = when (selectedOption.type) {
                         PersonalVehicleType.AUTO -> VehicleCategory.AUTO_RICKSHAW
                         PersonalVehicleType.E_RICKSHAW -> VehicleCategory.E_RICKSHAW
-                        PersonalVehicleType.BIKE -> VehicleCategory.BIKE
                         PersonalVehicleType.CAB -> VehicleCategory.MINI_CAR
                     },
                     modelName = "${selectedOption.type.displayName} (Personal Dedicated)",
@@ -602,7 +601,6 @@ class HomeViewModel(
                 category = when (selectedOption.type) {
                     PersonalVehicleType.AUTO -> VehicleCategory.AUTO_RICKSHAW
                     PersonalVehicleType.E_RICKSHAW -> VehicleCategory.E_RICKSHAW
-                    PersonalVehicleType.BIKE -> VehicleCategory.BIKE
                     PersonalVehicleType.CAB -> VehicleCategory.MINI_CAR
                 },
                 modelName = selectedOption.type.displayName,
