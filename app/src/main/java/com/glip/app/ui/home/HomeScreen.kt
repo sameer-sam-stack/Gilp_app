@@ -1130,61 +1130,15 @@ fun HomeScreen(
                     isCorridorEmpty = uiState.filteredVehicles.isEmpty()
                 )
             } else {
-                // SHARED POOLING VEHICLES LIST
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp)
-                ) {
-                    // Vehicle Details Boxes
-                    items(uiState.filteredVehicles) { vehicle ->
-                        val isSelected = vehicle.vehicleId == (uiState.selectedVehicle?.vehicleId ?: uiState.filteredVehicles.firstOrNull()?.vehicleId)
-                        VehicleCard(
-                            vehicle = vehicle,
-                            isSelected = isSelected,
-                            onClick = { viewModel.selectVehicle(vehicle) },
-                            onBookClick = {
-                                viewModel.bookSelectedVehicle(vehicle, userName, userPhone)
-                            },
-                            modifier = Modifier.width(120.dp)
-                        )
-                    }
-                }
-
-                // Quick Request Button for Currently Selected Vehicle
-                val sel = uiState.selectedVehicle ?: uiState.filteredVehicles.firstOrNull()
-                if (sel != null && uiState.rideBookingStatus == "NONE") {
-                    Button(
-                        onClick = {
-                            viewModel.bookSelectedVehicle(sel, userName, userPhone)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 2.dp)
-                            .height(44.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = GlipGreenPrimary)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.DirectionsCar,
-                                contentDescription = null,
-                                tint = Color.Black,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Request Seat with ${sel.driver.fullName} (₹${sel.farePerKmEstimate.toInt()})",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Black
-                            )
+                // SHARED POOLING MATCHED DRIVER (Single matched driver who is traveling on this route)
+                val matchedVehicle = uiState.selectedVehicle ?: uiState.filteredVehicles.firstOrNull()
+                if (matchedVehicle != null && uiState.rideBookingStatus == "NONE") {
+                    MatchedRouteDriverCard(
+                        vehicle = matchedVehicle,
+                        onBookClick = {
+                            viewModel.bookSelectedVehicle(matchedVehicle, userName, userPhone)
                         }
-                    }
-
-
+                    )
                 }
             }
             }
@@ -1903,6 +1857,132 @@ fun DriverRatingCard(
                         contentDescription = "Submit",
                         tint = Color.White,
                         modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MatchedRouteDriverCard(
+    vehicle: Vehicle,
+    onBookClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.5.dp, Color(0xFF10B981)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFFDCFCE7),
+                        modifier = Modifier.size(42.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.DirectionsCar,
+                                contentDescription = null,
+                                tint = Color(0xFF15803D),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            text = vehicle.category.displayName,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "Route: ${vehicle.route.destinationName}",
+                            fontSize = 12.sp,
+                            color = Color(0xFF64748B),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "₹${vehicle.farePerKmEstimate.toInt()}",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF15803D)
+                    )
+                    Text(
+                        text = "Save 48%",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF16A34A)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            Divider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFEFF6FF)
+                    ) {
+                        Text(
+                            text = "${vehicle.etaMinutes} mins away",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1D4ED8),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color(0xFFFEF3C7)
+                    ) {
+                        Text(
+                            text = "${vehicle.seatAvailability.availableSeats} Seats Left",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF92400E),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = onBookClick,
+                    modifier = Modifier.height(38.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
+                ) {
+                    Text(
+                        text = "Request Ride",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
             }

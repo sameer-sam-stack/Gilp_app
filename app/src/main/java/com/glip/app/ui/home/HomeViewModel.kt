@@ -116,6 +116,8 @@ class HomeViewModel(
         routeSearchTimerJob?.cancel()
         _uiState.update {
             it.copy(
+                vehicles = emptyList(),
+                filteredVehicles = emptyList(),
                 pickupQuery = pickup,
                 dropQuery = drop,
                 pickupLat = pLat,
@@ -287,23 +289,20 @@ class HomeViewModel(
                     val routeInfo = remoteRoutes[drv.id] ?: remoteRoutes[drv.mobileNumber]
                     val hasPassengerTrip = (pLat != 0.0 && pLng != 0.0 && dLat != 0.0 && dLng != 0.0)
 
-                    // If passenger specified a destination corridor, driver MUST have an active destination route
-                    if (hasPassengerTrip && (routeInfo == null || routeInfo.destLat == 0.0 || routeInfo.destLng == 0.0)) {
+                    // A driver can ONLY be a shared pooling vehicle if they have set an active destination route in Supabase
+                    if (routeInfo == null || routeInfo.destLat == 0.0 || routeInfo.destLng == 0.0) {
+                        continue
+                    }
+
+                    // If passenger has not set search coordinates yet, do not add shared corridor vehicles
+                    if (!hasPassengerTrip) {
                         continue
                     }
 
                     // Preserve DRIVER'S OWN independent destination - NEVER overwrite with passenger dropoff!
-                    val destName = routeInfo?.destinationName?.ifBlank { "City Route Corridor" } ?: "City Route Corridor"
-                    val destLat = if (routeInfo != null && routeInfo.destLat != 0.0) {
-                        routeInfo.destLat
-                    } else {
-                        drv.currentLat + 0.015
-                    }
-                    val destLng = if (routeInfo != null && routeInfo.destLng != 0.0) {
-                        routeInfo.destLng
-                    } else {
-                        drv.currentLng + 0.015
-                    }
+                    val destName = routeInfo.destinationName.ifBlank { "City Route Corridor" }
+                    val destLat = routeInfo.destLat
+                    val destLng = routeInfo.destLng
 
                     // Fetch turn-by-turn road polyline from driver location to driver destination
                     val roadResult = OsrmRoutingHelper.fetchRoadRoute(

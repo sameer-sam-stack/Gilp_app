@@ -17,6 +17,14 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -210,7 +218,7 @@ private fun RegistrationInputStep(
         keyboardActions = KeyboardActions(
             onDone = {
                 focusManager.clearFocus()
-                viewModel.proceedToOtp()
+                viewModel.proceedToOtp(context)
             }
         ),
         shape = RoundedCornerShape(12.dp),
@@ -269,7 +277,7 @@ private fun RegistrationInputStep(
     Button(
         onClick = {
             focusManager.clearFocus()
-            viewModel.proceedToOtp()
+            viewModel.proceedToOtp(context)
         },
         enabled = !uiState.isLoading,
         modifier = Modifier
@@ -508,15 +516,24 @@ private fun RegistrationOtpStep(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text(
-            text = "Resend OTP",
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = GlipOrangeAccent,
-            modifier = Modifier.clickable {
-                viewModel.resendOtp()
-            }
-        )
+        if (uiState.resendCountdownSeconds > 0) {
+            Text(
+                text = "Resend in ${uiState.resendCountdownSeconds}s",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF94A3B8)
+            )
+        } else {
+            Text(
+                text = "Resend OTP",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = GlipOrangeAccent,
+                modifier = Modifier.clickable {
+                    viewModel.resendOtp(context)
+                }
+            )
+        }
     }
 
 

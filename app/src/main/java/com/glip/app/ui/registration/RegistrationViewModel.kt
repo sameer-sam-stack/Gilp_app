@@ -1,5 +1,6 @@
 package com.glip.app.ui.registration
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.glip.app.data.supabase.UserSupabaseClient
@@ -7,6 +8,7 @@ import com.glip.app.domain.model.UserProfile
 import com.glip.app.domain.repository.UserRepository
 import com.glip.app.domain.usecase.OtpVerificationManager
 import com.glip.app.domain.usecase.PhoneValidator
+import com.glip.app.util.OtpNotificationHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +35,7 @@ data class RegistrationUiState(
     val showOtpPopup: Boolean = false,
     val attemptsRemaining: Int = 3,
     val cooldownSeconds: Long = 0,
+    val resendCountdownSeconds: Int = 45,
     val isLoading: Boolean = false,
     val fullNameError: String? = null,
     val phoneError: String? = null,
@@ -50,7 +53,8 @@ class RegistrationViewModel(
     private val _uiState = MutableStateFlow(RegistrationUiState())
     val uiState: StateFlow<RegistrationUiState> = _uiState.asStateFlow()
 
-    private var otpPopupJob: Job? = null
+    private var otpNotificationJob: Job? = null
+    private var resendCountdownJob: Job? = null
 
     fun toggleExistingUserMode(isExisting: Boolean) {
         _uiState.update {
@@ -72,7 +76,7 @@ class RegistrationViewModel(
         _uiState.update { it.copy(phoneNumber = digits, phoneError = null) }
     }
 
-    fun proceedToOtp() {
+    fun proceedToOtp(context: Context) {
         val state = _uiState.value
         var hasError = false
 
@@ -111,46 +115,61 @@ class RegistrationViewModel(
                     return@launch
                 }
 
-                // Account exists! Proceed to OTP
+                // Account exists! Proceed to OTP with empty boxes and start 7s silent delivery
                 val randomOtp = (100000..999999).random().toString()
-                val autoFilledDigits = randomOtp.map { it.toString() }
 
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         currentStep = RegistrationStep.OTP_VERIFY,
                         generatedOtp = randomOtp,
-                        otpDigits = autoFilledDigits,
-                        otpInput = randomOtp,
+                        otpDigits = List(6) { "" },
+                        otpInput = "",
                         showOtpPopup = false,
                         otpError = null,
-                        phoneError = null
+                        phoneError = null,
+                        resendCountdownSeconds = 45
                     )
                 }
+                startOtpDeliveryAndCountdown(context, randomOtp)
             }
             return
         }
 
-        // New User mode: proceed to OTP
+        // New User mode: proceed to OTP with empty boxes and start 7s silent delivery
         val randomOtp = (100000..999999).random().toString()
-        val autoFilledDigits = randomOtp.map { it.toString() }
 
         _uiState.update {
             it.copy(
                 currentStep = RegistrationStep.OTP_VERIFY,
                 generatedOtp = randomOtp,
-                otpDigits = autoFilledDigits,
-                otpInput = randomOtp,
+                otpDigits = List(6) { "" },
+                otpInput = "",
                 showOtpPopup = false,
                 otpError = null,
-                phoneError = null
+                phoneError = null,
+                resendCountdownSeconds = 45
             )
         }
+        startOtpDeliveryAndCountdown(context, randomOtp)
     }
 
-    private fun startOtpPopupTimer() {
-        // Demo popup timer removed - OTP auto-fills directly
-        otpPopupJob?.cancel()
+    private fun startOtpDeliveryAndCountdown(context: Context, otpCode: String) {
+        // 7-second background delivery: Silent in background, pops native notification at 7s
+        otpNotificationJob?.cancel()
+        otpNotificationJob = viewModelScope.launch {
+            delay(7000L)
+            OtpNotificationHelper.sendOtpNotification(context, otpCode)
+        }
+
+        // 45-second resend countdown timer (spam protection)
+        resendCountdownJob?.cancel()
+        resendCountdownJob = viewModelScope.launch {
+            for (sec in 45 downTo 0) {
+                _uiState.update { it.copy(resendCountdownSeconds = sec) }
+                delay(1000L)
+            }
+        }
     }
 
     fun updateOtpDigit(index: Int, value: String) {
@@ -176,27 +195,9 @@ class RegistrationViewModel(
         }
     }
 
-    fun copyAndFillOtp() {
-        val code = _uiState.value.generatedOtp.ifBlank { "123456" }
-        val digits = code.take(6).map { it.toString() }
-        val fullList = digits + List(6 - digits.size) { "" }
-
-        _uiState.update {
-            it.copy(
-                otpDigits = fullList,
-                otpInput = code,
-                showOtpPopup = false,
-                otpError = null
-            )
-        }
-    }
-
-    fun dismissOtpPopup() {
-        _uiState.update { it.copy(showOtpPopup = false) }
-    }
-
     fun goBackToPhoneInput() {
-        otpPopupJob?.cancel()
+        otpNotificationJob?.cancel()
+        resendCountdownJob?.cancel()
         _uiState.update {
             it.copy(
                 currentStep = RegistrationStep.INPUT,
@@ -206,18 +207,20 @@ class RegistrationViewModel(
         }
     }
 
-    fun resendOtp() {
+    fun resendOtp(context: Context) {
+        if (_uiState.value.resendCountdownSeconds > 0) return
         val randomOtp = (100000..999999).random().toString()
-        val autoFilledDigits = randomOtp.map { it.toString() }
         _uiState.update {
             it.copy(
                 generatedOtp = randomOtp,
-                otpDigits = autoFilledDigits,
-                otpInput = randomOtp,
+                otpDigits = List(6) { "" },
+                otpInput = "",
                 showOtpPopup = false,
-                otpError = null
+                otpError = null,
+                resendCountdownSeconds = 45
             )
         }
+        startOtpDeliveryAndCountdown(context, randomOtp)
     }
 
     fun verifyOtpAndContinue() {
@@ -229,10 +232,10 @@ class RegistrationViewModel(
             return
         }
 
-        // Verify against generated OTP or universal testing code 123456
+        // Strict verification against generated OTP or universal testing code 123456
         val isValidOtp = enteredOtp == state.generatedOtp || enteredOtp == "123456"
         if (!isValidOtp) {
-            _uiState.update { it.copy(otpError = "Invalid verification code. Please check and try again.") }
+            _uiState.update { it.copy(otpError = "Invalid verification code. Please check the OTP in your notification and try again.") }
             return
         }
 
