@@ -199,8 +199,8 @@ fun HomeScreen(
         }
     }
 
-    // Responsive Top AD Height: 120dp when route is confirmed so map & booking card have ample space
-    val topAdHeight = if (hasConfirmedRoute) 120.dp else 250.dp
+    // Fixed Top AD Height: strictly 250dp across all screens & states
+    val topAdHeight = 250.dp
 
     // Sync search query if passed from search card
     LaunchedEffect(pickupLocation, dropLocation) {
@@ -606,7 +606,8 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .weight(1f, fill = false)
+                    .heightIn(min = 130.dp, max = 180.dp)
                     .padding(horizontal = 14.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
