@@ -119,6 +119,19 @@ private fun RegistrationInputStep(
     viewModel: RegistrationViewModel,
     focusManager: androidx.compose.ui.focus.FocusManager
 ) {
+    val context = LocalContext.current
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
     // App Logo & Brand Header at top
     GlipBrandHeader()
 
@@ -338,6 +351,7 @@ private fun RegistrationOtpStep(
     viewModel: RegistrationViewModel,
     focusManager: androidx.compose.ui.focus.FocusManager
 ) {
+    val context = LocalContext.current
     val focusRequesters = remember { List(6) { FocusRequester() } }
 
     // Top Navigation Bar with Back Arrow
