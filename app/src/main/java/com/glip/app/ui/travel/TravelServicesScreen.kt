@@ -462,15 +462,24 @@ fun TravelServicesScreen(
     // Navigation State: "DIRECTORY" (all 20+ services) or "VEHICLE_RENTAL" (Outstation travel)
     var currentViewMode by remember { mutableStateOf("DIRECTORY") }
 
-    // Location state from LocationTracker: only the detected city name
+    // Trigger real-time location refresh when entering screen
+    LaunchedEffect(Unit) {
+        LocationTracker.refreshLocation(context)
+    }
+
+    // Location state from LocationTracker: detected city and sublocality area
     val currentCityDetected by LocationTracker.currentCity.collectAsState()
+    val currentAreaDetected by LocationTracker.currentArea.collectAsState()
     val activeCity = currentCityDetected?.ifBlank { "Rajnandgaon" } ?: "Rajnandgaon"
+    val activeArea = currentAreaDetected?.ifBlank { null }
 
     // Directory Search & Filter state
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("All") }
     var selectedServiceForBooking by remember { mutableStateOf<HubServiceItem?>(null) }
     var showBookingDialog by remember { mutableStateOf(false) }
+    var showUnavailableDialog by remember { mutableStateOf(false) }
+    var unavailableServiceItem by remember { mutableStateOf<HubServiceItem?>(null) }
     var showCityPickerModal by remember { mutableStateOf(false) }
     var citySearchQuery by remember { mutableStateOf("") }
 
@@ -486,7 +495,15 @@ fun TravelServicesScreen(
     var showConfirmDialog by remember { mutableStateOf(false) }
 
     BackHandler {
-        if (currentViewMode == "VEHICLE_RENTAL") {
+        if (showUnavailableDialog) {
+            showUnavailableDialog = false
+            unavailableServiceItem = null
+        } else if (showBookingDialog) {
+            showBookingDialog = false
+            selectedServiceForBooking = null
+        } else if (showCityPickerModal) {
+            showCityPickerModal = false
+        } else if (currentViewMode == "VEHICLE_RENTAL") {
             currentViewMode = "DIRECTORY"
         } else {
             onNavigateBack()
@@ -570,8 +587,8 @@ fun TravelServicesScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .background(Color(0xFFF8FAFC)),
-                contentPadding = PaddingValues(14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 2.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // 1. LOCATION HEADER: Matches Screenshot 2 (Pin icon, Bold City with dropdown arrow, and Area subtext)
                 item {
@@ -580,7 +597,7 @@ fun TravelServicesScreen(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(10.dp))
                             .clickable { showCityPickerModal = true }
-                            .padding(horizontal = 4.dp, vertical = 6.dp),
+                            .padding(horizontal = 4.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
@@ -608,8 +625,13 @@ fun TravelServicesScreen(
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
+                            val subtext = if (!activeArea.isNullOrBlank() && !activeArea.equals(activeCity, ignoreCase = true)) {
+                                "$activeArea, $activeCity"
+                            } else {
+                                activeCity
+                            }
                             Text(
-                                text = "Motipur, $activeCity",
+                                text = subtext,
                                 fontSize = 12.5.sp,
                                 color = Color(0xFF64748B),
                                 fontWeight = FontWeight.Normal
@@ -625,7 +647,7 @@ fun TravelServicesScreen(
                         onValueChange = { searchQuery = it },
                         placeholder = {
                             Text(
-                                text = "(  e.g. Cleaning Repair, taxi)...",
+                                text = "Search services",
                                 fontSize = 13.sp,
                                 color = Color(0xFF94A3B8)
                             )
@@ -658,7 +680,9 @@ fun TravelServicesScreen(
                             focusedBorderColor = Color(0xFF0284C7),
                             unfocusedBorderColor = Color(0xFFCBD5E1)
                         ),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
                     )
                 }
 
@@ -705,12 +729,26 @@ fun TravelServicesScreen(
                                 CompactServiceTile(
                                     item = service,
                                     onClick = {
-                                        if (service.id == "travel_outstation") {
-                                            currentViewMode = "VEHICLE_RENTAL"
+                                        val isAvailableService = service.id in listOf(
+                                            "parcel_delivery",
+                                            "school_vehicle",
+                                            "travel_outstation",
+                                            "intercity_travels",
+                                            "ride_pooling"
+                                        )
+                                        if (isAvailableService) {
+                                            if (service.id == "travel_outstation") {
+                                                currentViewMode = "VEHICLE_RENTAL"
+                                            } else {
+                                                selectedServiceForBooking = service
+                                                showBookingDialog = true
+                                            }
                                         } else {
-                                            selectedServiceForBooking = service
-                                            showBookingDialog = true
+                                            unavailableServiceItem = service
+                                            showUnavailableDialog = true
                                         }
+                                    }
+                                )
                                     }
                                 )
                             }
@@ -1117,6 +1155,50 @@ fun TravelServicesScreen(
                 }
             }
         }
+    }
+
+    // Service Unavailable Popup Dialog ("yaha services abhi nhi hai" in English with Cancel button & BackHandler)
+    if (showUnavailableDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showUnavailableDialog = false
+                unavailableServiceItem = null
+            },
+            title = {
+                Text(
+                    text = "Service Unavailable",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Text(
+                    text = "This service is currently not available in your area.",
+                    fontSize = 14.5.sp,
+                    color = Color(0xFF475569),
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showUnavailableDialog = false
+                        unavailableServiceItem = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF0F172A),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(
+                        text = "Cancel",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        )
     }
 
     // Service Details / Booking Dialog

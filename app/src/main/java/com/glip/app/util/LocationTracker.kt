@@ -39,9 +39,13 @@ object LocationTracker {
     private val _currentCity = MutableStateFlow<String?>("Rajnandgaon")
     val currentCity: StateFlow<String?> = _currentCity.asStateFlow()
 
+    private val _currentArea = MutableStateFlow<String?>(null)
+    val currentArea: StateFlow<String?> = _currentArea.asStateFlow()
+
     fun setManualCity(cityName: String) {
         if (cityName.isNotBlank()) {
             _currentCity.value = cityName
+            _currentArea.value = null
         }
     }
 
@@ -75,8 +79,14 @@ object LocationTracker {
                     val fullLine = addr.getAddressLine(0)
                     val shortLoc = addr.subLocality ?: addr.locality ?: addr.featureName
                     val detectedCity = addr.locality ?: addr.subAdminArea ?: addr.adminArea
+                    val detectedArea = addr.subLocality ?: addr.thoroughfare ?: addr.featureName
                     if (!detectedCity.isNullOrBlank()) {
                         _currentCity.value = detectedCity
+                    }
+                    if (!detectedArea.isNullOrBlank() && !detectedArea.equals(detectedCity, ignoreCase = true) && !detectedArea.matches(Regex("^[0-9+]+$"))) {
+                        _currentArea.value = detectedArea
+                    } else {
+                        _currentArea.value = null
                     }
                     _currentAddress.value = when {
                         !shortLoc.isNullOrBlank() -> shortLoc
@@ -112,6 +122,18 @@ object LocationTracker {
                         ).firstOrNull { it.isNotBlank() }
                         if (!cityCandidate.isNullOrBlank()) {
                             _currentCity.value = cityCandidate
+                        }
+                        val areaCandidate = listOf(
+                            addressObj.optString("suburb"),
+                            addressObj.optString("neighbourhood"),
+                            addressObj.optString("residential"),
+                            addressObj.optString("subdistrict"),
+                            addressObj.optString("road")
+                        ).firstOrNull { it.isNotBlank() }
+                        if (!areaCandidate.isNullOrBlank() && !areaCandidate.equals(cityCandidate, ignoreCase = true)) {
+                            _currentArea.value = areaCandidate
+                        } else {
+                            _currentArea.value = null
                         }
                     }
                     val readable = if (name.isNotBlank()) name else parts.take(2).joinToString(",").trim()
