@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.glip.app.domain.model.UserProfile
 import com.glip.app.ui.theme.GlipBrandYellow
 import com.glip.app.util.LocationTracker
@@ -391,6 +393,61 @@ val ALL_HUB_SERVICES = listOf(
 
 val CATEGORY_CHIPS = listOf("All", "Travel", "Repairs", "Cleaning", "Home", "Personal", "Vehicle")
 
+val ALL_CITIES_CATALOG = listOf(
+    // Chhattisgarh Cities
+    "Rajnandgaon",
+    "Raipur",
+    "Bhilai",
+    "Durg",
+    "Bilaspur",
+    "Korba",
+    "Jagdalpur",
+    "Ambikapur",
+    "Dhamtari",
+    "Mahasamund",
+    "Kanker",
+    "Kawardha",
+    "Bhatapara",
+    "Champa",
+    "Balod",
+    "Bemetara",
+    "Dongargarh",
+    "Khairagarh",
+    "Kondagaon",
+    "Manendragarh",
+    "Sakti",
+    "Sarangarh",
+    "Surajpur",
+    "Jashpur",
+    "Gariaband",
+    "Mungeli",
+    "Baloda Bazar",
+    "Janjgir",
+    "Baikunthpur",
+    "Narayanpur",
+    "Dantewada",
+    "Sukma",
+    "Bijapur",
+    // Major Indian Cities
+    "Delhi",
+    "Mumbai",
+    "Bengaluru",
+    "Kolkata",
+    "Hyderabad",
+    "Pune",
+    "Indore",
+    "Nagpur",
+    "Jaipur",
+    "Lucknow",
+    "Ahmedabad",
+    "Bhopal",
+    "Patna",
+    "Chandigarh",
+    "Surat",
+    "Kanpur",
+    "Varanasi"
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TravelServicesScreen(
@@ -414,6 +471,8 @@ fun TravelServicesScreen(
     var selectedCategory by remember { mutableStateOf("All") }
     var selectedServiceForBooking by remember { mutableStateOf<HubServiceItem?>(null) }
     var showBookingDialog by remember { mutableStateOf(false) }
+    var showCityPickerModal by remember { mutableStateOf(false) }
+    var citySearchQuery by remember { mutableStateOf("") }
 
     // Outstation Vehicle Rental State
     var pickupCity by remember { mutableStateOf("Rajnandgaon") }
@@ -505,83 +564,47 @@ fun TravelServicesScreen(
                 contentPadding = PaddingValues(14.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                // 1. LOCATION HEADER: Displays ONLY City Name detected from GPS
+                // 1. LOCATION HEADER: Matches Screenshot 2 (Pin icon, Bold City with dropdown arrow, and Area subtext)
                 item {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color.White,
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                        shadowElevation = 1.dp
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { showCityPickerModal = true }
+                            .padding(horizontal = 4.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(34.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFDCFCE7)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.MyLocation,
-                                    contentDescription = "Current City",
-                                    tint = Color(0xFF15803D),
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "Location",
+                            tint = Color(0xFF0F172A),
+                            modifier = Modifier.size(24.dp)
+                        )
 
-                            Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
 
-                            Column(modifier = Modifier.weight(1f)) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "Your Current Location (City)",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF64748B),
-                                    fontWeight = FontWeight.Medium
+                                    text = activeCity,
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
                                 )
-                                Spacer(modifier = Modifier.height(1.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = activeCity,
-                                        fontSize = 15.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0F172A)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = Color(0xFFDCFCE7)
-                                    ) {
-                                        Text(
-                                            text = "GPS ON",
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF15803D),
-                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-                            IconButton(
-                                onClick = {
-                                    LocationTracker.refreshLocation(context)
-                                    Toast.makeText(context, "GPS refreshed: $activeCity", Toast.LENGTH_SHORT).show()
-                                },
-                                modifier = Modifier.size(32.dp)
-                            ) {
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = "Refresh GPS",
-                                    tint = Color(0xFF475569),
-                                    modifier = Modifier.size(18.dp)
+                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    contentDescription = "Select City",
+                                    tint = Color(0xFF0F172A),
+                                    modifier = Modifier.size(22.dp)
                                 )
                             }
+                            Text(
+                                text = "Motipur, $activeCity",
+                                fontSize = 12.5.sp,
+                                color = Color(0xFF64748B),
+                                fontWeight = FontWeight.Normal
+                            )
                         }
                     }
                 }
@@ -1409,8 +1432,162 @@ fun TravelServicesScreen(
             }
         )
     }
-}
+    // CITY SELECTION MODAL MATCHING SCREENSHOT 3
+    if (showCityPickerModal) {
+        Dialog(
+            onDismissRequest = {
+                showCityPickerModal = false
+                citySearchQuery = ""
+            },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = Color.White
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    // Header: Back Arrow + "Location"
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp)
+                    ) {
+                        IconButton(
+                            onClick = {
+                                showCityPickerModal = false
+                                citySearchQuery = ""
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color(0xFF0F172A)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Location",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                    }
 
+                    // Search City Box matching Screenshot 3
+                    OutlinedTextField(
+                        value = citySearchQuery,
+                        onValueChange = { citySearchQuery = it },
+                        placeholder = {
+                            Text(
+                                text = "Search city, area or locality",
+                                fontSize = 14.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        trailingIcon = {
+                            if (citySearchQuery.isNotEmpty()) {
+                                IconButton(onClick = { citySearchQuery = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear",
+                                        tint = Color(0xFF64748B),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF0F172A),
+                            unfocusedBorderColor = Color(0xFFCBD5E1),
+                            focusedContainerColor = Color(0xFFF8FAFC),
+                            unfocusedContainerColor = Color(0xFFF8FAFC)
+                        ),
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                    )
+
+                    // "All cities" Section Header
+                    Text(
+                        text = "All cities",
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF64748B),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    val filteredCities = remember(citySearchQuery) {
+                        ALL_CITIES_CATALOG.filter {
+                            citySearchQuery.isBlank() || it.contains(citySearchQuery, ignoreCase = true)
+                        }
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().weight(1f)
+                    ) {
+                        items(filteredCities) { city ->
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        LocationTracker.setManualCity(city)
+                                        showCityPickerModal = false
+                                        citySearchQuery = ""
+                                        Toast.makeText(context, "Location set to $city", Toast.LENGTH_SHORT).show()
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 14.dp, horizontal = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = city,
+                                        fontSize = 15.sp,
+                                        fontWeight = if (city.equals(activeCity, ignoreCase = true)) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (city.equals(activeCity, ignoreCase = true)) Color(0xFF0F172A) else Color(0xFF1E293B)
+                                    )
+                                    if (city.equals(activeCity, ignoreCase = true)) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Selected",
+                                            tint = Color(0xFF15803D),
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                                HorizontalDivider(
+                                    color = Color(0xFFF1F5F9),
+                                    thickness = 1.dp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 /**
  * Compact service card matching the outer services style ('same Box jaise bahr hai'),
  * with a smaller, compact footprint ('In Sab ke box ka size chota rakh na').

@@ -135,8 +135,8 @@ fun ServicesScreen(
 
             // 6. Travel services
             ServiceTile(
-                title = "Travel services",
-                icon = Icons.Default.AirportShuttle,
+                title = "More services",
+                icon = Icons.Default.GridView,
                 iconColor = Color(0xFF8B5CF6),
                 backgroundColor = Color(0xFFF5F3FF),
                 onClick = onNavigateToTravelServices,

@@ -39,6 +39,12 @@ object LocationTracker {
     private val _currentCity = MutableStateFlow<String?>("Rajnandgaon")
     val currentCity: StateFlow<String?> = _currentCity.asStateFlow()
 
+    fun setManualCity(cityName: String) {
+        if (cityName.isNotBlank()) {
+            _currentCity.value = cityName
+        }
+    }
+
     fun isGpsEnabled(context: Context): Boolean {
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
         val gps = try { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) } catch (e: Exception) { false }

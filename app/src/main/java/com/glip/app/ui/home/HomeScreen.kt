@@ -199,8 +199,8 @@ fun HomeScreen(
         }
     }
 
-    // Fixed Top AD Height across all screens & states
-    val topAdHeight = 250.dp
+    // Responsive Top AD Height: 120dp when route is confirmed so map & booking card have ample space
+    val topAdHeight = if (hasConfirmedRoute) 120.dp else 250.dp
 
     // Sync search query if passed from search card
     LaunchedEffect(pickupLocation, dropLocation) {
@@ -1160,172 +1160,9 @@ fun HomeScreen(
 }
 
 /**
- * Realistic Vehicle Side Profile Graphic rendered via Canvas (Matching media_1792647166626_3c29a9aa.jpg).
- */
-@Composable
-fun VehicleSideGraphic(
-    type: PersonalVehicleType,
-    modifier: Modifier = Modifier
-) {
-    androidx.compose.foundation.Canvas(modifier = modifier) {
-        val w = size.width
-        val h = size.height
-        val wheelRadius = h * 0.16f
-
-        when (type) {
-            PersonalVehicleType.E_RICKSHAW -> {
-                // E-Rickshaw side profile: Yellow/White Canopy, Dark Padded Seat, Chrome Bars, 3 Wheels
-                // 1. Roof Canopy (Yellow / Amber)
-                val canopy = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(w * 0.10f, h * 0.20f)
-                    lineTo(w * 0.80f, h * 0.20f)
-                    quadraticBezierTo(w * 0.84f, h * 0.22f, w * 0.82f, h * 0.28f)
-                    lineTo(w * 0.08f, h * 0.28f)
-                    close()
-                }
-                drawPath(canopy, color = Color(0xFFF59E0B))
-
-                // Roof Top Rails
-                drawRoundRect(
-                    color = Color(0xFFD97706),
-                    topLeft = androidx.compose.ui.geometry.Offset(w * 0.08f, h * 0.17f),
-                    size = androidx.compose.ui.geometry.Size(w * 0.74f, h * 0.05f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
-                )
-
-                // 2. Chrome Support Pillars
-                val pillarColor = Color(0xFF94A3B8)
-                drawLine(pillarColor, start = androidx.compose.ui.geometry.Offset(w * 0.14f, h * 0.24f), end = androidx.compose.ui.geometry.Offset(w * 0.14f, h * 0.68f), strokeWidth = 2.5f)
-                drawLine(pillarColor, start = androidx.compose.ui.geometry.Offset(w * 0.42f, h * 0.24f), end = androidx.compose.ui.geometry.Offset(w * 0.42f, h * 0.68f), strokeWidth = 2.5f)
-                drawLine(pillarColor, start = androidx.compose.ui.geometry.Offset(w * 0.76f, h * 0.24f), end = androidx.compose.ui.geometry.Offset(w * 0.72f, h * 0.66f), strokeWidth = 2.5f)
-
-                // 3. Passenger Seat Cushions (Black Padded Leather)
-                drawRoundRect(
-                    color = Color(0xFF1E293B),
-                    topLeft = androidx.compose.ui.geometry.Offset(w * 0.16f, h * 0.44f),
-                    size = androidx.compose.ui.geometry.Size(w * 0.09f, h * 0.22f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
-                )
-                drawRoundRect(
-                    color = Color(0xFF334155),
-                    topLeft = androidx.compose.ui.geometry.Offset(w * 0.16f, h * 0.58f),
-                    size = androidx.compose.ui.geometry.Size(w * 0.28f, h * 0.09f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(2f, 2f)
-                )
-
-                // 4. White/Silver Metallic Chassis Frame & Footboard
-                drawRoundRect(
-                    color = Color(0xFFE2E8F0),
-                    topLeft = androidx.compose.ui.geometry.Offset(w * 0.12f, h * 0.66f),
-                    size = androidx.compose.ui.geometry.Size(w * 0.60f, h * 0.10f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
-                )
-
-                // 5. Front Yellow Apron & Handlebar
-                val frontApron = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(w * 0.70f, h * 0.50f)
-                    lineTo(w * 0.80f, h * 0.50f)
-                    lineTo(w * 0.75f, h * 0.74f)
-                    lineTo(w * 0.68f, h * 0.74f)
-                    close()
-                }
-                drawPath(frontApron, color = Color(0xFFF59E0B))
-
-                // Handlebar & Headlamp
-                drawLine(Color(0xFF1E293B), start = androidx.compose.ui.geometry.Offset(w * 0.68f, h * 0.44f), end = androidx.compose.ui.geometry.Offset(w * 0.76f, h * 0.44f), strokeWidth = 3f)
-                drawCircle(Color(0xFFFEF08A), radius = 3f, center = androidx.compose.ui.geometry.Offset(w * 0.82f, h * 0.54f))
-
-                // 6. Wheels (Rear & Front)
-                drawCircle(Color(0xFF0F172A), radius = wheelRadius, center = androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.80f))
-                drawCircle(Color(0xFFCBD5E1), radius = wheelRadius * 0.55f, center = androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.80f))
-                drawCircle(Color(0xFF0F172A), radius = wheelRadius * 0.25f, center = androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.80f))
-
-                drawCircle(Color(0xFF0F172A), radius = wheelRadius, center = androidx.compose.ui.geometry.Offset(w * 0.82f, h * 0.80f))
-                drawCircle(Color(0xFFCBD5E1), radius = wheelRadius * 0.55f, center = androidx.compose.ui.geometry.Offset(w * 0.82f, h * 0.80f))
-                drawCircle(Color(0xFF0F172A), radius = wheelRadius * 0.25f, center = androidx.compose.ui.geometry.Offset(w * 0.82f, h * 0.80f))
-            }
-            PersonalVehicleType.AUTO -> {
-                // Classic Indian Auto Rickshaw
-                val roof = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(w * 0.10f, h * 0.25f)
-                    quadraticBezierTo(w * 0.45f, h * 0.17f, w * 0.80f, h * 0.26f)
-                    lineTo(w * 0.84f, h * 0.44f)
-                    lineTo(w * 0.08f, h * 0.44f)
-                    close()
-                }
-                drawPath(roof, color = Color(0xFFFACC15))
-
-                val body = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(w * 0.08f, h * 0.44f)
-                    lineTo(w * 0.84f, h * 0.44f)
-                    lineTo(w * 0.81f, h * 0.72f)
-                    lineTo(w * 0.11f, h * 0.72f)
-                    close()
-                }
-                drawPath(body, color = Color(0xFF15803D))
-
-                // Windshield Cutout
-                val glass = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(w * 0.60f, h * 0.30f)
-                    lineTo(w * 0.78f, h * 0.32f)
-                    lineTo(w * 0.75f, h * 0.48f)
-                    lineTo(w * 0.58f, h * 0.48f)
-                    close()
-                }
-                drawPath(glass, color = Color(0xFFBAE6FD))
-
-                // Passenger Cabin opening
-                drawRoundRect(
-                    color = Color(0xFF0F172A),
-                    topLeft = androidx.compose.ui.geometry.Offset(w * 0.22f, h * 0.42f),
-                    size = androidx.compose.ui.geometry.Size(w * 0.30f, h * 0.24f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(3f, 3f)
-                )
-
-                drawCircle(Color(0xFF0F172A), radius = wheelRadius, center = androidx.compose.ui.geometry.Offset(w * 0.24f, h * 0.80f))
-                drawCircle(Color(0xFFCBD5E1), radius = wheelRadius * 0.55f, center = androidx.compose.ui.geometry.Offset(w * 0.24f, h * 0.80f))
-
-                drawCircle(Color(0xFF0F172A), radius = wheelRadius, center = androidx.compose.ui.geometry.Offset(w * 0.80f, h * 0.80f))
-                drawCircle(Color(0xFFCBD5E1), radius = wheelRadius * 0.55f, center = androidx.compose.ui.geometry.Offset(w * 0.80f, h * 0.80f))
-            }
-            PersonalVehicleType.CAB -> {
-                // Sleek Modern 4-Wheeler Cab
-                val carBody = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(w * 0.08f, h * 0.62f)
-                    lineTo(w * 0.16f, h * 0.50f)
-                    lineTo(w * 0.30f, h * 0.30f)
-                    lineTo(w * 0.68f, h * 0.30f)
-                    lineTo(w * 0.82f, h * 0.50f)
-                    lineTo(w * 0.94f, h * 0.54f)
-                    lineTo(w * 0.94f, h * 0.70f)
-                    lineTo(w * 0.08f, h * 0.70f)
-                    close()
-                }
-                drawPath(carBody, color = Color(0xFF0284C7))
-
-                val windows = androidx.compose.ui.graphics.Path().apply {
-                    moveTo(w * 0.32f, h * 0.34f)
-                    lineTo(w * 0.66f, h * 0.34f)
-                    lineTo(w * 0.78f, h * 0.50f)
-                    lineTo(w * 0.24f, h * 0.50f)
-                    close()
-                }
-                drawPath(windows, color = Color(0xFFE0F2FE))
-
-                drawCircle(Color(0xFF0F172A), radius = wheelRadius * 0.95f, center = androidx.compose.ui.geometry.Offset(w * 0.25f, h * 0.78f))
-                drawCircle(Color(0xFFCBD5E1), radius = wheelRadius * 0.55f, center = androidx.compose.ui.geometry.Offset(w * 0.25f, h * 0.78f))
-
-                drawCircle(Color(0xFF0F172A), radius = wheelRadius * 0.95f, center = androidx.compose.ui.geometry.Offset(w * 0.78f, h * 0.78f))
-                drawCircle(Color(0xFFCBD5E1), radius = wheelRadius * 0.55f, center = androidx.compose.ui.geometry.Offset(w * 0.78f, h * 0.78f))
-            }
-        }
-    }
-}
-
-/**
- * Rapido / Uber Style Personal Vehicle Selection Card.
- * Displays vehicle categories (E Rickshaw, Auto, CAB),
- * upfront calculated fares matching Screenshot media_1792647166626_3c29a9aa.jpg, and Book button.
+ * Rapido / Uber Style Compact Personal Vehicle Selection Card.
+ * Displays clean compact vehicle categories (E - Rickshaw, Auto, CAB),
+ * upfront calculated fares, and prominent Book button.
  */
 @Composable
 fun PersonalRideOptionsCard(
@@ -1432,112 +1269,75 @@ fun PersonalRideOptionsCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Vehicle Category Rows: E Rickshaw, Auto, CAB (Matching media_1792647166626_3c29a9aa.jpg)
+            // Vehicle Category Rows: Compact E - Rickshaw, Auto, CAB
             Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 displayOptions.forEach { opt ->
                     val isSelected = opt.type == (selectedOption?.type ?: PersonalVehicleType.E_RICKSHAW)
-
-                    val effectiveDrop = remember(opt.etaMinutes, distanceKm) {
-                        if (opt.dropTimeFormatted.isNotBlank()) {
-                            opt.dropTimeFormatted
-                        } else {
-                            val cal = Calendar.getInstance()
-                            val tripMins = ((distanceKm / 22.0) * 60).roundToInt().coerceAtLeast(4)
-                            cal.add(Calendar.MINUTE, opt.etaMinutes + tripMins)
-                            SimpleDateFormat("hh:mm a", Locale.getDefault()).format(cal.time).lowercase()
-                        }
-                    }
-
-                    Card(
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { onSelectOption(opt) },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) Color(0xFFF8FAFC) else Color.White
-                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) Color(0xFFF8FAFC) else Color.White,
                         border = androidx.compose.foundation.BorderStroke(
-                            width = if (isSelected) 1.8.dp else 1.dp,
-                            color = if (isSelected) Color(0xFF234B7D) else Color(0xFFE2E8F0)
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 2.dp else 0.dp)
+                            width = if (isSelected) 1.5.dp else 1.dp,
+                            color = if (isSelected) Color(0xFF234B7D) else Color(0xFFF1F5F9)
+                        )
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            // Left: Vehicle Side Profile Illustration (Matches User Screenshot)
-                            VehicleSideGraphic(
-                                type = opt.type,
-                                modifier = Modifier.size(width = 62.dp, height = 46.dp)
-                            )
-
-                            Spacer(modifier = Modifier.width(14.dp))
-
-                            // Middle: Title, Tagline, and Live ETA / Drop / Capacity
-                            Column(
+                            // Left: Vehicle Icon + Title
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.weight(1f)
                             ) {
-                                Text(
-                                    text = when (opt.type) {
-                                        PersonalVehicleType.E_RICKSHAW -> "E Rickshaw"
-                                        PersonalVehicleType.AUTO -> "Auto"
-                                        PersonalVehicleType.CAB -> "CAB"
-                                    },
-                                    fontSize = 17.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF1E293B)
-                                )
-
-                                Spacer(modifier = Modifier.height(2.dp))
-
-                                Text(
-                                    text = when (opt.type) {
-                                        PersonalVehicleType.E_RICKSHAW -> "E-Rickshaws at Doorstep"
-                                        PersonalVehicleType.AUTO -> "Autos at Doorstep"
-                                        PersonalVehicleType.CAB -> "Cabs at Doorstep"
-                                    },
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Normal,
-                                    color = Color(0xFF64748B)
-                                )
-
-                                Spacer(modifier = Modifier.height(4.dp))
-
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
+                                Box(
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(
+                                            if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC)
+                                        ),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = "${opt.etaMinutes} mins away • Drop $effectiveDrop • ",
-                                        fontSize = 12.5.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = Color(0xFF475569)
-                                    )
                                     Icon(
-                                        imageVector = Icons.Default.Person,
-                                        contentDescription = "Seats",
-                                        tint = Color(0xFF475569),
-                                        modifier = Modifier.size(13.5.dp)
-                                    )
-                                    Text(
-                                        text = " ${opt.type.capacity}",
-                                        fontSize = 12.5.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF475569)
+                                        imageVector = when (opt.type) {
+                                            PersonalVehicleType.E_RICKSHAW -> Icons.Default.ElectricRickshaw
+                                            PersonalVehicleType.AUTO -> Icons.Default.ElectricRickshaw
+                                            else -> Icons.Default.DirectionsCar
+                                        },
+                                        contentDescription = opt.type.displayName,
+                                        tint = if (isSelected) Color(0xFF234B7D) else Color(0xFF334155),
+                                        modifier = Modifier.size(24.dp)
                                     )
                                 }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                Text(
+                                    text = when (opt.type) {
+                                        PersonalVehicleType.E_RICKSHAW -> "E - Rickshaw"
+                                        PersonalVehicleType.AUTO -> "Auto"
+                                        PersonalVehicleType.CAB -> "CAB"
+                                        else -> opt.type.displayName
+                                    },
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF263959)
+                                )
                             }
 
-                            Spacer(modifier = Modifier.width(10.dp))
-
-                            // Right: Prominent Large Bold Price (e.g. ₹35)
+                            // Right: Upfront Fare Amount ONLY
                             Text(
                                 text = "₹${opt.fareAmount}",
-                                fontSize = 22.sp,
+                                fontSize = 17.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF263959)
                             )
@@ -1550,6 +1350,14 @@ fun PersonalRideOptionsCard(
 
             // Primary Booking Button (Rapido warm gold yellow #F5B838)
             val effectiveSel = selectedOption ?: displayOptions.firstOrNull()
+            val selLabel = when (effectiveSel?.type) {
+                PersonalVehicleType.E_RICKSHAW -> "E - Rickshaw"
+                PersonalVehicleType.AUTO -> "Auto"
+                PersonalVehicleType.CAB -> "CAB"
+                else -> "Ride"
+            }
+            val selFare = effectiveSel?.fareAmount?.let { " • ₹$it" } ?: ""
+
             Button(
                 onClick = {
                     if (effectiveSel != null && !isRequested) {
@@ -1558,7 +1366,7 @@ fun PersonalRideOptionsCard(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(42.dp),
+                    .height(46.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFF5B838)
@@ -1566,8 +1374,8 @@ fun PersonalRideOptionsCard(
                 enabled = !isRequested
             ) {
                 Text(
-                    text = if (isRequested) "Requesting Driver..." else "Book",
-                    fontSize = 14.sp,
+                    text = if (isRequested) "Requesting Driver..." else "Book $selLabel$selFare",
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.Black
                 )
@@ -1575,7 +1383,6 @@ fun PersonalRideOptionsCard(
         }
     }
 }
-
 /**
  * Searching In Progress Card.
  * Shown under the map while waiting for driver acceptance.
