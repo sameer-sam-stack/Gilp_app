@@ -749,8 +749,6 @@ fun TravelServicesScreen(
                                         }
                                     }
                                 )
-                                    }
-                                )
                             }
                         }
                         // Fill empty slots in the last row to maintain grid alignment
