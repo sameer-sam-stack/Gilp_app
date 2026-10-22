@@ -64,6 +64,10 @@ class HomeViewModel(
     private val mobilityRepository: MobilityRepository
 ) : ViewModel() {
 
+    companion object {
+        const val MAX_DISPATCH_RADIUS_METERS = 8_000f // 8.0 KM strict city proximity limit
+    }
+
     private val TAG = "HomeViewModel"
 
     private val _uiState = MutableStateFlow(HomeUiState(isLoading = false))
@@ -270,6 +274,15 @@ class HomeViewModel(
                     if (drv.currentLat == 0.0 || drv.currentLng == 0.0) continue
                     if (drv.availableSeats <= 0) continue
 
+                    // Proximity check: Only consider drivers within 8 KM of pickup
+                    if (pLat != 0.0 && pLng != 0.0) {
+                        val dArr = FloatArray(1)
+                        Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, dArr)
+                        if (dArr[0] > MAX_DISPATCH_RADIUS_METERS) {
+                            continue
+                        }
+                    }
+
                     val routeInfo = remoteRoutes[drv.id] ?: remoteRoutes[drv.mobileNumber]
                     val hasPassengerTrip = (pLat != 0.0 && pLng != 0.0 && dLat != 0.0 && dLng != 0.0)
 
@@ -430,6 +443,24 @@ class HomeViewModel(
         userPhone: String
     ) {
         viewModelScope.launch {
+            val pLat = _uiState.value.pickupLat.takeIf { it != 0.0 } ?: targetVehicle.currentLat
+            val pLng = _uiState.value.pickupLng.takeIf { it != 0.0 } ?: targetVehicle.currentLng
+
+            // Proximity check: Must be within MAX_DISPATCH_RADIUS_METERS (8 KM)
+            if (targetVehicle.currentLat != 0.0 && targetVehicle.currentLng != 0.0 && pLat != 0.0 && pLng != 0.0) {
+                val results = FloatArray(1)
+                Location.distanceBetween(targetVehicle.currentLat, targetVehicle.currentLng, pLat, pLng, results)
+                if (results[0] > MAX_DISPATCH_RADIUS_METERS) {
+                    _uiState.update {
+                        it.copy(
+                            rideBookingStatus = "NONE",
+                            bookingError = "No vehicle available"
+                        )
+                    }
+                    return@launch
+                }
+            }
+
             val generatedOtp = String.format(java.util.Locale.US, "%04d", (1000..9999).random())
             _uiState.update {
                 it.copy(
@@ -440,8 +471,6 @@ class HomeViewModel(
                 )
             }
 
-            val pLat = _uiState.value.pickupLat.takeIf { it != 0.0 } ?: targetVehicle.currentLat
-            val pLng = _uiState.value.pickupLng.takeIf { it != 0.0 } ?: targetVehicle.currentLng
             val dLat = _uiState.value.dropLat.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLat
             val dLng = _uiState.value.dropLng.takeIf { it != 0.0 } ?: targetVehicle.route.destinationLng
 
@@ -471,8 +500,8 @@ class HomeViewModel(
             } else {
                 _uiState.update {
                     it.copy(
-                        rideBookingStatus = "REQUESTED",
-                        activeRequestId = "local_${System.currentTimeMillis()}"
+                        rideBookingStatus = "NONE",
+                        bookingError = "No vehicle available"
                     )
                 }
             }
@@ -481,7 +510,8 @@ class HomeViewModel(
 
     /**
      * Books a dedicated Personal Vehicle (Rapido / Uber Style).
-     * Finds the nearest online driver to passenger's pickup location who matches the EXACT vehicle category.
+     * Finds the nearest online driver to passenger's pickup location who matches the EXACT vehicle category
+     * and is strictly within 8 KM proximity radius.
      */
     fun bookPersonalRide(
         selectedOption: PersonalFareEstimate,
@@ -490,15 +520,6 @@ class HomeViewModel(
     ) {
         viewModelScope.launch {
             val generatedOtp = String.format(java.util.Locale.US, "%04d", (1000..9999).random())
-
-            // Immediately set REQUESTED state so the UI transitions instantly to Searching In Progress
-            _uiState.update {
-                it.copy(
-                    rideBookingStatus = "REQUESTED",
-                    bookingError = null,
-                    rideOtp = generatedOtp
-                )
-            }
 
             var pLat = _uiState.value.pickupLat
             var pLng = _uiState.value.pickupLng
@@ -522,14 +543,41 @@ class HomeViewModel(
                 _uiState.value.allOnlineDrivers
             }
 
-            // STRICT MATCH: Only drivers who are online AND match the requested vehicle category
-            // (e.g. Auto only to Auto drivers, Bike only to Bike drivers, E-Rickshaw only to E-Rickshaw drivers)
-            val matchingDrivers = freshOnlineDrivers.filter { drv ->
-                drv.isOnline && drv.matchesCategory(selectedOption.type.name)
+            // STRICT MATCH: Only drivers who are:
+            // 1. Online
+            // 2. Matching this vehicle category
+            // 3. Within strict 8 KM proximity radius (MAX_DISPATCH_RADIUS_METERS) of pickup location
+            val matchingDriversInRadius = freshOnlineDrivers.filter { drv ->
+                if (!drv.isOnline || !drv.matchesCategory(selectedOption.type.name)) return@filter false
+                if (drv.currentLat == 0.0 || drv.currentLng == 0.0) return@filter false
+                val results = FloatArray(1)
+                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
+                results[0] <= MAX_DISPATCH_RADIUS_METERS
             }
 
-            // Nearest driver matching THIS vehicle category ONLY (NEVER fallback to a different vehicle type!)
-            val nearestDriver = matchingDrivers.minByOrNull { drv ->
+            if (matchingDriversInRadius.isEmpty()) {
+                // No driver of this vehicle type is within 8 KM!
+                // Prevent sending request to distant drivers in other cities.
+                _uiState.update {
+                    it.copy(
+                        rideBookingStatus = "NONE",
+                        bookingError = "No vehicle available"
+                    )
+                }
+                return@launch
+            }
+
+            // Immediately set REQUESTED state only when a nearby driver is genuinely available
+            _uiState.update {
+                it.copy(
+                    rideBookingStatus = "REQUESTED",
+                    bookingError = null,
+                    rideOtp = generatedOtp
+                )
+            }
+
+            // Nearest driver matching THIS vehicle category ONLY within 8 KM
+            val nearestDriver = matchingDriversInRadius.minByOrNull { drv ->
                 val results = FloatArray(1)
                 Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
                 results[0]
@@ -551,6 +599,16 @@ class HomeViewModel(
                 fare = selectedOption.fareAmount.toDouble(),
                 otp = generatedOtp
             )
+
+            if (!result.isSuccess) {
+                _uiState.update {
+                    it.copy(
+                        rideBookingStatus = "NONE",
+                        bookingError = "No vehicle available"
+                    )
+                }
+                return@launch
+            }
 
             val targetVehicle = nearestDriver?.let { drv ->
                 Vehicle(
@@ -667,7 +725,7 @@ class HomeViewModel(
                         it.copy(
                             rideBookingStatus = "NONE",
                             isPersonalRideMode = true,
-                            bookingError = "Driver response time expired (2 minutes). Kripya doobara prayas karein."
+                            bookingError = "No vehicle available"
                         )
                     }
                     startPeriodicDriverSearch()
@@ -687,7 +745,7 @@ class HomeViewModel(
                         _uiState.update {
                             it.copy(
                                 rideBookingStatus = "NONE",
-                                bookingError = "Driver was unavailable. Please pick another vehicle."
+                                bookingError = "No vehicle available"
                             )
                         }
                         startPeriodicDriverSearch()
@@ -771,7 +829,7 @@ class HomeViewModel(
                                     liveTripDistanceKm = 0.0,
                                     liveEtaMinutes = 0,
                                     isRidePooled = false,
-                                    bookingError = "Aapki ride safaltapoorvak poori ho gayi hai. Dhanyawad!"
+                                    bookingError = "Ride completed successfully"
                                 )
                             }
                             applyRealDriverSearch()
@@ -791,7 +849,7 @@ class HomeViewModel(
                                     liveTripDistanceKm = 0.0,
                                     liveEtaMinutes = 0,
                                     isRidePooled = false,
-                                    bookingError = "Driver dwara ride cancel kar di gayi hai."
+                                    bookingError = "Ride cancelled by driver"
                                 )
                             }
                             applyRealDriverSearch()
@@ -982,6 +1040,10 @@ class HomeViewModel(
             return activeRide
         }
         return null
+    }
+
+    fun clearBookingError() {
+        _uiState.update { it.copy(bookingError = null) }
     }
 
     override fun onCleared() {

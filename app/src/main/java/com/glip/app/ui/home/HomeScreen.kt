@@ -208,6 +208,14 @@ fun HomeScreen(
         if (dropLocation.isNotBlank()) viewModel.onDropQueryChange(dropLocation)
     }
 
+    // Observe booking status or error notifications and display short English Toast
+    LaunchedEffect(uiState.bookingError) {
+        uiState.bookingError?.let { err ->
+            Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+            viewModel.clearBookingError()
+        }
+    }
+
     val effectivePickupLat = pickupCoordinates?.first ?: if (uiState.pickupLat != 0.0) uiState.pickupLat else pickupLat
     val effectivePickupLng = pickupCoordinates?.second ?: if (uiState.pickupLng != 0.0) uiState.pickupLng else pickupLng
     val effectiveDropLat = dropCoordinates?.first ?: if (uiState.dropLat != 0.0) uiState.dropLat else dropLat

@@ -121,13 +121,13 @@ object FareCalculationEngine {
     ): List<PersonalFareEstimate> {
         val format = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
-        // Filter drivers who are currently online and within a reasonable city radius (25 km)
+        // Filter drivers who are currently online and within strict 8 KM proximity radius
         val nearbyDrivers = onlineDrivers.filter { drv ->
             if (!drv.isOnline) return@filter false
-            if (pLat == 0.0 || pLng == 0.0 || drv.currentLat == 0.0 || drv.currentLng == 0.0) return@filter true
+            if (pLat == 0.0 || pLng == 0.0 || drv.currentLat == 0.0 || drv.currentLng == 0.0) return@filter false
             val results = FloatArray(1)
             Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, results)
-            results[0] <= 25_000f
+            results[0] <= 8_000f
         }
 
         return listOf(
@@ -137,15 +137,15 @@ object FareCalculationEngine {
         ).map { type ->
             val fare = calculatePersonalFare(distanceKm, type)
 
-            // Check if there is an online driver matching this exact vehicle category or any nearby online driver
+            // Strictly check if there is an online driver matching this exact vehicle category within 8 KM
             val matchingDrivers = nearbyDrivers.filter { it.matchesCategory(type.name) }
-            val isAvailable = if (onlineDrivers.isEmpty()) true else (matchingDrivers.isNotEmpty() || nearbyDrivers.isNotEmpty())
+            val isAvailable = if (pLat == 0.0 || pLng == 0.0) {
+                if (onlineDrivers.isEmpty()) true else matchingDrivers.isNotEmpty()
+            } else {
+                matchingDrivers.isNotEmpty()
+            }
 
             val nearest = matchingDrivers.minByOrNull { drv ->
-                val res = FloatArray(1)
-                Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, res)
-                res[0]
-            } ?: nearbyDrivers.minByOrNull { drv ->
                 val res = FloatArray(1)
                 Location.distanceBetween(drv.currentLat, drv.currentLng, pLat, pLng, res)
                 res[0]
