@@ -317,17 +317,22 @@ class HomeViewModel(
                     )
 
                     // Corridor matching: verify passenger's pickup and dropoff lie within driver's travel corridor
+                    // and strictly heading in the exact same forward direction
                     if (hasPassengerTrip) {
                         val matchesCorridor = CorridorMatchingHelper.isPassengerOnDriverCorridor(
                             pLat = pLat,
                             pLng = pLng,
                             dLat = dLat,
                             dLng = dLng,
+                            driverLat = drv.currentLat,
+                            driverLng = drv.currentLng,
+                            destLat = destLat,
+                            destLng = destLng,
                             routePoints = polylinePoints,
-                            maxCorridorMeters = 2500.0
+                            maxCorridorMeters = 1000.0
                         )
                         if (!matchesCorridor) {
-                            Log.d(TAG, "Driver ${drv.fullName} destination $destName does not overlap passenger corridor - excluded.")
+                            Log.d(TAG, "Driver ${drv.fullName} destination $destName does not match passenger corridor/direction - excluded.")
                             continue
                         }
                     }
