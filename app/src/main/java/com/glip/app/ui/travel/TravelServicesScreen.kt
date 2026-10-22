@@ -593,7 +593,7 @@ fun TravelServicesScreen(
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
-                                    imageVector = Icons.Default.KeyboardArrowDown,
+                                    imageVector = Icons.Default.ArrowDropDown,
                                     contentDescription = "Select City",
                                     tint = Color(0xFF0F172A),
                                     modifier = Modifier.size(22.dp)
