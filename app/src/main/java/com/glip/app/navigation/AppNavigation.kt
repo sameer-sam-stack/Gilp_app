@@ -252,6 +252,12 @@ fun AppNavigation(
                         onEditDrop = {
                             editingLocationMode = "drop"
                         },
+                        onResetHome = {
+                            selectedDrop = ""
+                            selectedDropLat = 0.0
+                            selectedDropLng = 0.0
+                            hasConfirmedRoute = false
+                        },
                         modifier = contentModifier
                     )
                 }

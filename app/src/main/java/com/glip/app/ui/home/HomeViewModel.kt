@@ -42,6 +42,7 @@ data class HomeUiState(
     val activeRequestId: String? = null,
     val rideBookingStatus: String = "NONE", // NONE, REQUESTED, ACCEPTED, IN_PROGRESS, CANCELLED
     val acceptedVehicle: Vehicle? = null,
+    val completedDriver: Vehicle? = null,
     val passengerRoutePoints: List<GeoPoint> = emptyList(),
     val bookingError: String? = null,
     val tripDistanceKm: Double = 0.0,
@@ -819,9 +820,11 @@ class HomeViewModel(
                     if (updatedStatus != null) {
                         if (updatedStatus.status.equals("COMPLETED", ignoreCase = true)) {
                             // Trip successfully completed by driver
+                            val finishedVehicle = _uiState.value.acceptedVehicle ?: _uiState.value.selectedVehicle
                             _uiState.update {
                                 it.copy(
-                                    rideBookingStatus = "NONE",
+                                    rideBookingStatus = "COMPLETED",
+                                    completedDriver = finishedVehicle,
                                     activeRequestId = null,
                                     acceptedVehicle = null,
                                     selectedVehicle = null,
@@ -829,11 +832,17 @@ class HomeViewModel(
                                     liveTripDistanceKm = 0.0,
                                     liveEtaMinutes = 0,
                                     isRidePooled = false,
-                                    bookingError = "Ride completed successfully"
+                                    pickupQuery = "",
+                                    dropQuery = "",
+                                    pickupLat = 0.0,
+                                    pickupLng = 0.0,
+                                    dropLat = 0.0,
+                                    dropLng = 0.0,
+                                    personalOptions = emptyList(),
+                                    tripDistanceKm = 0.0,
+                                    bookingError = null
                                 )
                             }
-                            applyRealDriverSearch()
-                            startPeriodicDriverSearch()
                             break
                         } else if (updatedStatus.status.equals("CANCELLED", ignoreCase = true) ||
                             updatedStatus.status.equals("DECLINED", ignoreCase = true)
@@ -937,6 +946,39 @@ class HomeViewModel(
             applyRealDriverSearch()
             startPeriodicDriverSearch()
         }
+    }
+
+    /**
+     * Resets the home screen after a completed ride has been dismissed/rated.
+     * Restores state so the user is ready to book a new ride from clean pickup/drop input.
+     */
+    fun resetHomeAfterRideCompleted() {
+        _uiState.update {
+            it.copy(
+                rideBookingStatus = "NONE",
+                completedDriver = null,
+                activeRequestId = null,
+                acceptedVehicle = null,
+                selectedVehicle = null,
+                passengerRoutePoints = emptyList(),
+                liveTripDistanceKm = 0.0,
+                liveEtaMinutes = 0,
+                isRidePooled = false,
+                pickupQuery = "",
+                dropQuery = "",
+                pickupLat = 0.0,
+                pickupLng = 0.0,
+                dropLat = 0.0,
+                dropLng = 0.0,
+                personalOptions = emptyList(),
+                tripDistanceKm = 0.0,
+                bookingError = null,
+                isPersonalRideMode = false,
+                isSearchingRouteVehicles = false
+            )
+        }
+        applyRealDriverSearch()
+        startPeriodicDriverSearch()
     }
 
     /**

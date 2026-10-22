@@ -43,7 +43,9 @@ import com.glip.app.ads.AdConfig
 import com.glip.app.ui.components.RouteLoader
 import com.glip.app.util.FareCalculationEngine
 import com.glip.app.util.PersonalFareEstimate
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
@@ -88,6 +90,7 @@ fun HomeScreen(
     onChangeLocation: () -> Unit = {},
     onEditPickup: () -> Unit = {},
     onEditDrop: () -> Unit = {},
+    onResetHome: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -115,6 +118,15 @@ fun HomeScreen(
     var isPickupSelected by remember(pickup, pickupCoordinates) {
         mutableStateOf(pickup.isNotBlank() || pickupCoordinates != null)
     }
+    // Hardware back button returns to clean home screen when rating is shown
+    BackHandler(enabled = uiState.rideBookingStatus == "COMPLETED") {
+        drop = ""
+        dropCoordinates = null
+        isDropSelected = false
+        viewModel.resetHomeAfterRideCompleted()
+        onResetHome()
+    }
+
     var isDropSelected by remember(drop, dropCoordinates) {
         mutableStateOf(drop.isNotBlank() || dropCoordinates != null)
     }
@@ -614,12 +626,12 @@ fun HomeScreen(
             ) {
                 if (!uiState.isFallbackListVisible) {
                     InteractiveDemoMap(
-                        vehicles = if (uiState.rideBookingStatus == "ACCEPTED" || uiState.rideBookingStatus == "IN_PROGRESS") listOfNotNull(uiState.acceptedVehicle) else uiState.filteredVehicles,
+                        vehicles = if (uiState.rideBookingStatus in listOf("ACCEPTED", "IN_PROGRESS", "COMPLETED")) listOfNotNull(uiState.acceptedVehicle ?: uiState.completedDriver) else uiState.filteredVehicles,
                         selectedVehicle = uiState.selectedVehicle,
                         onVehicleSelect = { viewModel.selectVehicle(it) },
                         onRecenter = { viewModel.recenterDemoArea() },
                         passengerRoutePoints = uiState.passengerRoutePoints,
-                        isRideAccepted = uiState.rideBookingStatus == "ACCEPTED" || uiState.rideBookingStatus == "IN_PROGRESS",
+                        isRideAccepted = uiState.rideBookingStatus in listOf("ACCEPTED", "IN_PROGRESS", "COMPLETED"),
                         rideBookingStatus = uiState.rideBookingStatus,
                         pickupGeoPoint = if (effectivePickupLat != 0.0) GeoPoint(effectivePickupLat, effectivePickupLng) else null,
                         dropGeoPoint = if (effectiveDropLat != 0.0) GeoPoint(effectiveDropLat, effectiveDropLng) else null,
@@ -960,6 +972,27 @@ fun HomeScreen(
                     }
                 }
             }
+        } else if (uiState.rideBookingStatus == "COMPLETED") {
+            // TRIP COMPLETED: 5-star Driver Rating Box under map
+            val driverVeh = uiState.completedDriver ?: uiState.acceptedVehicle ?: uiState.selectedVehicle
+            DriverRatingCard(
+                driver = driverVeh,
+                onBackClick = {
+                    drop = ""
+                    dropCoordinates = null
+                    isDropSelected = false
+                    viewModel.resetHomeAfterRideCompleted()
+                    onResetHome()
+                },
+                onSubmitRating = { _ ->
+                    Toast.makeText(context, "Thank you for your rating!", Toast.LENGTH_SHORT).show()
+                    drop = ""
+                    dropCoordinates = null
+                    isDropSelected = false
+                    viewModel.resetHomeAfterRideCompleted()
+                    onResetHome()
+                }
+            )
         } else if (uiState.rideBookingStatus == "REQUESTED") {
             // SEARCHING IN PROGRESS: Pipeline yellow progress line with (X) cancel button on right
             SearchingInProgressCard(
@@ -1687,6 +1720,191 @@ fun VehicleCard(
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF16A34A)
                 )
+            }
+        }
+    }
+}
+@Composable
+fun DriverRatingCard(
+    driver: Vehicle?,
+    onBackClick: () -> Unit,
+    onSubmitRating: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var selectedRating by remember { mutableIntStateOf(5) }
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.2.dp, Color(0xFFE2E8F0)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Top Row: Back button (top left) & Trip Completed badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFF1F5F9),
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clickable { onBackClick() }
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF0F172A),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xFFDCFCE7),
+                    border = BorderStroke(1.dp, Color(0xFF86EFAC))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF16A34A),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Trip Completed",
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF15803D)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Driver Icon + Name & Vehicle
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFF0FDF4),
+                    border = BorderStroke(1.5.dp, Color(0xFF10B981)),
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column {
+                    Text(
+                        text = driver?.driver?.fullName ?: "Driver Partner",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                    Text(
+                        text = "${driver?.licensePlateMasked ?: \"DL 01\"} • ${driver?.category?.displayName ?: \"Vehicle\"}",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Divider(color = Color(0xFFF1F5F9), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "How was your ride?",
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF334155)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 5 Clickable Stars (* * * * *)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                for (star in 1..5) {
+                    val isSelected = star <= selectedRating
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isSelected) Color(0xFFFEF3C7) else Color(0xFFF1F5F9),
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clickable { selectedRating = star }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = "Star $star",
+                                tint = if (isSelected) Color(0xFFF59E0B) else Color(0xFFCBD5E1),
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Submit Arrow button (Arrow icon so user feels rating is sent smoothly)
+            Button(
+                onClick = { onSubmitRating(selectedRating) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Submit Rating",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Submit",
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
