@@ -290,12 +290,13 @@ fun WalletScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 1. Balance Amount Box (Warm Amber Card matching Screenshot 1 background)
+        // 1. Balance Amount Box (Clean White Card with Green Balance)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFC7810A)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -307,23 +308,22 @@ fun WalletScreen(
                     text = "Your Wallet Balance",
                     fontSize = 14.5.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.92f)
+                    color = Color(0xFF64748B)
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "₹120.00",
+                    text = "₹00",
                     fontSize = 36.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
+                    color = Color(0xFF16A34A)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Centered "+ Add Money" button (matching Screenshot 1)
+                // Centered "+ Add Money" button
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = Color.White.copy(alpha = 0.18f),
-                    border = BorderStroke(1.2.dp, Color.White.copy(alpha = 0.45f)),
+                    color = Color(0xFF10B981),
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
                         .height(44.dp)

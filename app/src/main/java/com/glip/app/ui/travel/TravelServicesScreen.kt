@@ -516,17 +516,26 @@ fun TravelServicesScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
+                    if (currentViewMode == "VEHICLE_RENTAL") {
+                        Column {
+                            Text(
+                                text = "Travel Services",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+                            Text(
+                                text = "Outstation vehicle rental across CG",
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    } else {
                         Text(
-                            text = if (currentViewMode == "VEHICLE_RENTAL") "Travel Services" else "All Services Directory",
+                            text = "All Services Directory",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F172A)
-                        )
-                        Text(
-                            text = if (currentViewMode == "VEHICLE_RENTAL") "Outstation vehicle rental across CG" else "Verified home & travel services in $activeCity",
-                            fontSize = 12.sp,
-                            color = Color(0xFF64748B)
                         )
                     }
                 },
@@ -616,7 +625,7 @@ fun TravelServicesScreen(
                         onValueChange = { searchQuery = it },
                         placeholder = {
                             Text(
-                                text = "Search services (e.g. Cleaning, Repair, Taxi)...",
+                                text = "(  e.g. Cleaning Repair, taxi)...",
                                 fontSize = 13.sp,
                                 color = Color(0xFF94A3B8)
                             )
@@ -683,29 +692,6 @@ fun TravelServicesScreen(
                     }
                 }
 
-                // 4. SECTION TITLE & SERVICE COUNT
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 2.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Available Services (${filteredServices.size})",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
-                        )
-                        Text(
-                            text = "City: $activeCity",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF15803D)
-                        )
-                    }
-                }
 
                 // 5. COMPACT SERVICES GRID (3 boxes per row, compact size as requested: 'In Sab ke box ka size chota rakh na')
                 val chunkedServices = filteredServices.chunked(3)
