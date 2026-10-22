@@ -67,7 +67,7 @@ fun ServicesScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Row of 3 Service Cards (Parcel on Bike, School Vehicle, Personal Vehicle)
+        // Row 1: Parcel, Pay, School Vehicle
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -84,7 +84,17 @@ fun ServicesScreen(
                 modifier = Modifier.weight(1f)
             )
 
-            // 2. School Vehicle
+            // 2. Pay (Navigates directly to Wallet Screen)
+            ServiceTile(
+                title = "Pay",
+                icon = Icons.Default.AccountBalanceWallet,
+                iconColor = Color(0xFF6366F1),
+                backgroundColor = Color(0xFFEEF2FF),
+                onClick = onNavigateToWallet,
+                modifier = Modifier.weight(1f)
+            )
+
+            // 3. School Vehicle
             ServiceTile(
                 title = "School Vehicle",
                 icon = Icons.Default.DirectionsBus,
@@ -93,34 +103,24 @@ fun ServicesScreen(
                 onClick = onNavigateToSchoolVehicle,
                 modifier = Modifier.weight(1f)
             )
-
-            // 3. Personal Vehicle
-            ServiceTile(
-                title = "Personal Vehicle",
-                icon = Icons.Default.DirectionsCar,
-                iconColor = GlipGreenPrimary,
-                backgroundColor = Color(0xFFF0FDF4),
-                onClick = onNavigateToPersonalVehicle,
-                modifier = Modifier.weight(1f)
-            )
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Row 2: Pay, Intercity Travels, Travel Services
+        // Row 2: Personal Vehicle, Intercity travels, More services
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // 4. Pay (Navigates directly to Wallet Screen)
+            // 4. Personal Vehicle
             ServiceTile(
-                title = "Pay",
-                icon = Icons.Default.AccountBalanceWallet,
-                iconColor = Color(0xFF6366F1),
-                backgroundColor = Color(0xFFEEF2FF),
-                onClick = onNavigateToWallet,
+                title = "Personal Vehicle",
+                icon = Icons.Default.DirectionsCar,
+                iconColor = GlipGreenPrimary,
+                backgroundColor = Color(0xFFF0FDF4),
+                onClick = onNavigateToPersonalVehicle,
                 modifier = Modifier.weight(1f)
             )
 
@@ -134,7 +134,7 @@ fun ServicesScreen(
                 modifier = Modifier.weight(1f)
             )
 
-            // 6. Travel services
+            // 6. More services
             ServiceTile(
                 title = "More services",
                 icon = Icons.Default.GridView,
