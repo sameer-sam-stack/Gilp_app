@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.glip.app.R
 import com.glip.app.ui.components.GlipBrandHeader
 import com.glip.app.ui.theme.ErrorRed
+import com.glip.app.data.local.DemoProfilePreferences
 
 @Composable
 fun ProfileScreen(
@@ -39,6 +40,9 @@ fun ProfileScreen(
     val scrollState = rememberScrollState()
     val context = LocalContext.current
     var isDarkMode by remember { mutableStateOf(false) }
+    val preferences = remember { DemoProfilePreferences(context) }
+    var currentLanguage by remember { mutableStateOf(preferences.getAppLanguage()) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.isLoggedOut) {
         if (uiState.isLoggedOut) {
@@ -59,6 +63,80 @@ fun ProfileScreen(
             dismissButton = {
                 TextButton(onClick = { viewModel.showClearDataDialog(false) }) {
                     Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showLanguageDialog) {
+        AlertDialog(
+            onDismissRequest = { showLanguageDialog = false },
+            title = {
+                Text(
+                    text = "Select App Language",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A)
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    val languages = listOf(
+                        Pair("English", "English (Default)"),
+                        Pair("हिंदी", "हिन्दी (Hindi)")
+                    )
+                    languages.forEach { (langCode, langDisplay) ->
+                        val isSelected = currentLanguage == langCode
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    currentLanguage = langCode
+                                    preferences.setAppLanguage(langCode)
+                                    showLanguageDialog = false
+                                    Toast.makeText(context, "$langDisplay active", Toast.LENGTH_SHORT).show()
+                                },
+                            shape = RoundedCornerShape(12.dp),
+                            color = if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.5.dp,
+                                if (isSelected) Color(0xFF0284C7) else Color(0xFFE2E8F0)
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        text = langDisplay,
+                                        fontSize = 15.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) Color(0xFF0284C7) else Color(0xFF0F172A)
+                                    )
+                                }
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = "Selected",
+                                        tint = Color(0xFF0284C7),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showLanguageDialog = false }) {
+                    Text("Close", color = Color(0xFF64748B), fontWeight = FontWeight.Bold)
                 }
             }
         )
@@ -326,6 +404,7 @@ fun ProfileScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clickable { showLanguageDialog = true }
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -355,7 +434,7 @@ fun ProfileScreen(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Choose language",
+                                text = if (currentLanguage == "हिंदी") "भाषा चुनें (Choose language)" else "Choose language",
                                 fontSize = 12.sp,
                                 color = Color(0xFF64748B)
                             )
@@ -364,12 +443,10 @@ fun ProfileScreen(
                         Surface(
                             shape = RoundedCornerShape(14.dp),
                             color = Color(0xFFE0F2FE),
-                            modifier = Modifier.clickable {
-                                Toast.makeText(context, "English language active", Toast.LENGTH_SHORT).show()
-                            }
+                            modifier = Modifier.clickable { showLanguageDialog = true }
                         ) {
                             Text(
-                                text = "English",
+                                text = currentLanguage,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF0284C7),

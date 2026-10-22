@@ -366,9 +366,9 @@ fun HomeScreen(
                                         modifier = Modifier.size(34.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Map,
+                                            imageVector = Icons.Default.MyLocation,
                                             contentDescription = "Pick Pickup on Map",
-                                            tint = Color(0xFF64748B),
+                                            tint = Color(0xFF10B981),
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
@@ -453,7 +453,7 @@ fun HomeScreen(
                                         modifier = Modifier.size(34.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Map,
+                                            imageVector = Icons.Default.MyLocation,
                                             contentDescription = "Pick Drop on Map",
                                             tint = Color(0xFFEF4444),
                                             modifier = Modifier.size(20.dp)
@@ -1197,24 +1197,57 @@ fun PersonalRideOptionsCard(
         Column(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
-            // "No shared vehicle on Your Route.." Text
+            // "No shared vehicle on Your Route.." Row with back arrow & live loading indicator
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 6.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Small Back Arrow button
+                Surface(
+                    onClick = onChangeLocation,
+                    shape = CircleShape,
+                    color = Color(0xFFF1F5F9),
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color(0xFF0F172A),
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
                 Text(
                     text = "No shared vehicle on Your Route..",
                     fontSize = 11.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFF64748B)
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF64748B),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(6.dp))
+
+                // Small animated spinning loading indicator
+                CircularProgressIndicator(
+                    modifier = Modifier.size(15.dp),
+                    strokeWidth = 2.dp,
+                    color = Color(0xFFF5B838),
+                    trackColor = Color(0xFFFEF3C7)
                 )
 
                 if (canSwitchToPooling) {
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Switch to Pooling",
+                        text = "Pooling",
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = GlipGreenPrimary,

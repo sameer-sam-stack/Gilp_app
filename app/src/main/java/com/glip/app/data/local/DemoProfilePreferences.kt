@@ -20,6 +20,7 @@ class DemoProfilePreferences(context: Context) {
         private const val KEY_PHONE_NUMBER = "phone_number"
         private const val KEY_EMAIL = "email"
         private const val KEY_CREATED_AT = "created_at"
+        private const val KEY_APP_LANGUAGE = "app_language"
     }
 
     fun getUserProfile(): UserProfile? {
@@ -45,6 +46,14 @@ class DemoProfilePreferences(context: Context) {
             .putString(KEY_EMAIL, profile.email)
             .putLong(KEY_CREATED_AT, profile.createdAtTimestamp)
             .apply()
+    }
+
+    fun getAppLanguage(): String {
+        return prefs.getString(KEY_APP_LANGUAGE, "English") ?: "English"
+    }
+
+    fun setAppLanguage(language: String) {
+        prefs.edit().putString(KEY_APP_LANGUAGE, language).apply()
     }
 
     fun clearUserProfile() {

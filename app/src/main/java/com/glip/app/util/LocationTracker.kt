@@ -36,6 +36,9 @@ object LocationTracker {
     private val _currentCoordinates = MutableStateFlow<Pair<Double, Double>?>(null)
     val currentCoordinates: StateFlow<Pair<Double, Double>?> = _currentCoordinates.asStateFlow()
 
+    private val _currentCity = MutableStateFlow<String?>("Rajnandgaon")
+    val currentCity: StateFlow<String?> = _currentCity.asStateFlow()
+
     fun isGpsEnabled(context: Context): Boolean {
         val lm = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
         val gps = try { lm.isProviderEnabled(LocationManager.GPS_PROVIDER) } catch (e: Exception) { false }
@@ -65,6 +68,10 @@ object LocationTracker {
                 if (addr != null) {
                     val fullLine = addr.getAddressLine(0)
                     val shortLoc = addr.subLocality ?: addr.locality ?: addr.featureName
+                    val detectedCity = addr.locality ?: addr.subAdminArea ?: addr.adminArea
+                    if (!detectedCity.isNullOrBlank()) {
+                        _currentCity.value = detectedCity
+                    }
                     _currentAddress.value = when {
                         !shortLoc.isNullOrBlank() -> shortLoc
                         !fullLine.isNullOrBlank() -> fullLine.split(",").take(2).joinToString(",").trim()
@@ -87,6 +94,11 @@ object LocationTracker {
                     val name = json.optString("name")
                     val displayName = json.optString("display_name")
                     val parts = displayName.split(",")
+                    val addressObj = json.optJSONObject("address")
+                    val detectedCity = addressObj?.optString("city")?.ifBlank { addressObj.optString("town") }?.ifBlank { addressObj.optString("county") }?.ifBlank { addressObj.optString("state_district") }
+                    if (!detectedCity.isNullOrBlank()) {
+                        _currentCity.value = detectedCity
+                    }
                     val readable = if (name.isNotBlank()) name else parts.take(2).joinToString(",").trim()
                     if (readable.isNotBlank()) {
                         _currentAddress.value = readable

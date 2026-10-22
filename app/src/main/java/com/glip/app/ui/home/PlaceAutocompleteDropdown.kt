@@ -106,13 +106,13 @@ fun PlaceAutocompleteDropdown(
                         modifier = Modifier
                             .size(36.dp)
                             .clip(CircleShape)
-                            .background(if (activeField == "pickup") Color(0xFFEFF6FF) else Color(0xFFFEE2E2)),
+                            .background(if (activeField == "pickup") Color(0xFFDCFCE7) else Color(0xFFFEE2E2)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Map,
+                            imageVector = Icons.Default.MyLocation,
                             contentDescription = null,
-                            tint = if (activeField == "pickup") Color(0xFF2563EB) else Color(0xFFDC2626),
+                            tint = if (activeField == "pickup") Color(0xFF10B981) else Color(0xFFDC2626),
                             modifier = Modifier.size(20.dp)
                         )
                     }

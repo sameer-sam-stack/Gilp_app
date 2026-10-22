@@ -359,7 +359,7 @@ fun ParcelBookingScreen(
                                     modifier = Modifier.size(28.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Map,
+                                        imageVector = Icons.Default.MyLocation,
                                         contentDescription = "Select Pickup on Map",
                                         tint = Color(0xFF15803D),
                                         modifier = Modifier.size(20.dp)
@@ -640,7 +640,7 @@ fun ParcelBookingScreen(
                                     modifier = Modifier.size(28.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Map,
+                                        imageVector = Icons.Default.MyLocation,
                                         contentDescription = "Select Drop on Map",
                                         tint = Color(0xFFDC2626), // Red
                                         modifier = Modifier.size(20.dp)

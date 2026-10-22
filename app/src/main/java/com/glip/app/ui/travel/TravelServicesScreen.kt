@@ -1,5 +1,6 @@
 package com.glip.app.ui.travel
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -21,12 +22,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.glip.app.domain.model.UserProfile
 import com.glip.app.ui.theme.GlipBrandYellow
+import com.glip.app.util.LocationTracker
 
 data class RentalVehicle(
     val id: String,
@@ -133,6 +137,262 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
 
 val SEAT_OPTIONS = listOf("All", "6 Seat", "7 Seat", "9 Seat", "12 Seat", "14 Seat", "20 Seat", "32 Seat")
 
+data class HubServiceItem(
+    val id: String,
+    val title: String,
+    val category: String,
+    val icon: ImageVector,
+    val iconColor: Color,
+    val backgroundColor: Color,
+    val description: String = "",
+    val startingPrice: String = ""
+)
+
+val ALL_HUB_SERVICES = listOf(
+    HubServiceItem(
+        id = "travel_outstation",
+        title = "Travel Services",
+        category = "Travel",
+        icon = Icons.Default.AirportShuttle,
+        iconColor = Color(0xFF8B5CF6),
+        backgroundColor = Color(0xFFF5F3FF),
+        description = "Outstation vehicle rental (Toofan, Mini Bus, Innova, Cruiser) across Chhattisgarh.",
+        startingPrice = "From ₹12/km"
+    ),
+    HubServiceItem(
+        id = "intercity_travels",
+        title = "Intercity Bus",
+        category = "Travel",
+        icon = Icons.Default.DirectionsBus,
+        iconColor = Color(0xFF0284C7),
+        backgroundColor = Color(0xFFF0F9FF),
+        description = "Express intercity bus routes connecting all major cities across CG.",
+        startingPrice = "From ₹150"
+    ),
+    HubServiceItem(
+        id = "ride_pooling",
+        title = "Daily Route Ride",
+        category = "Travel",
+        icon = Icons.Default.TwoWheeler,
+        iconColor = Color(0xFF15803D),
+        backgroundColor = Color(0xFFF0FDF4),
+        description = "Affordable daily commuter shared rides and pooling along common routes.",
+        startingPrice = "From ₹30"
+    ),
+    HubServiceItem(
+        id = "parcel_delivery",
+        title = "Parcel Delivery",
+        category = "Travel",
+        icon = Icons.Default.Inventory2,
+        iconColor = Color(0xFFEA580C),
+        backgroundColor = Color(0xFFFFF7ED),
+        description = "Same-day fast doorstep courier & document delivery across the city.",
+        startingPrice = "From ₹40"
+    ),
+    HubServiceItem(
+        id = "school_vehicle",
+        title = "School Vehicle",
+        category = "Travel",
+        icon = Icons.Default.DirectionsBus,
+        iconColor = Color(0xFFEAB308),
+        backgroundColor = Color(0xFFFEFCE8),
+        description = "Safe, verified daily school cab & van service with real-time GPS tracking.",
+        startingPrice = "Monthly passes"
+    ),
+    HubServiceItem(
+        id = "home_cleaning",
+        title = "Home Cleaning",
+        category = "Cleaning",
+        icon = Icons.Default.CleaningServices,
+        iconColor = Color(0xFF0284C7),
+        backgroundColor = Color(0xFFF0F9FF),
+        description = "Complete deep home cleaning, floor scrubbing & kitchen sanitization.",
+        startingPrice = "From ₹499"
+    ),
+    HubServiceItem(
+        id = "sofa_cleaning",
+        title = "Sofa & Carpet",
+        category = "Cleaning",
+        icon = Icons.Default.Weekend,
+        iconColor = Color(0xFFD97706),
+        backgroundColor = Color(0xFFFFFBEB),
+        description = "Shampooing, fabric stain removal & deep vacuuming for sofas and mattresses.",
+        startingPrice = "From ₹299"
+    ),
+    HubServiceItem(
+        id = "ac_repair",
+        title = "AC Repair & Service",
+        category = "Repairs",
+        icon = Icons.Default.AcUnit,
+        iconColor = Color(0xFF0891B2),
+        backgroundColor = Color(0xFFECFEFF),
+        description = "Gas refill, cooling check, jet pump foam wash & compressor diagnostics.",
+        startingPrice = "From ₹399"
+    ),
+    HubServiceItem(
+        id = "electrician",
+        title = "Electrician",
+        category = "Repairs",
+        icon = Icons.Default.ElectricBolt,
+        iconColor = Color(0xFFF59E0B),
+        backgroundColor = Color(0xFFFEF3C7),
+        description = "Wiring, switchboard, ceiling fan, MCB & home inverter fitting & repair.",
+        startingPrice = "From ₹149"
+    ),
+    HubServiceItem(
+        id = "plumber",
+        title = "Plumber",
+        category = "Repairs",
+        icon = Icons.Default.Plumbing,
+        iconColor = Color(0xFF4F46E5),
+        backgroundColor = Color(0xFFEEF2FF),
+        description = "Tap leakages, water motor repair, bathroom fittings & pipeline work.",
+        startingPrice = "From ₹149"
+    ),
+    HubServiceItem(
+        id = "carpenter",
+        title = "Carpenter",
+        category = "Repairs",
+        icon = Icons.Default.Build,
+        iconColor = Color(0xFFB45309),
+        backgroundColor = Color(0xFFFEF3C7),
+        description = "Door locks, cupboard handles, bed assembly, woodwork & hinges.",
+        startingPrice = "From ₹199"
+    ),
+    HubServiceItem(
+        id = "appliance_repair",
+        title = "Appliance Repair",
+        category = "Repairs",
+        icon = Icons.Default.HomeRepairService,
+        iconColor = Color(0xFF0D9488),
+        backgroundColor = Color(0xFFCCFBF1),
+        description = "Washing machine, refrigerator, microwave oven & geyser service.",
+        startingPrice = "From ₹249"
+    ),
+    HubServiceItem(
+        id = "painting_polish",
+        title = "Painting & Polish",
+        category = "Home",
+        icon = Icons.Default.FormatPaint,
+        iconColor = Color(0xFFEA580C),
+        backgroundColor = Color(0xFFFFEDD5),
+        description = "Interior & exterior wall painting, waterproof coating & wood polish.",
+        startingPrice = "Free Estimate"
+    ),
+    HubServiceItem(
+        id = "pest_control",
+        title = "Pest Control",
+        category = "Cleaning",
+        icon = Icons.Default.PestControl,
+        iconColor = Color(0xFFDC2626),
+        backgroundColor = Color(0xFFFEE2E2),
+        description = "Herbal & chemical control for termites, cockroaches, bedbugs & mosquitoes.",
+        startingPrice = "From ₹599"
+    ),
+    HubServiceItem(
+        id = "salon_women",
+        title = "Salon for Women",
+        category = "Personal",
+        icon = Icons.Default.Spa,
+        iconColor = Color(0xFFEC4899),
+        backgroundColor = Color(0xFFFCE7F3),
+        description = "At-home facials, waxing, threading, manicure, pedicure & hair treatments.",
+        startingPrice = "From ₹299"
+    ),
+    HubServiceItem(
+        id = "salon_men",
+        title = "Salon for Men",
+        category = "Personal",
+        icon = Icons.Default.ContentCut,
+        iconColor = Color(0xFF475569),
+        backgroundColor = Color(0xFFF1F5F9),
+        description = "Grooming, haircut, beard styling, head massage & facial at your doorstep.",
+        startingPrice = "From ₹199"
+    ),
+    HubServiceItem(
+        id = "car_wash",
+        title = "Car Wash",
+        category = "Vehicle",
+        icon = Icons.Default.LocalCarWash,
+        iconColor = Color(0xFF2563EB),
+        backgroundColor = Color(0xFFEFF6FF),
+        description = "High pressure water wash, interior vacuuming & dashboard polish.",
+        startingPrice = "From ₹249"
+    ),
+    HubServiceItem(
+        id = "bike_service",
+        title = "Bike Service",
+        category = "Vehicle",
+        icon = Icons.Default.TwoWheeler,
+        iconColor = Color(0xFF16A34A),
+        backgroundColor = Color(0xFFDCFCE7),
+        description = "Doorstep engine oil change, spark plug tuning, brake pad & chain lube.",
+        startingPrice = "From ₹199"
+    ),
+    HubServiceItem(
+        id = "ro_water",
+        title = "RO Purifier",
+        category = "Repairs",
+        icon = Icons.Default.WaterDrop,
+        iconColor = Color(0xFF0284C7),
+        backgroundColor = Color(0xFFE0F2FE),
+        description = "Water purifier filter change, TDS testing, pump repair & membrane flush.",
+        startingPrice = "From ₹299"
+    ),
+    HubServiceItem(
+        id = "packers_movers",
+        title = "Packers & Movers",
+        category = "Home",
+        icon = Icons.Default.LocalShipping,
+        iconColor = Color(0xFF7C3AED),
+        backgroundColor = Color(0xFFEDE9FE),
+        description = "Reliable household shifting, bubble wrapping & safe vehicle transport.",
+        startingPrice = "Instant Quote"
+    ),
+    HubServiceItem(
+        id = "cctv_security",
+        title = "CCTV Security",
+        category = "Home",
+        icon = Icons.Default.Videocam,
+        iconColor = Color(0xFF334155),
+        backgroundColor = Color(0xFFF8FAFC),
+        description = "Security camera setup, DVR configuration & mobile remote view setup.",
+        startingPrice = "From ₹499"
+    ),
+    HubServiceItem(
+        id = "laundry_service",
+        title = "Laundry & Dry Clean",
+        category = "Cleaning",
+        icon = Icons.Default.LocalLaundryService,
+        iconColor = Color(0xFF059669),
+        backgroundColor = Color(0xFFD1FAE5),
+        description = "Doorstep pickup, steam press, blanket dry cleaning & spotless wash.",
+        startingPrice = "From ₹79"
+    ),
+    HubServiceItem(
+        id = "gardening",
+        title = "Gardening",
+        category = "Home",
+        icon = Icons.Default.Yard,
+        iconColor = Color(0xFF15803D),
+        backgroundColor = Color(0xFFDCFCE7),
+        description = "Lawn mowing, tree trimming, seasonal pest spray & garden beautification.",
+        startingPrice = "From ₹349"
+    ),
+    HubServiceItem(
+        id = "masonry_work",
+        title = "Masonry & Tiles",
+        category = "Home",
+        icon = Icons.Default.Build,
+        iconColor = Color(0xFF9A3412),
+        backgroundColor = Color(0xFFFFEDD5),
+        description = "Tile fitting, brick repair, wall plastering & renovation civil work.",
+        startingPrice = "Free Visit"
+    )
+)
+
+val CATEGORY_CHIPS = listOf("All", "Travel", "Repairs", "Cleaning", "Home", "Personal", "Vehicle")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TravelServicesScreen(
@@ -140,24 +400,51 @@ fun TravelServicesScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val defaultName = userProfile?.fullName?.ifBlank { "Sameer" } ?: "Sameer"
     val defaultPhone = userProfile?.phoneNumber?.ifBlank { "9752304981" } ?: "9752304981"
 
+    // Navigation State: "DIRECTORY" (all 20+ services) or "VEHICLE_RENTAL" (Outstation travel)
+    var currentViewMode by remember { mutableStateOf("DIRECTORY") }
+
+    // Location state from LocationTracker: only the detected city name
+    val currentCityDetected by LocationTracker.currentCity.collectAsState()
+    val activeCity = currentCityDetected?.ifBlank { "Rajnandgaon" } ?: "Rajnandgaon"
+
+    // Directory Search & Filter state
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("All") }
+    var selectedServiceForBooking by remember { mutableStateOf<HubServiceItem?>(null) }
+    var showBookingDialog by remember { mutableStateOf(false) }
+
+    // Outstation Vehicle Rental State
     var pickupCity by remember { mutableStateOf("Rajnandgaon") }
     var travelCity by remember { mutableStateOf("Jagdalpur") }
-
     var isSelectingPickupCity by remember { mutableStateOf(false) }
     var isSelectingTravelCity by remember { mutableStateOf(false) }
-
     var selectedSeatFilter by remember { mutableStateOf("All") }
     var fuelAndMaintenanceIncluded by remember { mutableStateOf(true) }
-
     var hasSearched by remember { mutableStateOf(false) }
     var confirmedVehicle by remember { mutableStateOf<RentalVehicle?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
     BackHandler {
-        onNavigateBack()
+        if (currentViewMode == "VEHICLE_RENTAL") {
+            currentViewMode = "DIRECTORY"
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    val filteredServices = remember(searchQuery, selectedCategory) {
+        ALL_HUB_SERVICES.filter { service ->
+            val matchesCategory = (selectedCategory == "All" || service.category.equals(selectedCategory, ignoreCase = true))
+            val matchesQuery = searchQuery.isBlank() ||
+                    service.title.contains(searchQuery, ignoreCase = true) ||
+                    service.description.contains(searchQuery, ignoreCase = true) ||
+                    service.category.contains(searchQuery, ignoreCase = true)
+            matchesCategory && matchesQuery
+        }
     }
 
     val displayedVehicles = remember(selectedSeatFilter, hasSearched) {
@@ -174,20 +461,26 @@ fun TravelServicesScreen(
                 title = {
                     Column {
                         Text(
-                            text = "Travel Services",
+                            text = if (currentViewMode == "VEHICLE_RENTAL") "Travel Services" else "All Services Directory",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F172A)
                         )
                         Text(
-                            text = "Outstation vehicle rental across Chhattisgarh",
+                            text = if (currentViewMode == "VEHICLE_RENTAL") "Outstation vehicle rental across CG" else "Verified home & travel services in $activeCity",
                             fontSize = 12.sp,
                             color = Color(0xFF64748B)
                         )
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = {
+                        if (currentViewMode == "VEHICLE_RENTAL") {
+                            currentViewMode = "DIRECTORY"
+                        } else {
+                            onNavigateBack()
+                        }
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -202,361 +495,615 @@ fun TravelServicesScreen(
         },
         modifier = modifier.fillMaxSize()
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(Color(0xFFF8FAFC)),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        if (currentViewMode == "DIRECTORY") {
             // ==========================================
-            // SEARCH BOX (Horizontal Layout as requested)
+            // ALL 20+ SERVICES DIRECTORY SCREEN
             // ==========================================
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(2.dp),
-                    border = BorderStroke(1.dp, Color(0xFFE2E8F0))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Vehicle Search & Route",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
-                        )
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Horizontal Box: Pickup City | Switch | Travel City
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(14.dp),
-                            color = Color(0xFFF8FAFC),
-                            border = BorderStroke(1.dp, Color(0xFFCBD5E1))
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // 1. Pickup City
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable { isSelectingPickupCity = true }
-                                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .clip(CircleShape)
-                                                .background(Color(0xFF15803D))
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = "Pickup City",
-                                            fontSize = 11.sp,
-                                            color = Color(0xFF64748B)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = pickupCity,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0F172A),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-
-                                // 2. Switch Button in between
-                                Surface(
-                                    shape = CircleShape,
-                                    color = Color.White,
-                                    border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
-                                    shadowElevation = 2.dp,
-                                    modifier = Modifier.clickable {
-                                        val temp = pickupCity
-                                        pickupCity = travelCity
-                                        travelCity = temp
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.SwapHoriz,
-                                        contentDescription = "Switch Cities",
-                                        tint = Color(0xFF0F172A),
-                                        modifier = Modifier
-                                            .padding(6.dp)
-                                            .size(20.dp)
-                                    )
-                                }
-
-                                // 3. Travel City
-                                Column(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .clickable { isSelectingTravelCity = true }
-                                        .padding(horizontal = 8.dp, vertical = 6.dp)
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .clip(CircleShape)
-                                                .background(Color(0xFFDC2626))
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = "Travel City",
-                                            fontSize = 11.sp,
-                                            color = Color(0xFF64748B)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = travelCity,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF0F172A),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Seat capacity selector (Kitna seat ke liye)
-                        Text(
-                            text = "Required Seats",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color(0xFF475569)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(SEAT_OPTIONS) { seatOpt ->
-                                val isSelected = seatOpt == selectedSeatFilter
-                                Surface(
-                                    shape = RoundedCornerShape(16.dp),
-                                    color = if (isSelected) GlipBrandYellow else Color(0xFFF1F5F9),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        if (isSelected) GlipBrandYellow else Color(0xFFE2E8F0)
-                                    ),
-                                    modifier = Modifier.clickable { selectedSeatFilter = seatOpt }
-                                ) {
-                                    Text(
-                                        text = seatOpt,
-                                        fontSize = 12.sp,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isSelected) Color(0xFF0F172A) else Color(0xFF334155),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Fuel and maintenance cost CheckBox
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    fuelAndMaintenanceIncluded = !fuelAndMaintenanceIncluded
-                                }
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Checkbox(
-                                checked = fuelAndMaintenanceIncluded,
-                                onCheckedChange = { fuelAndMaintenanceIncluded = it },
-                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFF0F172A))
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = "Fuel & Maintenance cost included",
-                                    fontSize = 13.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(0xFF0F172A)
-                                )
-                                Text(
-                                    text = "All toll, driver allowance & fuel calculated",
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF64748B)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(18.dp))
-
-                        // Search Button
-                        Button(
-                            onClick = {
-                                hasSearched = true
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(50.dp),
-                            shape = RoundedCornerShape(25.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = GlipBrandYellow,
-                                contentColor = Color(0xFF0F172A)
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(2.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                                tint = Color(0xFF0F172A),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Search Vehicles",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
-                            )
-                        }
-                    }
-                }
-            }
-
-            // ==========================================
-            // SEARCH RESULTS (Vehicle Boxes with Demo Photos & Arrow)
-            // ==========================================
-            if (hasSearched) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(Color(0xFFF8FAFC)),
+                contentPadding = PaddingValues(14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // 1. LOCATION HEADER: Displays ONLY City Name detected from GPS
                 item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp, bottom = 2.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Available Vehicles (${displayedVehicles.size})",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
-                        )
-                        Text(
-                            text = "$pickupCity → $travelCity",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF64748B)
-                        )
-                    }
-                }
-
-                items(displayedVehicles) { vehicle ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                confirmedVehicle = vehicle
-                                showConfirmDialog = true
-                            },
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(2.dp),
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color.White,
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        shadowElevation = 1.dp
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(14.dp),
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Demo Vehicle Graphic / Photo Box
                             Box(
                                 modifier = Modifier
-                                    .size(72.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(vehicle.badgeColor),
+                                    .size(34.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFDCFCE7)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(
-                                        imageVector = vehicle.icon,
-                                        contentDescription = vehicle.name,
-                                        tint = vehicle.iconColor,
-                                        modifier = Modifier.size(34.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = "PHOTO",
-                                        fontSize = 9.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = vehicle.iconColor
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.MyLocation,
+                                    contentDescription = "Current City",
+                                    tint = Color(0xFF15803D),
+                                    modifier = Modifier.size(18.dp)
+                                )
                             }
 
-                            Spacer(modifier = Modifier.width(14.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
 
-                            // Vehicle Details
                             Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Your Current Location (City)",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF64748B),
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(1.dp))
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Text(
-                                        text = "${vehicle.name}, ${vehicle.seatCapacity}",
+                                        text = activeCity,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF0F172A)
                                     )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = Color(0xFFDCFCE7)
+                                    ) {
+                                        Text(
+                                            text = "GPS ON",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF15803D),
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                        )
+                                    }
                                 }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = vehicle.tag,
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF0284C7)
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = vehicle.features,
-                                    fontSize = 11.sp,
-                                    color = Color(0xFF64748B)
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "${vehicle.ratePerKm} • ${if (fuelAndMaintenanceIncluded) "Fuel Included" else "Standard Rate"}",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF15803D)
-                                )
                             }
 
-                            // Side Arrow (As requested: "or side me arrow")
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .background(Color(0xFFF1F5F9)),
-                                contentAlignment = Alignment.Center
+                            IconButton(
+                                onClick = {
+                                    LocationTracker.refreshLocation(context)
+                                    Toast.makeText(context, "GPS refreshed: $activeCity", Toast.LENGTH_SHORT).show()
+                                },
+                                modifier = Modifier.size(32.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "Select",
-                                    tint = Color(0xFF0F172A),
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Refresh GPS",
+                                    tint = Color(0xFF475569),
                                     modifier = Modifier.size(18.dp)
                                 )
+                            }
+                        }
+                    }
+                }
+
+                // 2. SEARCH BAR: Live search input for services
+                item {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = {
+                            Text(
+                                text = "Search services (e.g. Cleaning, Repair, Taxi)...",
+                                fontSize = 13.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = Color(0xFF64748B),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear",
+                                        tint = Color(0xFF64748B),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedBorderColor = Color(0xFF0284C7),
+                            unfocusedBorderColor = Color(0xFFCBD5E1)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // 3. CATEGORY FILTER CHIPS
+                item {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(CATEGORY_CHIPS) { category ->
+                            val isSelected = category == selectedCategory
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (isSelected) Color(0xFF0F172A) else Color.White,
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isSelected) Color(0xFF0F172A) else Color(0xFFE2E8F0)
+                                ),
+                                shadowElevation = if (isSelected) 2.dp else 0.dp,
+                                modifier = Modifier.clickable { selectedCategory = category }
+                            ) {
+                                Text(
+                                    text = category,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else Color(0xFF475569),
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 4. SECTION TITLE & SERVICE COUNT
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 2.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Available Services (${filteredServices.size})",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "City: $activeCity",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF15803D)
+                        )
+                    }
+                }
+
+                // 5. COMPACT SERVICES GRID (3 boxes per row, compact size as requested: 'In Sab ke box ka size chota rakh na')
+                val chunkedServices = filteredServices.chunked(3)
+                items(chunkedServices) { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        rowItems.forEach { service ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                CompactServiceTile(
+                                    item = service,
+                                    onClick = {
+                                        if (service.id == "travel_outstation") {
+                                            currentViewMode = "VEHICLE_RENTAL"
+                                        } else {
+                                            selectedServiceForBooking = service
+                                            showBookingDialog = true
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                        // Fill empty slots in the last row to maintain grid alignment
+                        val emptySlots = 3 - rowItems.size
+                        repeat(emptySlots) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(20.dp))
+                }
+            }
+        } else {
+            // ==========================================
+            // VEHICLE RENTAL FLOW (Outstation Travel)
+            // ==========================================
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .background(Color(0xFFF8FAFC)),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Back to Directory banner
+                item {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { currentViewMode = "DIRECTORY" },
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFEEF2FF),
+                        border = BorderStroke(1.dp, Color(0xFFC7D2FE))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color(0xFF4F46E5),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Back to All Services Directory",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF4F46E5)
+                            )
+                        }
+                    }
+                }
+
+                // Vehicle Search Card
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        elevation = CardDefaults.cardElevation(2.dp),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Outstation Vehicle Search & Route",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Horizontal Box: Pickup City | Switch | Travel City
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFF8FAFC),
+                                border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // 1. Pickup City
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable { isSelectingPickupCity = true }
+                                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF15803D))
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "Pickup City",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF64748B)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = pickupCity,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0F172A),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    // 2. Switch Button in between
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = Color.White,
+                                        border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
+                                        shadowElevation = 2.dp,
+                                        modifier = Modifier.clickable {
+                                            val temp = pickupCity
+                                            pickupCity = travelCity
+                                            travelCity = temp
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.SwapHoriz,
+                                            contentDescription = "Switch Cities",
+                                            tint = Color(0xFF0F172A),
+                                            modifier = Modifier
+                                                .padding(6.dp)
+                                                .size(20.dp)
+                                        )
+                                    }
+
+                                    // 3. Travel City
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable { isSelectingTravelCity = true }
+                                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(8.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFFDC2626))
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "Travel City",
+                                                fontSize = 11.sp,
+                                                color = Color(0xFF64748B)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = travelCity,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0F172A),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Seat capacity selector
+                            Text(
+                                text = "Required Seats",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF475569)
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(SEAT_OPTIONS) { seatOpt ->
+                                    val isSelected = seatOpt == selectedSeatFilter
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = if (isSelected) GlipBrandYellow else Color(0xFFF1F5F9),
+                                        border = BorderStroke(
+                                            1.dp,
+                                            if (isSelected) GlipBrandYellow else Color(0xFFE2E8F0)
+                                        ),
+                                        modifier = Modifier.clickable { selectedSeatFilter = seatOpt }
+                                    ) {
+                                        Text(
+                                            text = seatOpt,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) Color(0xFF0F172A) else Color(0xFF334155),
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Fuel & maintenance checkbox
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        fuelAndMaintenanceIncluded = !fuelAndMaintenanceIncluded
+                                    }
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Checkbox(
+                                    checked = fuelAndMaintenanceIncluded,
+                                    onCheckedChange = { fuelAndMaintenanceIncluded = it },
+                                    colors = CheckboxDefaults.colors(checkedColor = Color(0xFF0F172A))
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "Fuel & Maintenance cost included",
+                                        fontSize = 13.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF0F172A)
+                                    )
+                                    Text(
+                                        text = "All toll, driver allowance & fuel calculated",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(18.dp))
+
+                            // Search Button
+                            Button(
+                                onClick = {
+                                    hasSearched = true
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp),
+                                shape = RoundedCornerShape(25.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = GlipBrandYellow,
+                                    contentColor = Color(0xFF0F172A)
+                                ),
+                                elevation = ButtonDefaults.buttonElevation(2.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = Color(0xFF0F172A),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Search Vehicles",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Results
+                if (hasSearched) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 4.dp, bottom = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Available Vehicles (${displayedVehicles.size})",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F172A)
+                            )
+                            Text(
+                                text = "$pickupCity → $travelCity",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF64748B)
+                            )
+                        }
+                    }
+
+                    items(displayedVehicles) { vehicle ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    confirmedVehicle = vehicle
+                                    showConfirmDialog = true
+                                },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(2.dp),
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(72.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(vehicle.badgeColor),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            imageVector = vehicle.icon,
+                                            contentDescription = vehicle.name,
+                                            tint = vehicle.iconColor,
+                                            modifier = Modifier.size(34.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "PHOTO",
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = vehicle.iconColor
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(14.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = "${vehicle.name}, ${vehicle.seatCapacity}",
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0F172A)
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = vehicle.tag,
+                                        fontSize = 11.5.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color(0xFF0284C7)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = vehicle.features,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "${vehicle.ratePerKm} • ${if (fuelAndMaintenanceIncluded) "Fuel Included" else "Standard Rate"}",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF15803D)
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFF1F5F9)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = "Select",
+                                        tint = Color(0xFF0F172A),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -565,7 +1112,145 @@ fun TravelServicesScreen(
         }
     }
 
-    // City Selection Bottom Sheets
+    // Service Details / Booking Dialog
+    if (showBookingDialog && selectedServiceForBooking != null) {
+        val srv = selectedServiceForBooking!!
+        AlertDialog(
+            onDismissRequest = {
+                showBookingDialog = false
+                selectedServiceForBooking = null
+            },
+            icon = {
+                Box(
+                    modifier = Modifier
+                        .size(54.dp)
+                        .clip(CircleShape)
+                        .background(srv.backgroundColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = srv.icon,
+                        contentDescription = srv.title,
+                        tint = srv.iconColor,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            },
+            title = {
+                Text(
+                    text = srv.title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A),
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = srv.description,
+                        fontSize = 13.5.sp,
+                        color = Color(0xFF475569),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = "Service Area:", fontSize = 12.sp, color = Color(0xFF64748B))
+                                Text(
+                                    text = "$activeCity & nearby",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = "Starting Price:", fontSize = 12.sp, color = Color(0xFF64748B))
+                                Text(
+                                    text = srv.startingPrice,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF15803D)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(text = "Warranty:", fontSize = 12.sp, color = Color(0xFF64748B))
+                                Text(
+                                    text = "30 Days Protection",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0284C7)
+                                )
+                            }
+                        }
+                    }
+
+                    Text(
+                        text = "Verified professional technician will arrive at your location.",
+                        fontSize = 11.5.sp,
+                        color = Color(0xFF64748B),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showBookingDialog = false
+                        Toast.makeText(context, "Request received for ${srv.title} in $activeCity! Team will call you shortly.", Toast.LENGTH_LONG).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GlipBrandYellow,
+                        contentColor = Color(0xFF0F172A)
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Book Service Now",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF0F172A)
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showBookingDialog = false
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Cancel",
+                        color = Color(0xFF64748B),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        )
+    }
+
+    // City Selection Bottom Sheets for Outstation Rental
     if (isSelectingPickupCity) {
         CitySelectionBottomSheet(
             title = "Select Pickup City",
@@ -584,7 +1269,7 @@ fun TravelServicesScreen(
         )
     }
 
-    // Confirmation Pop-up Dialog (As requested: "or in vehicle me click karne par pop aaye (book confirm)")
+    // Vehicle Booking Confirmation Dialog
     if (showConfirmDialog && confirmedVehicle != null) {
         AlertDialog(
             onDismissRequest = {
@@ -725,5 +1410,62 @@ fun TravelServicesScreen(
                 }
             }
         )
+    }
+}
+
+/**
+ * Compact service card matching the outer services style ('same Box jaise bahr hai'),
+ * with a smaller, compact footprint ('In Sab ke box ka size chota rakh na').
+ */
+@Composable
+fun CompactServiceTile(
+    item: HubServiceItem,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(98.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
+        border = BorderStroke(0.8.dp, Color(0xFFE2E8F0))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 6.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(CircleShape)
+                    .background(item.backgroundColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = item.title,
+                    tint = item.iconColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = item.title,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1E293B),
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                lineHeight = 13.sp
+            )
+        }
     }
 }
