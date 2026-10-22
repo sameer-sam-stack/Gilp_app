@@ -118,6 +118,11 @@ fun HomeScreen(
     var isPickupSelected by remember(pickup, pickupCoordinates) {
         mutableStateOf(pickup.isNotBlank() || pickupCoordinates != null)
     }
+
+    var isDropSelected by remember(drop, dropCoordinates) {
+        mutableStateOf(drop.isNotBlank() || dropCoordinates != null)
+    }
+
     // Hardware back button returns to clean home screen when rating is shown
     BackHandler(enabled = uiState.rideBookingStatus == "COMPLETED") {
         drop = ""
@@ -125,10 +130,6 @@ fun HomeScreen(
         isDropSelected = false
         viewModel.resetHomeAfterRideCompleted()
         onResetHome()
-    }
-
-    var isDropSelected by remember(drop, dropCoordinates) {
-        mutableStateOf(drop.isNotBlank() || dropCoordinates != null)
     }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -1783,8 +1784,10 @@ fun DriverRatingCard(
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF0F172A)
                     )
+                    val plate = driver?.licensePlateMasked ?: "DL 01"
+                    val catName = driver?.category?.displayName ?: "Vehicle"
                     Text(
-                        text = "${driver?.licensePlateMasked ?: \"DL 01\"} • ${driver?.category?.displayName ?: \"Vehicle\"}",
+                        text = "$plate • $catName",
                         fontSize = 12.sp,
                         color = Color(0xFF64748B)
                     )

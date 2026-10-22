@@ -1,13 +1,13 @@
 package com.glip.app.domain.model
 
-enum class VehicleCategory {
-    AUTO_RICKSHAW,
-    MINI_CAR,
-    SEDAN,
-    SUV,
-    VAN,
-    E_RICKSHAW,
-    BIKE
+enum class VehicleCategory(val displayName: String = "") {
+    AUTO_RICKSHAW("Auto"),
+    MINI_CAR("Mini Car"),
+    SEDAN("Sedan"),
+    SUV("SUV"),
+    VAN("Van"),
+    E_RICKSHAW("E-Rickshaw"),
+    BIKE("Bike")
 }
 
 enum class RouteStatus {
