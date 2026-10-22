@@ -12,8 +12,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -482,7 +480,7 @@ fun TravelServicesScreen(
                         }
                     }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
                             tint = Color(0xFF0F172A)
                         )
@@ -747,7 +745,7 @@ fun TravelServicesScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                imageVector = Icons.Default.ArrowBack,
                                 contentDescription = "Back",
                                 tint = Color(0xFF4F46E5),
                                 modifier = Modifier.size(16.dp)
@@ -1098,7 +1096,7 @@ fun TravelServicesScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        imageVector = Icons.Default.ArrowForward,
                                         contentDescription = "Select",
                                         tint = Color(0xFF0F172A),
                                         modifier = Modifier.size(18.dp)

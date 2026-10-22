@@ -1216,7 +1216,7 @@ fun PersonalRideOptionsCard(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
                             tint = Color(0xFF0F172A),
                             modifier = Modifier.size(14.dp)
