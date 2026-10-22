@@ -95,9 +95,18 @@ object LocationTracker {
                     val displayName = json.optString("display_name")
                     val parts = displayName.split(",")
                     val addressObj = json.optJSONObject("address")
-                    val detectedCity = addressObj?.optString("city")?.ifBlank { addressObj.optString("town") }?.ifBlank { addressObj.optString("county") }?.ifBlank { addressObj.optString("state_district") }
-                    if (!detectedCity.isNullOrBlank()) {
-                        _currentCity.value = detectedCity
+                    if (addressObj != null) {
+                        val cityCandidate = listOf(
+                            addressObj.optString("city"),
+                            addressObj.optString("town"),
+                            addressObj.optString("village"),
+                            addressObj.optString("municipality"),
+                            addressObj.optString("county"),
+                            addressObj.optString("state_district")
+                        ).firstOrNull { it.isNotBlank() }
+                        if (!cityCandidate.isNullOrBlank()) {
+                            _currentCity.value = cityCandidate
+                        }
                     }
                     val readable = if (name.isNotBlank()) name else parts.take(2).joinToString(",").trim()
                     if (readable.isNotBlank()) {
