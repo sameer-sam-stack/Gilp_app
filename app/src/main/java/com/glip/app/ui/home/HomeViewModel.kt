@@ -946,7 +946,11 @@ class HomeViewModel(
                 driverPhone = activeRide.driverPhone ?: ""
             )
 
-            val passengerGeoPoints = if (pLat != 0.0 && dLat != 0.0) {
+            val roadRes = if (pLat != 0.0 && dLat != 0.0) {
+                OsrmRoutingHelper.fetchRoadRoute(pLat, pLng, dLat, dLng)
+            } else null
+
+            val passengerGeoPoints = roadRes?.points ?: if (pLat != 0.0 && dLat != 0.0) {
                 listOf(GeoPoint(pLat, pLng), GeoPoint(dLat, dLng))
             } else emptyList()
 

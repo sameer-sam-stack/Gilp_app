@@ -35,6 +35,7 @@ import com.glip.app.ui.theme.GlipGreenPrimary
 import com.glip.app.ui.map.MapStyles
 import com.glip.app.ui.map.GlipLocationOverlay
 import com.glip.app.util.LocationTracker
+import com.glip.app.util.OsrmRoutingHelper
 import org.osmdroid.config.Configuration
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -71,6 +72,32 @@ fun InteractiveDemoMap(
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
     var lastZoomedBookingStatus by remember { mutableStateOf("NONE") }
     var lastFramedTripKey by remember { mutableStateOf<String?>(null) }
+    var liveRoadRoutePoints by remember { mutableStateOf<List<GeoPoint>>(emptyList()) }
+
+    // Fetch and snap turn-by-turn road route following real streets, turns and galis via OSRM
+    LaunchedEffect(pickupGeoPoint, dropGeoPoint, passengerRoutePoints) {
+        if (passengerRoutePoints.size > 2) {
+            liveRoadRoutePoints = passengerRoutePoints
+            mapViewRef?.invalidate()
+        } else if (pickupGeoPoint != null && dropGeoPoint != null) {
+            val p = pickupGeoPoint
+            val d = dropGeoPoint
+            val roadResult = OsrmRoutingHelper.fetchRoadRoute(
+                originLat = p.latitude,
+                originLng = p.longitude,
+                destLat = d.latitude,
+                destLng = d.longitude
+            )
+            if (roadResult != null && roadResult.points.size > 1) {
+                liveRoadRoutePoints = roadResult.points
+                mapViewRef?.invalidate()
+            } else if (passengerRoutePoints.isNotEmpty()) {
+                liveRoadRoutePoints = passengerRoutePoints
+            }
+        } else {
+            liveRoadRoutePoints = passengerRoutePoints
+        }
+    }
 
     // Auto-frame Pickup & Drop pins when trip route is loaded, so both points are visible to user
     LaunchedEffect(pickupGeoPoint, dropGeoPoint, mapViewRef) {
@@ -222,8 +249,9 @@ fun InteractiveDemoMap(
                         view.overlays.add(overlay)
                     }
 
-                    // 2. Render Polylines: Only show passenger's own pickup-to-drop polyline!
-                    if (passengerRoutePoints.isNotEmpty()) {
+                    // 2. Render Polylines: Only show passenger's own pickup-to-drop road polyline!
+                    val pointsToDraw = if (liveRoadRoutePoints.isNotEmpty()) liveRoadRoutePoints else passengerRoutePoints
+                    if (pointsToDraw.isNotEmpty()) {
                         // Passenger's Chosen Trip Polyline: Dark casing line + Vibrant Emerald Core Line
                         val casingLine = Polyline(view).apply {
                             outlinePaint.color = android.graphics.Color.parseColor("#0F172A")
@@ -231,7 +259,7 @@ fun InteractiveDemoMap(
                             outlinePaint.strokeCap = Paint.Cap.ROUND
                             outlinePaint.strokeJoin = Paint.Join.ROUND
                             outlinePaint.isAntiAlias = true
-                            setPoints(passengerRoutePoints)
+                            setPoints(pointsToDraw)
                         }
                         view.overlays.add(casingLine)
 
@@ -241,7 +269,7 @@ fun InteractiveDemoMap(
                             outlinePaint.strokeCap = Paint.Cap.ROUND
                             outlinePaint.strokeJoin = Paint.Join.ROUND
                             outlinePaint.isAntiAlias = true
-                            setPoints(passengerRoutePoints)
+                            setPoints(pointsToDraw)
                         }
                         view.overlays.add(coreLine)
 
