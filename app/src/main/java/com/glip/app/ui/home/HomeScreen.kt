@@ -1048,7 +1048,7 @@ fun HomeScreen(
                 onCancel = { viewModel.cancelCurrentRide() }
             )
         } else {
-            val isSearchingRoute = uiState.isSearchingRouteVehicles && uiState.filteredVehicles.isEmpty()
+            val isSearchingRoute = uiState.isSearchingRouteVehicles
             val isPersonalMode = uiState.isPersonalRideMode || (!uiState.isSearchingRouteVehicles && uiState.filteredVehicles.isEmpty())
 
             if (isSearchingRoute) {

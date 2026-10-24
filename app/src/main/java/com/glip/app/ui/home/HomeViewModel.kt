@@ -143,11 +143,13 @@ class HomeViewModel(
 
         // 120-second (2 minutes) search countdown: Look for live drivers heading along the passenger's route
         routeSearchTimerJob = viewModelScope.launch {
+            var elapsedSeconds = 0
             for (sec in 120 downTo 1) {
                 _uiState.update { it.copy(routeSearchSecondsRemaining = sec) }
                 delay(1000L)
-                // If a vehicle matched along the route, cancel countdown
-                if (_uiState.value.filteredVehicles.isNotEmpty()) {
+                elapsedSeconds++
+                // Wait at least 8 seconds before auto-transitioning (so user always sees the scanning card)
+                if (elapsedSeconds >= 8 && _uiState.value.filteredVehicles.isNotEmpty()) {
                     _uiState.update {
                         it.copy(
                             isSearchingRouteVehicles = false,
