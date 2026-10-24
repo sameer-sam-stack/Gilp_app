@@ -410,6 +410,15 @@ class HomeViewModel(
                 Log.w(TAG, "Error querying real drivers from Supabase: ${e.message}")
             }
 
+            // High-Occupancy Optimization (Fill most-occupied vehicle first):
+            // Prioritize the vehicle whose seats are closest to being full (fewest available seats > 0).
+            // Once a vehicle is full (availableSeats <= 0), it is excluded.
+            // If available seats are equal, prioritize the vehicle closer to pickup (lower etaMinutes).
+            matchedVehicles.sortWith(
+                compareBy<Vehicle> { it.seatAvailability.availableSeats }
+                    .thenBy { it.etaMinutes }
+            )
+
             val distKm = _uiState.value.tripDistanceKm
             val freshPersonalOpts = if (distKm > 0.0) {
                 FareCalculationEngine.getPersonalOptions(
@@ -434,7 +443,7 @@ class HomeViewModel(
                     personalOptions = freshPersonalOpts,
                     selectedPersonalOption = updatedSelectedPersonal,
                     isLoading = false,
-                    selectedVehicle = it.selectedVehicle?.takeIf { sel -> matchedVehicles.any { v -> v.vehicleId == sel.vehicleId } } ?: matchedVehicles.firstOrNull()
+                    selectedVehicle = it.selectedVehicle?.takeIf { sel -> matchedVehicles.any { v -> v.vehicleId == sel.vehicleId && v.seatAvailability.availableSeats > 0 } } ?: matchedVehicles.firstOrNull()
                 )
             }
         }
