@@ -1746,7 +1746,7 @@ fun DriverRatingCard(
     onSubmitRating: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedRating by remember { mutableIntStateOf(5) }
+    var selectedRating by remember { mutableIntStateOf(0) }
 
     Card(
         modifier = modifier
@@ -1873,10 +1873,11 @@ fun DriverRatingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 for (star in 1..5) {
-                    val isSelected = star <= selectedRating
+                    val isSelected = selectedRating > 0 && star <= selectedRating
                     Surface(
                         shape = CircleShape,
-                        color = if (isSelected) Color(0xFFFEF3C7) else Color(0xFFF1F5F9),
+                        color = if (isSelected) Color(0xFFFEF3C7) else Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, if (isSelected) Color(0xFFF59E0B) else Color(0xFFE2E8F0)),
                         modifier = Modifier
                             .size(38.dp)
                             .clickable { selectedRating = star }
@@ -1897,7 +1898,7 @@ fun DriverRatingCard(
 
             // Submit Arrow button (Arrow icon so user feels rating is sent smoothly)
             Button(
-                onClick = { onSubmitRating(selectedRating) },
+                onClick = { onSubmitRating(if (selectedRating == 0) 5 else selectedRating) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(44.dp),
