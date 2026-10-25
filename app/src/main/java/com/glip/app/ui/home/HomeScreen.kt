@@ -1,12 +1,14 @@
 package com.glip.app.ui.home
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.glip.app.util.GpsPromptHelper
 import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -132,12 +134,30 @@ fun HomeScreen(
         onResetHome()
     }
 
+    val activity = context as? Activity
+    val gpsResolutionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            LocationTracker.refreshLocation(context) { loc ->
+                if (pickup.isBlank() || pickup == "Detecting your location...") {
+                    pickupCoordinates = Pair(loc.latitude, loc.longitude)
+                    pickup = LocationTracker.currentAddress.value ?: "Current Location"
+                    isPickupSelected = true
+                }
+            }
+        }
+    }
+
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
         val granted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                       perms[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (granted) {
+            if (!LocationTracker.isGpsEnabled(context) && activity != null) {
+                GpsPromptHelper.requestEnableGps(activity, gpsResolutionLauncher)
+            }
             LocationTracker.refreshLocation(context) { loc ->
                 if (pickup.isBlank()) {
                     pickupCoordinates = Pair(loc.latitude, loc.longitude)
@@ -153,6 +173,9 @@ fun HomeScreen(
         val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
         if (fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED) {
+            if (!LocationTracker.isGpsEnabled(context) && activity != null) {
+                GpsPromptHelper.requestEnableGps(activity, gpsResolutionLauncher)
+            }
             LocationTracker.refreshLocation(context) { loc ->
                 if (pickup.isBlank()) {
                     pickupCoordinates = Pair(loc.latitude, loc.longitude)
@@ -504,6 +527,9 @@ fun HomeScreen(
                                         arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
                                     )
                                     return@PlaceAutocompleteDropdown
+                                }
+                                if (!LocationTracker.isGpsEnabled(context) && activity != null) {
+                                    GpsPromptHelper.requestEnableGps(activity, gpsResolutionLauncher)
                                 }
                                 val curCoords = LocationTracker.currentCoordinates.value
                                 val curAddr = LocationTracker.currentAddress.value

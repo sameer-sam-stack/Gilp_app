@@ -61,13 +61,11 @@ object LocationTracker {
     }
 
     fun promptEnableGps(context: Context) {
-        try {
-            val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error opening location settings", e)
+        val activity = context as? android.app.Activity
+        if (activity != null) {
+            GpsPromptHelper.requestEnableGps(activity)
+        } else {
+            GpsPromptHelper.openSettingsFallback(context)
         }
     }
 

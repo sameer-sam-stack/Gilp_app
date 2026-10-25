@@ -107,4 +107,5 @@ dependencies {
 
   // Real OpenStreetMap (OSM) via osmdroid (Open Source, Royalty-Free)
   implementation(libs.osmdroid.android)
+  implementation("com.google.android.gms:play-services-location:21.2.0")
 }

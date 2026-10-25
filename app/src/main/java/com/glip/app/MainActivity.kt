@@ -16,12 +16,21 @@ import com.glip.app.ads.AdManager
 import com.glip.app.data.local.DemoProfilePreferences
 import com.glip.app.navigation.AppNavigation
 import com.glip.app.ui.theme.GlipTheme
+import com.glip.app.util.GpsPromptHelper
 import com.glip.app.util.LocationTracker
 
 class MainActivity : ComponentActivity() {
 
     private val demoPreferences by lazy {
         DemoProfilePreferences(applicationContext)
+    }
+
+    private val gpsResolutionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            LocationTracker.refreshLocation(this)
+        }
     }
 
     private val locationPermissionLauncher = registerForActivityResult(
@@ -31,7 +40,7 @@ class MainActivity : ComponentActivity() {
         val coarseGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (fineGranted || coarseGranted) {
             if (!LocationTracker.isGpsEnabled(this)) {
-                LocationTracker.promptEnableGps(this)
+                GpsPromptHelper.requestEnableGps(this, gpsResolutionLauncher)
             }
             LocationTracker.refreshLocation(this)
         }
@@ -85,7 +94,7 @@ class MainActivity : ComponentActivity() {
             locationPermissionLauncher.launch(perms)
         } else {
             if (!LocationTracker.isGpsEnabled(this)) {
-                LocationTracker.promptEnableGps(this)
+                GpsPromptHelper.requestEnableGps(this, gpsResolutionLauncher)
             }
             LocationTracker.refreshLocation(this)
         }

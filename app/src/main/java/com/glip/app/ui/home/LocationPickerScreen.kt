@@ -1,6 +1,10 @@
 package com.glip.app.ui.home
 
+import android.app.Activity
 import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.glip.app.util.GpsPromptHelper
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -92,6 +96,18 @@ fun LocationPickerScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val activity = context as? Activity
+    val gpsResolutionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            LocationTracker.refreshLocation(context) { loc ->
+                centerLat = loc.latitude
+                centerLng = loc.longitude
+                mapViewRef?.controller?.animateTo(GeoPoint(loc.latitude, loc.longitude))
+            }
+        }
+    }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
@@ -533,6 +549,9 @@ fun LocationPickerScreen(
                         .size(46.dp)
                 ) {
                     IconButton(onClick = {
+                        if (!LocationTracker.isGpsEnabled(context) && activity != null) {
+                            GpsPromptHelper.requestEnableGps(activity, gpsResolutionLauncher)
+                        }
                         val cachedCoords = LocationTracker.currentCoordinates.value
                         if (cachedCoords != null) {
                             mapViewRef?.controller?.animateTo(GeoPoint(cachedCoords.first, cachedCoords.second))
