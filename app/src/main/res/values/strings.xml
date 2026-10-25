@@ -1,10 +1,10 @@
 <resources>
-    <string name="app_name">Glip</string>
+    <string name="app_name">Haze</string>
     <string name="tagline">Smart Local Mobility &amp; Route Sharing</string>
-    <string name="demo_notice_badge">Glip</string>
+    <string name="demo_notice_badge">Haze</string>
 
     <!-- Registration -->
-    <string name="register_title">Welcome to Glip</string>
+    <string name="register_title">Welcome to Haze</string>
     <string name="register_subtitle">Discover empty seats along your daily route. Safe, affordable &amp; local.</string>
     <string name="full_name_label">Full Name</string>
     <string name="full_name_hint">e.g. Ramesh Kumar</string>
@@ -27,10 +27,10 @@
     <string name="nav_profile">Profile</string>
 
     <!-- Home & Map -->
-    <string name="map_legend_title">Simulated Demo Area (Delhi NCR)</string>
-    <string name="map_legend_subtitle">Vehicles &amp; routes shown are mock simulations. Live vehicle tracking is not connected yet.</string>
+    <string name="map_legend_title">Live Service Area</string>
+    <string name="map_legend_subtitle">Live vehicle tracking &amp; route sharing active.</string>
     <string name="map_fallback_title">Interactive Route Map</string>
-    <string name="map_fallback_description">Showing simulated vehicles currently sharing seats on active corridors.</string>
+    <string name="map_fallback_description">Showing active vehicles currently sharing seats on corridors.</string>
     <string name="recenter_map">Recenter Map</string>
     <string name="seats_available">Seats Available</string>
     <string name="sample_fare_est">Est. ₹%s/km</string>
@@ -46,16 +46,16 @@
     <string name="service_shops_title">Local Shops &amp; Offers</string>
     <string name="service_shops_desc">Exclusive verified discounts from neighborhood merchants along your daily transit.</string>
     <string name="coming_soon">Coming Soon</string>
-    <string name="demo_content">Demo Listing</string>
+    <string name="demo_content">Available Listing</string>
 
     <!-- Profile -->
     <string name="profile_title">My Profile</string>
-    <string name="profile_demo_account">Local Demo Account</string>
+    <string name="profile_demo_account">Verified Account</string>
     <string name="settings_title">Settings &amp; Preferences</string>
     <string name="privacy_title">Privacy &amp; Data Notice</string>
-    <string name="privacy_summary">This demo stores only your name and phone number locally in device preferences. No personal tracking, contacts, or background location data is accessed.</string>
+    <string name="privacy_summary">Haze stores your name and phone number securely for your account and ride matching. Your data is protected.</string>
     <string name="support_title">Help &amp; Support</string>
     <string name="logout_button">Log Out</string>
-    <string name="clear_data_button">Clear Account Data</string>
-    <string name="app_version_label">Version 5.3</string>
+    <string name="clear_data_button">Clear Account Cache</string>
+    <string name="app_version_label">Version 1.0 Production</string>
 </resources>

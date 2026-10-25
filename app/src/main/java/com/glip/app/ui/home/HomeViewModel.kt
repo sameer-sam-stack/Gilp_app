@@ -1029,7 +1029,7 @@ class HomeViewModel(
                 vehicleId = activeRide.driverId ?: "drv-active",
                 licensePlateMasked = activeRide.vehicleNumber ?: "Auto",
                 category = VehicleCategory.AUTO_RICKSHAW,
-                modelName = "Glip Partner",
+                modelName = "Haze Partner",
                 currentLat = activeRide.driverLat,
                 currentLng = activeRide.driverLng,
                 headingDegrees = activeRide.driverBearing,

@@ -58,7 +58,7 @@ class ProfileViewModel(
                 it.copy(
                     showClearDataDialog = false,
                     isLoggedOut = true,
-                    message = "Demo profile and local preferences cleared."
+                    message = "Account session and local cache cleared."
                 )
             }
         }

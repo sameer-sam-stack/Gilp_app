@@ -285,7 +285,7 @@ class RegistrationViewModel(
                 } else {
                     UserProfile(
                         userId = "USR-${UUID.randomUUID().toString().take(8).uppercase()}",
-                        fullName = state.fullName.trim().ifBlank { "Glip Rider" },
+                        fullName = state.fullName.trim().ifBlank { "Haze Rider" },
                         phoneNumber = cleanPhone,
                         email = null
                     )

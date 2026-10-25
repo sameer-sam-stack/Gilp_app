@@ -196,7 +196,7 @@ fun AppLoadingSplashScreen(modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(28.dp))
 
             Text(
-                text = "Glip",
+                text = "Haze",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,

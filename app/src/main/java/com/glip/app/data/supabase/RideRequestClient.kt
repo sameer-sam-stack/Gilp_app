@@ -114,7 +114,7 @@ object RideRequestClient {
      * Sends a new ride booking request to Supabase so target driver receives live alert.
      */
     suspend fun createRideRequest(
-        passengerName: String = "Glip Rider",
+        passengerName: String = "Haze Rider",
         passengerMobile: String = "9876543210",
         pickupAddress: String,
         pickupLat: Double,
@@ -137,7 +137,7 @@ object RideRequestClient {
                 setRequestProperty("Prefer", "return=representation")
             }
 
-            val finalName = (userName ?: passengerName).ifBlank { "Glip Rider" }
+            val finalName = (userName ?: passengerName).ifBlank { "Haze Rider" }
             val finalMobile = (userPhone ?: passengerMobile).ifBlank { "9876543210" }
 
             val payload = JSONObject().apply {

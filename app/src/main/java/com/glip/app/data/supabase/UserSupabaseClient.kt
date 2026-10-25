@@ -55,7 +55,7 @@ object UserSupabaseClient {
                     } else if (userObj.has("name") && !userObj.isNull("name") && userObj.getString("name").isNotBlank()) {
                         userObj.getString("name")
                     } else {
-                        "Glip Rider"
+                        "Haze Rider"
                     }
                     val phone = if (userObj.has("phone_number") && !userObj.isNull("phone_number") && userObj.getString("phone_number").isNotBlank()) {
                         userObj.getString("phone_number")
@@ -119,7 +119,7 @@ object UserSupabaseClient {
                 put("name", profile.fullName)
                 put("phone_number", cleanPhone)
                 put("phone", cleanPhone)
-                put("email", profile.email ?: "${cleanPhone}@glipgo.com")
+                put("email", profile.email ?: "${cleanPhone}@hazeapp.in")
                 put("status", "active")
             }
 

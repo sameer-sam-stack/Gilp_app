@@ -34,7 +34,7 @@ fun GlipBrandHeader(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "G",
+                text = "H",
                 color = Color.White,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
@@ -45,7 +45,7 @@ fun GlipBrandHeader(
 
         Column {
             Text(
-                text = "Glip",
+                text = "Haze",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -61,7 +61,7 @@ fun GlipBrandHeader(
 
 @Composable
 fun DemoBadge(
-    text: String = "SIMULATED DATA",
+    text: String = "LIVE",
     modifier: Modifier = Modifier
 ) {
     Surface(

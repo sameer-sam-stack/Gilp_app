@@ -54,7 +54,7 @@ fun ProfileScreen(
         AlertDialog(
             onDismissRequest = { viewModel.showClearDataDialog(false) },
             title = { Text(stringResource(id = R.string.clear_data_button)) },
-            text = { Text("This will permanently clear your local demo profile and return you to the registration screen.") },
+            text = { Text("This will permanently clear your local account session and return you to the registration screen.") },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearDemoData() }) {
                     Text("Clear All", color = ErrorRed, fontWeight = FontWeight.Bold)
@@ -611,10 +611,10 @@ fun ProfileScreen(
                             .size(54.dp)
                             .clickable {
                                 try {
-                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://glipgo.com/support"))
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://hazeapp.in/support"))
                                     context.startActivity(intent)
                                 } catch (e: Exception) {
-                                    Toast.makeText(context, "Website: glipgo.com", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Website: hazeapp.in", Toast.LENGTH_SHORT).show()
                                 }
                             }
                     ) {
@@ -657,7 +657,7 @@ fun ProfileScreen(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(
-                    text = "Clear Local Demo Data",
+                    text = "Clear Local Account Data",
                     color = Color(0xFF94A3B8),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
