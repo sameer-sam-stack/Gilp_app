@@ -1376,7 +1376,9 @@ fun PersonalRideOptionsCard(
                                 text = "₹${opt.fareAmount}",
                                 fontSize = 17.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF263959)
+                                color = Color(0xFF263959),
+                                maxLines = 1,
+                                softWrap = false
                             )
                         }
                     }
@@ -1714,14 +1716,18 @@ fun VehicleCard(
                         fontSize = 10.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF1D4ED8),
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
                 Text(
                     text = "Save 48%",
                     fontSize = 8.5.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF16A34A)
+                    color = Color(0xFF16A34A),
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }
@@ -1921,47 +1927,67 @@ fun MatchedRouteDriverCard(
     onBookClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val categoryLabel = when (vehicle.category) {
+        VehicleCategory.BIKE -> "Bike"
+        VehicleCategory.AUTO_RICKSHAW -> "Auto"
+        VehicleCategory.E_RICKSHAW -> "E-Rickshaw"
+        else -> "Cab"
+    }
+
+    val vehicleIcon = when (vehicle.category) {
+        VehicleCategory.BIKE -> Icons.Default.TwoWheeler
+        VehicleCategory.AUTO_RICKSHAW -> Icons.Default.ElectricRickshaw
+        VehicleCategory.E_RICKSHAW -> Icons.Default.ElectricRickshaw
+        else -> Icons.Default.DirectionsCar
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(16.dp),
+            .padding(horizontal = 14.dp, vertical = 2.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.5.dp, Color(0xFF10B981)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            // Row 1: Left [Icon + (Title & Route)] | Right [₹Fare + Save Badge]
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // Left: Icon + Text
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Surface(
                         shape = CircleShape,
                         color = Color(0xFFDCFCE7),
-                        modifier = Modifier.size(42.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.DirectionsCar,
+                                imageVector = vehicleIcon,
                                 contentDescription = null,
                                 tint = Color(0xFF15803D),
-                                modifier = Modifier.size(24.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = vehicle.category.displayName,
-                            fontSize = 16.sp,
+                            text = categoryLabel,
+                            fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0F172A)
+                            color = Color(0xFF0F172A),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "Route: ${vehicle.route.destinationName}",
-                            fontSize = 12.sp,
+                            fontSize = 11.5.sp,
                             color = Color(0xFF64748B),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -1969,71 +1995,95 @@ fun MatchedRouteDriverCard(
                     }
                 }
 
-                Column(horizontalAlignment = Alignment.End) {
+                // Right: Fare & Save Badge (Never wraps vertically)
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
                     Text(
                         text = "₹${vehicle.farePerKmEstimate.toInt()}",
-                        fontSize = 20.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF15803D)
+                        color = Color(0xFF15803D),
+                        maxLines = 1,
+                        softWrap = false
                     )
-                    Text(
-                        text = "Save 48%",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF16A34A)
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = Color(0xFFDCFCE7),
+                        modifier = Modifier.padding(top = 1.dp)
+                    ) {
+                        Text(
+                            text = "Save 48%",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF166534),
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-            Divider(color = Color(0xFFF1F5F9), thickness = 1.dp)
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider(color = Color(0xFFF1F5F9), thickness = 0.8.dp)
+            Spacer(modifier = Modifier.height(8.dp))
 
+            // Row 2: ETA & Seat Badges + Request Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Surface(
                         shape = RoundedCornerShape(6.dp),
                         color = Color(0xFFEFF6FF)
                     ) {
                         Text(
                             text = "${vehicle.etaMinutes} mins away",
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF1D4ED8),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
-                    Spacer(modifier = Modifier.width(6.dp))
                     Surface(
                         shape = RoundedCornerShape(6.dp),
                         color = Color(0xFFFEF3C7)
                     ) {
                         Text(
                             text = "${vehicle.seatAvailability.availableSeats} Seats Left",
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF92400E),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
 
                 Button(
                     onClick = onBookClick,
-                    modifier = Modifier.height(38.dp),
+                    modifier = Modifier.height(36.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp)
                 ) {
                     Text(
                         text = "Request Ride",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color.White,
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
