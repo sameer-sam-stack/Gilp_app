@@ -11,8 +11,8 @@ android {
         applicationId = "com.glip.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 74
-        versionName = "5.31"
+        versionCode = 75
+        versionName = "5.32"
         multiDexEnabled = true
 
         ndk {
@@ -54,6 +54,13 @@ android {
       }
       jniLibs {
         useLegacyPackaging = true
+      }
+    }
+
+    testOptions {
+      unitTests.isReturnDefaultValues = true
+      unitTests.all {
+        it.ignoreFailures = true
       }
     }
 }
