@@ -11,8 +11,8 @@ android {
         applicationId = "com.glip.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 76
-        versionName = "5.33"
+        versionCode = 77
+        versionName = "5.34"
         multiDexEnabled = true
 
         ndk {
@@ -115,8 +115,4 @@ dependencies {
   // Real OpenStreetMap (OSM) via osmdroid (Open Source, Royalty-Free)
   implementation(libs.osmdroid.android)
   implementation("com.google.android.gms:play-services-location:21.2.0")
-}
-
-tasks.matching { it.name.contains("test", ignoreCase = true) }.configureEach {
-    enabled = false
 }
