@@ -849,7 +849,10 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedButton(
-                        onClick = { viewModel.cancelCurrentRide() },
+                        onClick = {
+                            viewModel.cancelCurrentRide()
+                            onChangeLocation()
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(36.dp),
@@ -1045,7 +1048,10 @@ fun HomeScreen(
         } else if (uiState.rideBookingStatus == "REQUESTED") {
             // SEARCHING IN PROGRESS: Pipeline yellow progress line with (X) cancel button on right
             SearchingInProgressCard(
-                onCancel = { viewModel.cancelCurrentRide() }
+                onCancel = {
+                    viewModel.cancelCurrentRide()
+                    onChangeLocation()
+                }
             )
         } else {
             val isSearchingRoute = uiState.isSearchingRouteVehicles

@@ -30,7 +30,7 @@ data class RemoteDriver(
         val vt = vehicleType.trim().uppercase()
         val vm = vehicleModel.trim().uppercase()
         val vn = vehicleNumber.trim().uppercase()
-        val combined = "$vt $vm $vn"
+        val combined = "$vt $vm"
 
         return when (q) {
             "BIKE", "MOTORCYCLE", "TWO_WHEELER" -> {
@@ -38,7 +38,7 @@ data class RemoteDriver(
             }
             "E_RICKSHAW", "E-RICKSHAW", "TOTO" -> {
                 combined.contains("E_RICKSHAW") || combined.contains("E-RICKSHAW") || combined.contains("E RICKSHAW") ||
-                combined.contains("TOTO") || combined.contains("BATTERY") || (combined.contains("RICKSHAW") && (combined.contains("E") || combined.contains("ELECTRIC")))
+                combined.contains("TOTO") || combined.contains("BATTERY") || (combined.contains("RICKSHAW") && (combined.contains("E_") || combined.contains("E-") || combined.contains("ELECTRIC")))
             }
             "AUTO", "AUTO_RICKSHAW" -> {
                 (combined.contains("AUTO") || combined.contains("RICKSHAW") || combined.contains("THREE")) &&
