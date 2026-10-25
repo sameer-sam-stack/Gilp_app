@@ -349,11 +349,17 @@ object RideRequestClient {
     /**
      * Fetch active online drivers from Supabase `drivers` table.
      */
-    suspend fun fetchActiveDrivers(): List<RemoteDriver> = withContext(Dispatchers.IO) {
+    suspend fun fetchActiveDrivers(passengerLat: Double = 0.0, passengerLng: Double = 0.0): List<RemoteDriver> = withContext(Dispatchers.IO) {
         val list = mutableListOf<RemoteDriver>()
         var connection: HttpURLConnection? = null
         try {
-            connection = openConnection("/${SupabaseConfig.TABLE_DRIVERS}?is_online=eq.true&select=*&order=last_updated_at.desc&limit=25", "GET")
+            val spatialFilter = if (passengerLat != 0.0 && passengerLng != 0.0) {
+                val delta = 0.12 // ~12 km spatial bounding box
+                "&current_lat=gte.${passengerLat - delta}&current_lat=lte.${passengerLat + delta}&current_lng=gte.${passengerLng - delta}&current_lng=lte.${passengerLng + delta}"
+            } else ""
+            val selectCols = "id,full_name,mobile_number,vehicle_number,vehicle_model,vehicle_type,total_seats,available_seats,current_lat,current_lng,bearing,is_online"
+            val endpoint = "/${SupabaseConfig.TABLE_DRIVERS}?is_online=eq.true$spatialFilter&select=$selectCols&limit=30"
+            connection = openConnection(endpoint, "GET")
             val code = connection.responseCode
             if (code in 200..299) {
                 val body = BufferedReader(InputStreamReader(connection.inputStream)).use { it.readText() }

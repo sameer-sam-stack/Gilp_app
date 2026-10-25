@@ -42,6 +42,10 @@ object LocationTracker {
     private val _currentArea = MutableStateFlow<String?>(null)
     val currentArea: StateFlow<String?> = _currentArea.asStateFlow()
 
+    // In-memory reverse geocode cache (~110m precision) to avoid rate limits and save battery
+    private val reverseGeocodeCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private var lastNominatimCallTime = 0L
+
     fun setManualCity(cityName: String) {
         if (cityName.isNotBlank()) {
             _currentCity.value = cityName
@@ -97,53 +101,66 @@ object LocationTracker {
                 }
             } catch (_: Exception) {}
 
-            // 2. HTTP Fallback: OpenStreetMap Nominatim reverse geocode
-            try {
-                val url = URL("https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}&zoom=18&addressdetails=1")
-                val conn = url.openConnection() as HttpURLConnection
-                conn.setRequestProperty("User-Agent", "GlipGoApp/1.0 (contact@glipgo.com)")
-                conn.connectTimeout = 3500
-                conn.readTimeout = 3500
-                if (conn.responseCode == 200) {
-                    val text = conn.inputStream.bufferedReader().use { it.readText() }
-                    val json = JSONObject(text)
-                    val name = json.optString("name")
-                    val displayName = json.optString("display_name")
-                    val parts = displayName.split(",")
-                    val addressObj = json.optJSONObject("address")
-                    if (addressObj != null) {
-                        val cityCandidate = listOf(
-                            addressObj.optString("city"),
-                            addressObj.optString("town"),
-                            addressObj.optString("village"),
-                            addressObj.optString("municipality"),
-                            addressObj.optString("county"),
-                            addressObj.optString("state_district")
-                        ).firstOrNull { it.isNotBlank() }
-                        if (!cityCandidate.isNullOrBlank()) {
-                            _currentCity.value = cityCandidate
+            val cacheKey = "${(location.latitude * 1000).toInt()}_${(location.longitude * 1000).toInt()}"
+            val cachedAddress = reverseGeocodeCache[cacheKey]
+            if (!cachedAddress.isNullOrBlank()) {
+                _currentAddress.value = cachedAddress
+                return@launch
+            }
+
+            // 2. HTTP Fallback: OpenStreetMap Nominatim reverse geocode (rate-limited to 1 call per 2.5s)
+            val now = System.currentTimeMillis()
+            if (now - lastNominatimCallTime >= 2500L) {
+                lastNominatimCallTime = now
+                try {
+                    val url = URL("https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}&zoom=18&addressdetails=1")
+                    val conn = url.openConnection() as HttpURLConnection
+                    conn.setRequestProperty("User-Agent", "GlipGoApp/2.0 (contact@glipgo.com)")
+                    conn.connectTimeout = 3500
+                    conn.readTimeout = 3500
+                    if (conn.responseCode == 200) {
+                        val text = conn.inputStream.bufferedReader().use { it.readText() }
+                        val json = JSONObject(text)
+                        val name = json.optString("name")
+                        val displayName = json.optString("display_name")
+                        val parts = displayName.split(",")
+                        val addressObj = json.optJSONObject("address")
+                        if (addressObj != null) {
+                            val cityCandidate = listOf(
+                                addressObj.optString("city"),
+                                addressObj.optString("town"),
+                                addressObj.optString("village"),
+                                addressObj.optString("municipality"),
+                                addressObj.optString("county"),
+                                addressObj.optString("state_district")
+                            ).firstOrNull { it.isNotBlank() }
+                            if (!cityCandidate.isNullOrBlank()) {
+                                _currentCity.value = cityCandidate
+                            }
+                            val areaCandidate = listOf(
+                                addressObj.optString("suburb"),
+                                addressObj.optString("neighbourhood"),
+                                addressObj.optString("residential"),
+                                addressObj.optString("subdistrict"),
+                                addressObj.optString("road")
+                            ).firstOrNull { it.isNotBlank() }
+                            if (!areaCandidate.isNullOrBlank() && !areaCandidate.equals(cityCandidate, ignoreCase = true)) {
+                                _currentArea.value = areaCandidate
+                            } else {
+                                _currentArea.value = null
+                            }
                         }
-                        val areaCandidate = listOf(
-                            addressObj.optString("suburb"),
-                            addressObj.optString("neighbourhood"),
-                            addressObj.optString("residential"),
-                            addressObj.optString("subdistrict"),
-                            addressObj.optString("road")
-                        ).firstOrNull { it.isNotBlank() }
-                        if (!areaCandidate.isNullOrBlank() && !areaCandidate.equals(cityCandidate, ignoreCase = true)) {
-                            _currentArea.value = areaCandidate
-                        } else {
-                            _currentArea.value = null
+                        val readable = if (name.isNotBlank()) name else parts.take(2).joinToString(",").trim()
+                        if (readable.isNotBlank()) {
+                            _currentAddress.value = readable
+                            if (reverseGeocodeCache.size > 300) reverseGeocodeCache.clear()
+                            reverseGeocodeCache[cacheKey] = readable
+                            return@launch
                         }
                     }
-                    val readable = if (name.isNotBlank()) name else parts.take(2).joinToString(",").trim()
-                    if (readable.isNotBlank()) {
-                        _currentAddress.value = readable
-                        return@launch
-                    }
-                }
-                conn.disconnect()
-            } catch (_: Exception) {}
+                    conn.disconnect()
+                } catch (_: Exception) {}
+            }
 
             if (_currentAddress.value == null) {
                 _currentAddress.value = "Current Location (${String.format(Locale.US, "%.3f, %.3f", location.latitude, location.longitude)})"

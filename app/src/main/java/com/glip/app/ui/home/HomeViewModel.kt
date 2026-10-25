@@ -100,7 +100,10 @@ class HomeViewModel(
                 if (_uiState.value.rideBookingStatus == "NONE") {
                     applyRealDriverSearch()
                 }
-                delay(3500L) // Auto-refresh active matching drivers every 3.5s
+                // Adaptive Polling: 3.5s when pickup & drop coordinates exist, 8s when idle/browsing
+                val hasCoordinates = _uiState.value.pickupLat != 0.0 && _uiState.value.dropLat != 0.0
+                val refreshDelay = if (hasCoordinates) 3500L else 8000L
+                delay(refreshDelay)
             }
         }
     }
@@ -270,8 +273,8 @@ class HomeViewModel(
             var remoteDrivers: List<RemoteDriver> = emptyList()
 
             try {
-                // 1. Fetch real online drivers & their active destination routes from Supabase
-                remoteDrivers = RideRequestClient.fetchActiveDrivers()
+                // 1. Fetch real online drivers & their active destination routes from Supabase (spatially bounded)
+                remoteDrivers = RideRequestClient.fetchActiveDrivers(pLat, pLng)
                 val remoteRoutes = RideRequestClient.fetchActiveDriverRoutes()
 
                 var colorIdx = 0
