@@ -28,6 +28,7 @@ object OsrmRoutingHelper {
 
     private val routeCache = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, RoadRouteResult>>()
     private const val CACHE_TTL_MS = 600_000L // 10 minutes cache
+    private const val MAX_CACHE_ENTRIES = 500
 
     private fun makeCacheKey(oLat: Double, oLng: Double, dLat: Double, dLng: Double): String {
         // Round to 3 decimal places (~110m) so GPS jitter reuses the same road geometry
@@ -94,6 +95,7 @@ object OsrmRoutingHelper {
                                     distanceMeters = distanceMeters,
                                     durationSeconds = durationSeconds
                                 )
+                                if (routeCache.size > MAX_CACHE_ENTRIES) routeCache.clear()
                                 routeCache[cacheKey] = Pair(System.currentTimeMillis(), result)
                                 return@withContext result
                             }
@@ -134,6 +136,7 @@ object OsrmRoutingHelper {
                                     geoPoints.add(GeoPoint(pointPair.getDouble(1), pointPair.getDouble(0)))
                                 }
                                 val result = RoadRouteResult(geoPoints, distanceMeters, durationSeconds)
+                                if (routeCache.size > MAX_CACHE_ENTRIES) routeCache.clear()
                                 routeCache[cacheKey] = Pair(System.currentTimeMillis(), result)
                                 return@withContext result
                             }

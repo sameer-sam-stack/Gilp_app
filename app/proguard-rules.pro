@@ -1,7 +1,11 @@
 # ProGuard / R8 rules for Glip Go Consumer App
-# Keeps reflection, data models, coroutines, and serialization intact
+# Preserves stack traces, reflection, data models, coroutines, and serialization
 
-# Keep Kotlin Coroutines & Serialization
+# Preserve Line Numbers and Source File Attributes for accurate Play Console Crash Reports
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# Keep Kotlin Coroutines & Reflection
 -keepclassmembers class kotlinx.coroutines.** { *; }
 -keep class kotlinx.serialization.** { *; }
 -keepclassmembers class * {
@@ -9,7 +13,7 @@
     @kotlinx.serialization.SerialName <fields>;
 }
 
-# Keep Data Models & Network DTOs
+# Keep Data Models, Remote DTOs & Repositories
 -keep class com.glip.app.data.model.** { *; }
 -keep class com.glip.app.domain.model.** { *; }
 -keep class com.glip.app.data.remote.** { *; }
@@ -25,3 +29,7 @@
 # Keep Jetpack Compose & Navigation
 -keep class androidx.compose.** { *; }
 -keep class androidx.navigation.** { *; }
+
+# Google Play Services & Maps (for seamless SDK integration)
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
