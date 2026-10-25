@@ -97,17 +97,6 @@ fun LocationPickerScreen(
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
-    val gpsResolutionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            LocationTracker.refreshLocation(context) { loc ->
-                centerLat = loc.latitude
-                centerLng = loc.longitude
-                mapViewRef?.controller?.animateTo(GeoPoint(loc.latitude, loc.longitude))
-            }
-        }
-    }
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
@@ -120,6 +109,18 @@ fun LocationPickerScreen(
     var addressPreview by remember { mutableStateOf("Locating...") }
     var isGeocoding by remember { mutableStateOf(false) }
 
+
+    val gpsResolutionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            LocationTracker.refreshLocation(context) { loc ->
+                centerLat = loc.latitude
+                centerLng = loc.longitude
+                mapViewRef?.controller?.animateTo(GeoPoint(loc.latitude, loc.longitude))
+            }
+        }
+    }
     // Search state
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
