@@ -39,7 +39,7 @@ object GpsPromptHelper {
                 if (exception is ResolvableApiException) {
                     try {
                         if (launcher != null) {
-                            val request = IntentSenderRequest.Builder(exception.resolution.intentSender).build()
+                            val request = IntentSenderRequest.Builder(exception.resolution).build()
                             launcher.launch(request)
                         } else {
                             exception.startResolutionForResult(activity, 9001)

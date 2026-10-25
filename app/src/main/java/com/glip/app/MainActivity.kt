@@ -1,6 +1,7 @@
 package com.glip.app
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -28,7 +29,7 @@ class MainActivity : ComponentActivity() {
     private val gpsResolutionLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
-        if (result.resultCode == RESULT_OK) {
+        if (result.resultCode == Activity.RESULT_OK) {
             LocationTracker.refreshLocation(this)
         }
     }
