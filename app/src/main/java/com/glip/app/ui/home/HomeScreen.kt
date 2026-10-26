@@ -280,14 +280,14 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 14.dp),
+                    .padding(horizontal = 4.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                     border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -299,7 +299,7 @@ fun HomeScreen(
                 ) {
                     // SCREENSHOT 1 PICKUP & DROP LOCATION SELECTOR
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(6.dp),
                         color = Color.White,
                         border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                         modifier = Modifier.fillMaxWidth()
@@ -646,9 +646,9 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 14.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(16.dp))
+                    .padding(horizontal = 4.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, Color(0xFFE2E8F0), RoundedCornerShape(8.dp))
             ) {
                 if (!uiState.isFallbackListVisible) {
                     InteractiveDemoMap(
@@ -743,8 +743,8 @@ fun HomeScreen(
                 Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(14.dp),
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(8.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF10B981)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -905,8 +905,8 @@ fun HomeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight()
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(14.dp),
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                shape = RoundedCornerShape(8.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFF10B981)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
@@ -1268,8 +1268,8 @@ fun PersonalRideOptionsCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 2.dp),
-        shape = RoundedCornerShape(14.dp),
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -1468,8 +1468,8 @@ fun SearchingInProgressCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(14.dp),
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -1541,8 +1541,8 @@ fun RouteVehicleSearchingCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 2.dp),
-        shape = RoundedCornerShape(12.dp),
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -1777,8 +1777,8 @@ fun DriverRatingCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(16.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.2.dp, Color(0xFFE2E8F0)),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -1977,8 +1977,8 @@ fun MatchedRouteDriverCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 2.dp),
-        shape = RoundedCornerShape(14.dp),
+            .padding(horizontal = 4.dp, vertical = 2.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.5.dp, Color(0xFF10B981)),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)

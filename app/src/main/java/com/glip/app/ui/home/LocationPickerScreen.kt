@@ -263,7 +263,7 @@ fun LocationPickerScreen(
             ) {
                 // Floating prompt pill above pin
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(8.dp),
                     color = Color(0xFF0F172A),
                     shadowElevation = 6.dp,
                     modifier = Modifier.padding(bottom = 6.dp)
@@ -350,7 +350,7 @@ fun LocationPickerScreen(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Surface(
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(8.dp),
                     color = Color.White,
                     shadowElevation = 4.dp,
                     border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -380,7 +380,7 @@ fun LocationPickerScreen(
 
             // Search Bar Input Box
             Surface(
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(8.dp),
                 color = Color.White,
                 shadowElevation = 6.dp,
                 border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
@@ -472,7 +472,7 @@ fun LocationPickerScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(max = 240.dp),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(8.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(8.dp),
                     border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -579,7 +579,7 @@ fun LocationPickerScreen(
             // Bottom Floating Card with Address Preview & "Confirm Location" Button
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(8.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = BorderStroke(1.5.dp, themeBorderColor),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
@@ -640,7 +640,7 @@ fun LocationPickerScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF18181B))
                     ) {
                         Row(
@@ -776,7 +776,7 @@ fun SameLocationAlertDialog(
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(10.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             border = BorderStroke(1.5.dp, Color(0xFFEF4444)),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -817,7 +817,7 @@ fun SameLocationAlertDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Pickup And Drop location is same\nChoose different location",
+                    text = "Pickup and drop locations cannot be the same.\nPlease select a different destination.",
                     fontSize = 14.sp,
                     color = Color(0xFF475569),
                     textAlign = TextAlign.Center,
@@ -832,7 +832,7 @@ fun SameLocationAlertDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(46.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF18181B))
                 ) {
                     Text(
