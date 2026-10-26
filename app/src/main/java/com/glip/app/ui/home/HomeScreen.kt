@@ -863,7 +863,9 @@ fun HomeScreen(
                                 )
                             }
                             Text(
-                                text = uiState.rideOtp.ifBlank { "4821" },
+                                text = uiState.rideOtp.ifBlank {
+                                    com.glip.app.util.UserRideOtpManager.getPersistentRideOtp(context, userPhone)
+                                },
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = Color(0xFFB45309),

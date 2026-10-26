@@ -60,6 +60,16 @@ class DemoProfilePreferences(context: Context) {
         prefs.edit().clear().apply()
     }
 
+    fun getPermanentRideOtp(): String {
+        val phone = getUserProfile()?.phoneNumber
+        val userId = getUserProfile()?.userId
+        return com.glip.app.util.UserRideOtpManager.getPersistentRideOtp(
+            context = null,
+            phoneNumber = phone,
+            userId = userId
+        )
+    }
+
     fun observeUserProfile(): Flow<UserProfile?> = callbackFlow {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
             trySend(getUserProfile())

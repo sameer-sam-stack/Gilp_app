@@ -478,13 +478,13 @@ class HomeViewModel(
                 }
             }
 
-            val generatedOtp = String.format(java.util.Locale.US, "%04d", (1000..9999).random())
+            val persistentOtp = com.glip.app.util.UserRideOtpManager.getPersistentRideOtp(null, userPhone)
             _uiState.update {
                 it.copy(
                     selectedVehicle = targetVehicle,
                     rideBookingStatus = "REQUESTED",
                     bookingError = null,
-                    rideOtp = generatedOtp
+                    rideOtp = persistentOtp
                 )
             }
 
@@ -507,7 +507,7 @@ class HomeViewModel(
                 targetDriverId = targetVehicle.driver.driverId.ifBlank { null },
                 requestedSeats = 1,
                 fare = calculatedPoolFare,
-                otp = generatedOtp
+                otp = persistentOtp
             )
 
             if (result.isSuccess) {
@@ -536,7 +536,7 @@ class HomeViewModel(
         userPhone: String
     ) {
         viewModelScope.launch {
-            val generatedOtp = String.format(java.util.Locale.US, "%04d", (1000..9999).random())
+            val persistentOtp = com.glip.app.util.UserRideOtpManager.getPersistentRideOtp(null, userPhone)
 
             var pLat = _uiState.value.pickupLat
             var pLng = _uiState.value.pickupLng
@@ -589,7 +589,7 @@ class HomeViewModel(
                 it.copy(
                     rideBookingStatus = "REQUESTED",
                     bookingError = null,
-                    rideOtp = generatedOtp
+                    rideOtp = persistentOtp
                 )
             }
 
@@ -614,7 +614,7 @@ class HomeViewModel(
                 targetDriverId = targetDriverUuid,
                 requestedSeats = selectedOption.type.capacity,
                 fare = selectedOption.fareAmount.toDouble(),
-                otp = generatedOtp
+                otp = persistentOtp
             )
 
             if (!result.isSuccess) {
@@ -1074,7 +1074,7 @@ class HomeViewModel(
                 it.copy(
                     activeRequestId = activeRide.requestId,
                     rideBookingStatus = bookingStatus,
-                    rideOtp = activeRide.otp ?: "1234",
+                    rideOtp = activeRide.otp?.takeIf { it.isNotBlank() } ?: com.glip.app.util.UserRideOtpManager.getPersistentRideOtp(null, cleanPhone),
                     pickupQuery = activeRide.pickupName ?: "",
                     dropQuery = activeRide.dropName ?: "",
                     pickupLat = pLat,
