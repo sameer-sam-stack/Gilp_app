@@ -738,8 +738,9 @@ class HomeViewModel(
             while (true) {
                 delay(2000L) // Poll every 2 seconds
                 val elapsed = System.currentTimeMillis() - startTime
-                if (elapsed > 120_000L) { // 120s TTL (2 minutes)
+                if (elapsed > 200_000L) { // 200s TTL (matching search countdown)
                     RideRequestClient.cancelRideRequest(requestId)
+                    RideRequestClient.deleteRideRequest(requestId)
                     _uiState.update {
                         it.copy(
                             rideBookingStatus = "NONE",
@@ -947,6 +948,7 @@ class HomeViewModel(
             val reqId = _uiState.value.activeRequestId
             if (!reqId.isNullOrBlank()) {
                 RideRequestClient.cancelRideRequest(reqId)
+                RideRequestClient.deleteRideRequest(reqId)
             }
             _uiState.update {
                 it.copy(

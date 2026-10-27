@@ -245,6 +245,9 @@ fun AppNavigation(
                         onChangeLocation = {
                             homeViewModel.cancelCurrentRide()
                             hasConfirmedRoute = false
+                            selectedDrop = ""
+                            selectedDropLat = 0.0
+                            selectedDropLng = 0.0
                         },
                         onEditPickup = {
                             editingLocationMode = "pickup"

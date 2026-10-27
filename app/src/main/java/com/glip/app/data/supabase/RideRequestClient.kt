@@ -10,6 +10,10 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 data class RemoteDriver(
     val id: String,
@@ -107,6 +111,58 @@ object RideRequestClient {
             true
         } catch (_: Exception) {
             false
+        }
+    }
+
+    fun getIsoTimestamp(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        return sdf.format(Date())
+    }
+
+    fun isTimestampFresh(isoTimestamp: String, maxAgeSeconds: Long = 180): Boolean {
+        if (isoTimestamp.isBlank()) return false
+        return try {
+            val clean = isoTimestamp.substringBefore('.').substringBefore('+').substringBefore('Z')
+            val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            val date = sdf.parse(clean) ?: return false
+            val ageMs = System.currentTimeMillis() - date.time
+            ageMs in -10000L..(maxAgeSeconds * 1000L)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    suspend fun deleteRideRequest(requestId: String): Boolean = withContext(Dispatchers.IO) {
+        if (requestId.isBlank()) return@withContext false
+        var connection: HttpURLConnection? = null
+        try {
+            connection = openConnection("/${SupabaseConfig.TABLE_RIDE_REQUESTS}?id=eq.$requestId", "DELETE")
+            connection.responseCode in 200..299
+        } catch (_: Exception) {
+            false
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    suspend fun deleteStaleDriverRoute(driverIdOrMobile: String): Boolean = withContext(Dispatchers.IO) {
+        if (driverIdOrMobile.isBlank()) return@withContext false
+        var connection: HttpURLConnection? = null
+        try {
+            val filter = if (isValidUuid(driverIdOrMobile)) {
+                "driver_id=eq.$driverIdOrMobile"
+            } else {
+                "driver_mobile=eq.$driverIdOrMobile"
+            }
+            connection = openConnection("/${SupabaseConfig.TABLE_DRIVER_ROUTES}?$filter", "DELETE")
+            connection.responseCode in 200..299
+        } catch (_: Exception) {
+            false
+        } finally {
+            connection?.disconnect()
         }
     }
 
@@ -262,6 +318,26 @@ object RideRequestClient {
                     val obj = arr.getJSONObject(0)
                     val reqId = obj.optString("id")
                     val status = obj.optString("status", "PENDING")
+                    val createdAt = obj.optString("created_at", "")
+
+                    // Live Data Freshness Validation:
+                    // 1. PENDING request is only valid during the 200s active search countdown.
+                    // If older than 210s, it's a dead request from an abandoned search -> purge & return null!
+                    if (status.equals("PENDING", ignoreCase = true)) {
+                        if (!isTimestampFresh(createdAt, maxAgeSeconds = 210)) {
+                            Log.d(TAG, "Purging stale PENDING request $reqId (created: $createdAt)")
+                            deleteRideRequest(reqId)
+                            return@withContext null
+                        }
+                    } else if (status.equals("ACCEPTED", ignoreCase = true) || status.equals("IN_PROGRESS", ignoreCase = true)) {
+                        // 2. Ongoing trip is only valid if created within the last 60 minutes
+                        if (!isTimestampFresh(createdAt, maxAgeSeconds = 3600)) {
+                            Log.d(TAG, "Purging stale ongoing ride $reqId (created: $createdAt)")
+                            deleteRideRequest(reqId)
+                            return@withContext null
+                        }
+                    }
+
                     val driverId = obj.optString("driver_id", "").ifBlank { null }
                     val fareAmount = obj.optDouble("fare_amount", 0.0)
                     val pName = obj.optString("pickup_name", "")
@@ -357,7 +433,7 @@ object RideRequestClient {
                 val delta = 0.12 // ~12 km spatial bounding box
                 "&current_lat=gte.${passengerLat - delta}&current_lat=lte.${passengerLat + delta}&current_lng=gte.${passengerLng - delta}&current_lng=lte.${passengerLng + delta}"
             } else ""
-            val selectCols = "id,full_name,mobile_number,vehicle_number,vehicle_model,vehicle_type,total_seats,available_seats,current_lat,current_lng,bearing,is_online"
+            val selectCols = "id,full_name,mobile_number,vehicle_number,vehicle_model,vehicle_type,total_seats,available_seats,current_lat,current_lng,bearing,is_online,last_updated_at"
             val endpoint = "/${SupabaseConfig.TABLE_DRIVERS}?is_online=eq.true$spatialFilter&select=$selectCols&limit=30"
             connection = openConnection(endpoint, "GET")
             val code = connection.responseCode
@@ -368,6 +444,13 @@ object RideRequestClient {
                     val obj = arr.getJSONObject(i)
                     val isOnline = obj.optBoolean("is_online", false)
                     if (!isOnline) continue
+
+                    // Live Heartbeat Check: Driver must have sent GPS ping within last 180 seconds (3 minutes)
+                    val lastUpdated = obj.optString("last_updated_at", "")
+                    if (lastUpdated.isNotBlank() && !isTimestampFresh(lastUpdated, maxAgeSeconds = 180)) {
+                        // Driver killed app or lost connectivity - do not show ghost vehicle
+                        continue
+                    }
 
                     val id = obj.optString("id")
                     val name = obj.optString("full_name", "Driver Partner")
@@ -414,7 +497,7 @@ object RideRequestClient {
         val map = mutableMapOf<String, RemoteDriverRoute>()
         var connection: HttpURLConnection? = null
         try {
-            connection = openConnection("/${SupabaseConfig.TABLE_DRIVER_ROUTES}?is_active=eq.true&select=*", "GET")
+            connection = openConnection("/${SupabaseConfig.TABLE_DRIVER_ROUTES}?is_active=eq.true&order=created_at.desc&limit=30", "GET")
             val code = connection.responseCode
             if (code in 200..299) {
                 val body = BufferedReader(InputStreamReader(connection.inputStream)).use { it.readText() }
@@ -423,14 +506,27 @@ object RideRequestClient {
                     val obj = arr.getJSONObject(i)
                     val drvId = obj.optString("driver_id", "")
                     val mob = obj.optString("driver_mobile", "")
-                    val destName = obj.optString("destination_name", "")
+                    val destName = obj.optString("destination_name", "").trim()
                     val destLat = obj.optDouble("dest_lat", 0.0)
                     val destLng = obj.optDouble("dest_lng", 0.0)
+                    val createdAt = obj.optString("created_at", "")
+
+                    // 1. Skip blank or Independent Ride
+                    if (destName.isBlank() || destName.contains("Independent", ignoreCase = true) || destLat == 0.0 || destLng == 0.0) {
+                        continue
+                    }
+
+                    // 2. Freshness check: Routes older than 4 hours are obsolete from previous shifts
+                    if (createdAt.isNotBlank() && !isTimestampFresh(createdAt, maxAgeSeconds = 4 * 3600)) {
+                        deleteStaleDriverRoute(drvId.ifBlank { mob })
+                        continue
+                    }
+
                     val route = RemoteDriverRoute(drvId.ifBlank { mob }, destName, destLat, destLng)
-                    if (drvId.isNotBlank()) {
+                    if (drvId.isNotBlank() && !map.containsKey(drvId)) {
                         map[drvId] = route
                     }
-                    if (mob.isNotBlank()) {
+                    if (mob.isNotBlank() && !map.containsKey(mob)) {
                         map[mob] = route
                     }
                 }
