@@ -138,4 +138,17 @@ afterEvaluate {
         enabled = true
         onlyIf { true }
     }
+    tasks.matching { it.name.contains("assembleDebug", ignoreCase = true) }.configureEach {
+        doLast {
+            val hazeApk = file("build/outputs/apk/debug/HAZE.apk")
+            val defaultApk = file("build/outputs/apk/debug/app-debug.apk")
+            if (hazeApk.exists() && !defaultApk.exists()) {
+                hazeApk.copyTo(defaultApk, overwrite = true)
+                println("Copied HAZE.apk to app-debug.apk for CI release artifact compatibility")
+            } else if (defaultApk.exists() && !hazeApk.exists()) {
+                defaultApk.copyTo(hazeApk, overwrite = true)
+                println("Copied app-debug.apk to HAZE.apk")
+            }
+        }
+    }
 }
