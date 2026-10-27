@@ -625,11 +625,10 @@ fun TravelServicesScreen(
                                     modifier = Modifier.size(22.dp)
                                 )
                             }
-                            val subtext = if (!activeArea.isNullOrBlank() && !activeArea.equals(activeCity, ignoreCase = true)) {
-                                "$activeArea, $activeCity"
-                            } else {
-                                activeCity
-                            }
+                            val cleanArea = if (!activeArea.isNullOrBlank()) {
+                                activeArea.replace(Regex(",?\\s*" + Regex.escape(activeCity) + "\\b", RegexOption.IGNORE_CASE), "").trim().trimEnd(',')
+                            } else ""
+                            val subtext = cleanArea.ifBlank { "Current Area" }
                             Text(
                                 text = subtext,
                                 fontSize = 12.5.sp,
@@ -695,7 +694,7 @@ fun TravelServicesScreen(
                         items(CATEGORY_CHIPS) { category ->
                             val isSelected = category == selectedCategory
                             Surface(
-                                shape = RoundedCornerShape(16.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = if (isSelected) Color(0xFF0F172A) else Color.White,
                                 border = BorderStroke(
                                     1.dp,
@@ -810,12 +809,12 @@ fun TravelServicesScreen(
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(8.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(2.dp),
                         border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(modifier = Modifier.padding(14.dp)) {
                             Text(
                                 text = "Outstation Vehicle Search & Route",
                                 fontSize = 15.sp,
@@ -823,12 +822,12 @@ fun TravelServicesScreen(
                                 color = Color(0xFF0F172A)
                             )
 
-                            Spacer(modifier = Modifier.height(14.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
 
                             // Horizontal Box: Pickup City | Switch | Travel City
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(14.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 color = Color(0xFFF8FAFC),
                                 border = BorderStroke(1.dp, Color(0xFFCBD5E1))
                             ) {
@@ -945,7 +944,7 @@ fun TravelServicesScreen(
                                 items(SEAT_OPTIONS) { seatOpt ->
                                     val isSelected = seatOpt == selectedSeatFilter
                                     Surface(
-                                        shape = RoundedCornerShape(16.dp),
+                                        shape = RoundedCornerShape(8.dp),
                                         color = if (isSelected) GlipBrandYellow else Color(0xFFF1F5F9),
                                         border = BorderStroke(
                                             1.dp,
@@ -1065,7 +1064,7 @@ fun TravelServicesScreen(
                                     confirmedVehicle = vehicle
                                     showConfirmDialog = true
                                 },
-                            shape = RoundedCornerShape(16.dp),
+                            shape = RoundedCornerShape(8.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(2.dp),
                             border = BorderStroke(1.dp, Color(0xFFE2E8F0))
@@ -1667,24 +1666,24 @@ fun CompactServiceTile(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(98.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .height(82.dp)
+            .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         border = BorderStroke(0.8.dp, Color(0xFFE2E8F0))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 6.dp, vertical = 8.dp),
+                .padding(horizontal = 4.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
+                    .size(32.dp)
                     .clip(CircleShape)
                     .background(item.backgroundColor),
                 contentAlignment = Alignment.Center
@@ -1693,19 +1692,19 @@ fun CompactServiceTile(
                     imageVector = item.icon,
                     contentDescription = item.title,
                     tint = item.iconColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(17.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = item.title,
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF1E293B),
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                lineHeight = 13.sp
+                lineHeight = 12.sp
             )
         }
     }

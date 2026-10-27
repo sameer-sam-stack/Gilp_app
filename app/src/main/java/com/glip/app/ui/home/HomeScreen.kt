@@ -57,6 +57,13 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import com.glip.app.data.places.AutocompletePlace
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import com.glip.app.R
 import com.glip.app.data.places.PlacesConfig
 import com.glip.app.data.places.PlacesSearchService
 import com.glip.app.util.LocationTracker
@@ -276,12 +283,13 @@ fun HomeScreen(
 
         // 2. Main Content: When !hasConfirmedRoute, NO MAP is shown (Only Pickup & Drop Card + Ride Button)
         if (!hasConfirmedRoute) {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 4.dp),
-                contentAlignment = Alignment.TopCenter
+                    .padding(horizontal = 4.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Card(
                     modifier = Modifier
@@ -405,19 +413,36 @@ fun HomeScreen(
                                     }
 
                                     // Map Pin Icon (Opens interactive map picker)
-                                    IconButton(
-                                        onClick = {
-                                            activeField = null
-                                            onEditPickup()
-                                        },
-                                        modifier = Modifier.size(34.dp)
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                activeField = null
+                                                onEditPickup()
+                                            }
+                                            .padding(horizontal = 4.dp, vertical = 2.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.MyLocation,
                                             contentDescription = "Pick Pickup on Map",
                                             tint = Color(0xFF10B981),
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(18.dp)
                                         )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = Color(0xFFEFF6FF),
+                                            border = BorderStroke(0.8.dp, Color(0xFF93C5FD))
+                                        ) {
+                                            Text(
+                                                text = "Map",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF1D4ED8),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                            )
+                                        }
                                     }
                                 }
 
@@ -492,19 +517,36 @@ fun HomeScreen(
                                         }
                                     }
 
-                                    IconButton(
-                                        onClick = {
-                                            activeField = null
-                                            onEditDrop()
-                                        },
-                                        modifier = Modifier.size(34.dp)
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                activeField = null
+                                                onEditDrop()
+                                            }
+                                            .padding(horizontal = 4.dp, vertical = 2.dp)
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.MyLocation,
                                             contentDescription = "Pick Drop on Map",
                                             tint = Color(0xFFEF4444),
-                                            modifier = Modifier.size(20.dp)
+                                            modifier = Modifier.size(18.dp)
                                         )
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(12.dp),
+                                            color = Color(0xFFEFF6FF),
+                                            border = BorderStroke(0.8.dp, Color(0xFF93C5FD))
+                                        ) {
+                                            Text(
+                                                text = "Map",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF1D4ED8),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -635,6 +677,66 @@ fun HomeScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // POPULAR PLACES SECTION (Screenshot 2 Style: Bus Stand, Railway Station, Ad Box)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            ) {
+                Text(
+                    text = "Popular Places",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E293B)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // 1. Bus Stand Card
+                    PopularPlaceItemCard(
+                        title = "Bus Stand",
+                        imageRes = R.drawable.place_bus_stand,
+                        onClick = {
+                            drop = "Bus Stand"
+                            isDropSelected = true
+                            if (pickup.isEmpty()) {
+                                activeField = "pickup"
+                            }
+                        }
+                    )
+
+                    // 2. Railway Station Card
+                    PopularPlaceItemCard(
+                        title = "Railway station",
+                        imageRes = R.drawable.place_railway_station,
+                        onClick = {
+                            drop = "Railway station"
+                            isDropSelected = true
+                            if (pickup.isEmpty()) {
+                                activeField = "pickup"
+                            }
+                        }
+                    )
+
+                    // 3. Ad Box (Thoda Bada Size Baki Box se)
+                    PopularPlaceAdCard(
+                        modifier = Modifier
+                            .width(220.dp)
+                            .height(155.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         if (showSameLocationDialog) {
@@ -2119,6 +2221,161 @@ fun MatchedRouteDriverCard(
                         color = Color.White,
                         maxLines = 1,
                         softWrap = false
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Popular Place card (Screenshot 2 Style: Bus Stand, Railway Station).
+ */
+@Composable
+private fun PopularPlaceItemCard(
+    title: String,
+    imageRes: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .width(160.dp)
+            .height(155.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp)
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFFBBF24)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Select",
+                        tint = Color(0xFF1E293B),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+            )
+        }
+    }
+}
+
+/**
+ * Ad Box inside Popular Places row ("Thoda Bada Size Baki Box se").
+ */
+@Composable
+private fun PopularPlaceAdCard(
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, Color(0xFFCBD5E1))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = Color(0xFFFEF3C7),
+                    border = BorderStroke(0.6.dp, Color(0xFFF59E0B))
+                ) {
+                    Text(
+                        text = "AD",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFFB45309),
+                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                    )
+                }
+
+                Text(
+                    text = "Sponsored",
+                    fontSize = 10.sp,
+                    color = Color(0xFF94A3B8)
+                )
+            }
+
+            Column {
+                Text(
+                    text = "Reliable Rides Across CG",
+                    fontSize = 13.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0F172A),
+                    lineHeight = 17.sp
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Book auto, cab & rentals anytime",
+                    fontSize = 11.sp,
+                    color = Color(0xFF64748B)
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = Color(0xFF0F172A),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(28.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "Book Now",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
             }
