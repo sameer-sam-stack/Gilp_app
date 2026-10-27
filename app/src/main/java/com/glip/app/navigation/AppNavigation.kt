@@ -53,8 +53,8 @@ fun AppNavigation(
     var isAppLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        // Display RouteLoader while GPS, tiles and assets initialize smoothly
-        delay(2500)
+        // Fast, smooth initial entrance animation
+        delay(750)
         isAppLoading = false
     }
 

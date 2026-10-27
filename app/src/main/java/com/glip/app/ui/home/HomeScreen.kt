@@ -737,7 +737,7 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // 1. Bus Stand Card
                     PopularPlaceItemCard(
@@ -753,11 +753,11 @@ fun HomeScreen(
                         onClick = { onSelectPopularPlace("Railway station") }
                     )
 
-                    // 3. Ad Box (Thoda Bada Size Baki Box se)
+                    // 3. Ad Box (Thoda Bada Size Baki Box se, right side me halka sa visible)
                     PopularPlaceAdCard(
                         modifier = Modifier
-                            .width(220.dp)
-                            .height(155.dp)
+                            .width(180.dp)
+                            .height(138.dp)
                     )
                 }
             }
@@ -801,13 +801,41 @@ fun HomeScreen(
                         }
                     )
 
+                    // Floating Top-Left Back Button: Takes user 1 step back to Pickup & Drop selection screen
+                    Surface(
+                        onClick = {
+                            viewModel.cancelCurrentRide()
+                            onChangeLocation()
+                        },
+                        shape = CircleShape,
+                        color = Color.White,
+                        shadowElevation = 4.dp,
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(top = 12.dp, start = 12.dp)
+                            .size(34.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color(0xFF0F172A),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
                     // Rapido-style Floating "Active Order" Pill (matching media_1792370698775_970cba94.png)
                     if (uiState.rideBookingStatus in listOf("REQUESTED", "ACCEPTED", "IN_PROGRESS")) {
                         Surface(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
-                                .padding(top = 14.dp),
-                            shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp, topStart = 0.dp, bottomStart = 0.dp),
+                                .padding(top = 14.dp, start = 54.dp),
+                            shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp, topStart = 24.dp, bottomStart = 24.dp),
                             color = Color(0xFF0F172A),
                             border = BorderStroke(2.dp, Color(0xFFF59E0B)),
                             shadowElevation = 6.dp
@@ -1698,6 +1726,23 @@ fun RouteVehicleSearchingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Top-Left Back button: Takes user 1 step back to Pickup & Drop selection screen
+                    Surface(
+                        onClick = onChangeLocation,
+                        shape = CircleShape,
+                        color = Color(0xFFF1F5F9),
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color(0xFF1E293B),
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
                     Box(
                         modifier = Modifier
                             .size(7.dp)
@@ -2271,8 +2316,8 @@ private fun PopularPlaceItemCard(
 ) {
     Card(
         modifier = modifier
-            .width(160.dp)
-            .height(155.dp)
+            .width(136.dp)
+            .height(138.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),

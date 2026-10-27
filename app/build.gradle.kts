@@ -11,8 +11,8 @@ android {
         applicationId = "com.glip.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 84
-        versionName = "5.41"
+        versionCode = 85
+        versionName = "1.0.1"
         multiDexEnabled = true
 
         ndk {
@@ -62,6 +62,13 @@ android {
       unitTests.all {
         it.ignoreFailures = true
       }
+    }
+
+    applicationVariants.all {
+        outputs.all {
+            val output = this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            output?.outputFileName = "HAZE.apk"
+        }
     }
 }
 
