@@ -21,7 +21,7 @@ object CorridorMatchingHelper {
      * @param destLat Driver's destination latitude
      * @param destLng Driver's destination longitude
      * @param routePoints Driver's full road polyline points (lat, lng) from current location to destination
-     * @param maxCorridorMeters Maximum allowed detour distance from passenger point to driver's route (default 1000m)
+     * @param maxCorridorMeters Maximum allowed detour distance from passenger point to driver's route (default 400m)
      */
     fun isPassengerOnDriverCorridor(
         pLat: Double,
@@ -33,7 +33,7 @@ object CorridorMatchingHelper {
         destLat: Double = 0.0,
         destLng: Double = 0.0,
         routePoints: List<Pair<Double, Double>>,
-        maxCorridorMeters: Double = 1000.0
+        maxCorridorMeters: Double = 400.0
     ): Boolean {
         // If passenger hasn't set search coordinates yet, allow showing nearby vehicles
         if (pLat == 0.0 || pLng == 0.0 || dLat == 0.0 || dLng == 0.0) return true

@@ -69,6 +69,7 @@ import com.glip.app.data.places.PlacesSearchService
 import com.glip.app.util.LocationTracker
 import com.glip.app.util.PersonalVehicleType
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -106,6 +107,7 @@ fun HomeScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    val coroutineScope = rememberCoroutineScope()
 
     val liveAddress by LocationTracker.currentAddress.collectAsState()
     val liveCoords by LocationTracker.currentCoordinates.collectAsState()
@@ -695,6 +697,42 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                val onSelectPopularPlace: (String) -> Unit = { placeType ->
+                    activeField = null
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    coroutineScope.launch {
+                        val curCity = LocationTracker.currentCity.value?.ifBlank { "Rajnandgaon" } ?: "Rajnandgaon"
+                        val pLat = pickupCoordinates?.first ?: if (pickupLat != 0.0) pickupLat else (liveCoords?.first ?: LocationTracker.currentCoordinates.value?.first ?: 21.0975)
+                        val pLng = pickupCoordinates?.second ?: if (pickupLng != 0.0) pickupLng else (liveCoords?.second ?: LocationTracker.currentCoordinates.value?.second ?: 81.0388)
+                        val pText = pickup.ifBlank { liveAddress ?: LocationTracker.currentAddress.value ?: "Current Location" }
+
+                        val targetDrop = if (placeType.contains("railway", ignoreCase = true)) {
+                            "$curCity Railway Station"
+                        } else {
+                            "$curCity Bus Stand"
+                        }
+
+                        val places = try {
+                            PlacesSearchService.searchNearbyPlaces(context, targetDrop, pLat, pLng)
+                        } catch (_: Exception) {
+                            emptyList()
+                        }
+                        val dLat = places.firstOrNull()?.latitude ?: if (placeType.contains("railway", ignoreCase = true)) (pLat + 0.015) else (pLat + 0.012)
+                        val dLng = places.firstOrNull()?.longitude ?: if (placeType.contains("railway", ignoreCase = true)) (pLng + 0.015) else (pLng + 0.012)
+                        val dText = places.firstOrNull()?.primaryText ?: targetDrop
+
+                        pickup = pText
+                        drop = dText
+                        isPickupSelected = true
+                        isDropSelected = true
+                        pickupCoordinates = Pair(pLat, pLng)
+                        dropCoordinates = Pair(dLat, dLng)
+
+                        onConfirmRideSearch(pText.trim(), dText.trim(), pLat, pLng, dLat, dLng)
+                    }
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -705,26 +743,14 @@ fun HomeScreen(
                     PopularPlaceItemCard(
                         title = "Bus Stand",
                         imageRes = R.drawable.place_bus_stand,
-                        onClick = {
-                            drop = "Bus Stand"
-                            isDropSelected = true
-                            if (pickup.isEmpty()) {
-                                activeField = "pickup"
-                            }
-                        }
+                        onClick = { onSelectPopularPlace("Bus Stand") }
                     )
 
                     // 2. Railway Station Card
                     PopularPlaceItemCard(
                         title = "Railway station",
                         imageRes = R.drawable.place_railway_station,
-                        onClick = {
-                            drop = "Railway station"
-                            isDropSelected = true
-                            if (pickup.isEmpty()) {
-                                activeField = "pickup"
-                            }
-                        }
+                        onClick = { onSelectPopularPlace("Railway station") }
                     )
 
                     // 3. Ad Box (Thoda Bada Size Baki Box se)
@@ -1231,18 +1257,12 @@ fun HomeScreen(
                                 color = if (!isPersonalMode) GlipGreenDark else Color(0xFF475569)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = Color(0xFFDCFCE7)
-                            ) {
-                                Text(
-                                    text = "Save 48%",
-                                    fontSize = 8.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF166534),
-                                    modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
-                                )
-                            }
+                            Text(
+                                text = "Save 48%",
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF166534)
+                            )
                         }
                     }
 
@@ -1270,18 +1290,12 @@ fun HomeScreen(
                                 color = if (isPersonalMode) Color(0xFF92400E) else Color(0xFF475569)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = Color(0xFFFEF08A)
-                            ) {
-                                Text(
-                                    text = "Solo",
-                                    fontSize = 8.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF854D0E),
-                                    modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
-                                )
-                            }
+                            Text(
+                                text = "Solo",
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF854D0E)
+                            )
                         }
                     }
                 }
@@ -1315,15 +1329,38 @@ fun HomeScreen(
                     isCorridorEmpty = uiState.filteredVehicles.isEmpty()
                 )
             } else {
-                // SHARED POOLING MATCHED DRIVER (Single matched driver who is traveling on this route)
-                val matchedVehicle = uiState.selectedVehicle ?: uiState.filteredVehicles.firstOrNull()
-                if (matchedVehicle != null && uiState.rideBookingStatus == "NONE") {
-                    MatchedRouteDriverCard(
-                        vehicle = matchedVehicle,
-                        onBookClick = {
-                            viewModel.bookSelectedVehicle(matchedVehicle, userName, userPhone)
+                // SHARED POOLING MATCHED DRIVER(S)
+                val vehicles = uiState.filteredVehicles
+                if (vehicles.size > 1 && uiState.rideBookingStatus == "NONE") {
+                    // Slide / Carousel for multiple matched drivers traveling along the same corridor
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
+                    ) {
+                        items(vehicles, key = { it.id }) { v ->
+                            Box(modifier = Modifier.fillParentMaxWidth(0.92f)) {
+                                MatchedRouteDriverCard(
+                                    vehicle = v,
+                                    onBookClick = {
+                                        viewModel.bookSelectedVehicle(v, userName, userPhone)
+                                    }
+                                )
+                            }
                         }
-                    )
+                    }
+                } else {
+                    val matchedVehicle = uiState.selectedVehicle ?: vehicles.firstOrNull()
+                    if (matchedVehicle != null && uiState.rideBookingStatus == "NONE") {
+                        MatchedRouteDriverCard(
+                            vehicle = matchedVehicle,
+                            onBookClick = {
+                                viewModel.bookSelectedVehicle(matchedVehicle, userName, userPhone)
+                            }
+                        )
+                    }
                 }
             }
             }
@@ -1696,7 +1733,7 @@ fun RouteVehicleSearchingCard(
 
             // Yellow Progress Bar (Pila line jo aage badte rahta hai)
             LinearProgressIndicator(
-                progress = { (120 - secondsRemaining) / 120f },
+                progress = { (200 - secondsRemaining) / 200f },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp)
@@ -2145,21 +2182,15 @@ fun MatchedRouteDriverCard(
                         maxLines = 1,
                         softWrap = false
                     )
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = Color(0xFFDCFCE7),
-                        modifier = Modifier.padding(top = 1.dp)
-                    ) {
-                        Text(
-                            text = "Save 48%",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF166534),
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                            maxLines = 1,
-                            softWrap = false
-                        )
-                    }
+                    Text(
+                        text = "Save 48%",
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF166534),
+                        modifier = Modifier.padding(top = 1.dp),
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
             }
 

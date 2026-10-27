@@ -52,7 +52,7 @@ data class HomeUiState(
     val allOnlineDrivers: List<RemoteDriver> = emptyList(),
     val poolingFareEstimate: PoolingFareEstimate? = null,
     val isSearchingRouteVehicles: Boolean = false,
-    val routeSearchSecondsRemaining: Int = 120,
+    val routeSearchSecondsRemaining: Int = 200,
     val hasRouteSearchTimedOut: Boolean = false,
     val rideOtp: String = "",
     val liveTripDistanceKm: Double = 0.0,
@@ -137,17 +137,17 @@ class HomeViewModel(
                 bookingError = null,
                 isPersonalRideMode = false,
                 isSearchingRouteVehicles = true,
-                routeSearchSecondsRemaining = 10,
+                routeSearchSecondsRemaining = 200,
                 hasRouteSearchTimedOut = false
             )
         }
         computeRoadDistanceAndPricing(pLat, pLng, dLat, dLng)
         applyRealDriverSearch()
 
-        // 120-second (2 minutes) search countdown: Look for live drivers heading along the passenger's route
+        // 200-second (3:20) search countdown: Look for live drivers heading along the passenger's route
         routeSearchTimerJob = viewModelScope.launch {
             var elapsedSeconds = 0
-            for (sec in 10 downTo 1) {
+            for (sec in 200 downTo 1) {
                 _uiState.update { it.copy(routeSearchSecondsRemaining = sec) }
                 delay(1000L)
                 if (_uiState.value.filteredVehicles.isNotEmpty()) {
@@ -161,7 +161,7 @@ class HomeViewModel(
                     return@launch
                 }
             }
-            // 10s expired with no matching route vehicle: auto-switch to Personal Ride option (Rapido style)!
+            // 200s expired with no matching route vehicle: auto-switch to Personal Ride option (Rapido style)!
             _uiState.update {
                 it.copy(
                     isSearchingRouteVehicles = false,
@@ -293,7 +293,9 @@ class HomeViewModel(
                     val hasPassengerTrip = (pLat != 0.0 && pLng != 0.0 && dLat != 0.0 && dLng != 0.0)
 
                     // A driver can ONLY be a shared pooling vehicle if they have set an active destination route in Supabase
-                    if (routeInfo == null || routeInfo.destLat == 0.0 || routeInfo.destLng == 0.0) {
+                    if (routeInfo == null || routeInfo.destLat == 0.0 || routeInfo.destLng == 0.0 ||
+                        routeInfo.destinationName.isBlank() ||
+                        routeInfo.destinationName.contains("Independent", ignoreCase = true)) {
                         continue
                     }
 
@@ -332,7 +334,7 @@ class HomeViewModel(
                             destLat = destLat,
                             destLng = destLng,
                             routePoints = polylinePoints,
-                            maxCorridorMeters = 1000.0
+                            maxCorridorMeters = 400.0
                         )
                         if (!matchesCorridor) {
                             Log.d(TAG, "Driver ${drv.fullName} destination $destName does not match passenger corridor/direction - excluded.")
