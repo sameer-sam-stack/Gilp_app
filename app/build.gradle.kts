@@ -11,8 +11,8 @@ android {
         applicationId = "com.glip.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 82
-        versionName = "5.39"
+        versionCode = 83
+        versionName = "5.40"
         multiDexEnabled = true
 
         ndk {
