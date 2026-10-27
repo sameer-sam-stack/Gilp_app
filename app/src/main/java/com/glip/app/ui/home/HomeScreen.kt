@@ -1340,7 +1340,7 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        items(vehicles, key = { it.id }) { v ->
+                        items(vehicles, key = { it.vehicleId }) { v ->
                             Box(modifier = Modifier.fillParentMaxWidth(0.92f)) {
                                 MatchedRouteDriverCard(
                                     vehicle = v,
