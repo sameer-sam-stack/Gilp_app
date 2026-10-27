@@ -31,11 +31,13 @@ jobs:
         run: ./gradlew test
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug
+        run: |
+          ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk HAZE.apk
 
       - name: Publish Direct APK Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: "Glip App Latest Build"
-          files: app/build/outputs/apk/debug/app-debug.apk
+          name: "HAZE Latest Release (v1.0.3)"
+          files: HAZE.apk
