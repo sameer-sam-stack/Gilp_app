@@ -388,7 +388,7 @@ fun IntercityTravelScreen(
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "Pickup City (CG)",
+                                                text = "Pickup City",
                                                 fontSize = 11.sp,
                                                 color = Color(0xFF64748B)
                                             )
@@ -458,7 +458,7 @@ fun IntercityTravelScreen(
                                         Spacer(modifier = Modifier.width(12.dp))
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
-                                                text = "Drop City (CG)",
+                                                text = "Drop City",
                                                 fontSize = 11.sp,
                                                 color = Color(0xFF64748B)
                                             )

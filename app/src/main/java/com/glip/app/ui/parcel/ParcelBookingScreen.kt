@@ -352,18 +352,33 @@ fun ParcelBookingScreen(
                                     }
                                 }
 
-                                IconButton(
+                                Surface(
                                     onClick = {
                                         selectingLocationMode = "pickup"
                                     },
-                                    modifier = Modifier.size(28.dp)
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color.White,
+                                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                    modifier = Modifier.height(28.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.MyLocation,
-                                        contentDescription = "Select Pickup on Map",
-                                        tint = Color(0xFF15803D),
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.MyLocation,
+                                            contentDescription = "Select Pickup on Map",
+                                            tint = Color(0xFF10B981),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "Map",
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF1E293B)
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -633,18 +648,33 @@ fun ParcelBookingScreen(
                                     }
                                 }
 
-                                IconButton(
+                                Surface(
                                     onClick = {
                                         selectingLocationMode = "drop"
                                     },
-                                    modifier = Modifier.size(28.dp)
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color.White,
+                                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                    modifier = Modifier.height(28.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.MyLocation,
-                                        contentDescription = "Select Drop on Map",
-                                        tint = Color(0xFFDC2626), // Red
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.MyLocation,
+                                            contentDescription = "Select Drop on Map",
+                                            tint = Color(0xFFEF4444),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "Map",
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF1E293B)
+                                        )
+                                    }
                                 }
                             }
                         }

@@ -414,35 +414,33 @@ fun HomeScreen(
                                         }
                                     }
 
-                                    // Map Pin Icon (Opens interactive map picker)
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable {
-                                                activeField = null
-                                                onEditPickup()
-                                            }
-                                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                                    // Map Selector Capsule: [ Green Icon  Map ]
+                                    Surface(
+                                        onClick = {
+                                            activeField = null
+                                            onEditPickup()
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color.White,
+                                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                        modifier = Modifier.height(28.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.MyLocation,
-                                            contentDescription = "Pick Pickup on Map",
-                                            tint = Color(0xFF10B981),
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Surface(
-                                            shape = RoundedCornerShape(12.dp),
-                                            color = Color(0xFFEFF6FF),
-                                            border = BorderStroke(0.8.dp, Color(0xFF93C5FD))
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
+                                            Icon(
+                                                imageVector = Icons.Default.MyLocation,
+                                                contentDescription = "Pick Pickup on Map",
+                                                tint = Color(0xFF10B981),
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
                                             Text(
                                                 text = "Map",
-                                                fontSize = 9.sp,
+                                                fontSize = 11.5.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF1D4ED8),
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                                color = Color(0xFF1E293B)
                                             )
                                         }
                                     }
@@ -519,34 +517,33 @@ fun HomeScreen(
                                         }
                                     }
 
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(8.dp))
-                                            .clickable {
-                                                activeField = null
-                                                onEditDrop()
-                                            }
-                                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                                    // Map Selector Capsule: [ Red Icon  Map ]
+                                    Surface(
+                                        onClick = {
+                                            activeField = null
+                                            onEditDrop()
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color.White,
+                                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                                        modifier = Modifier.height(28.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.MyLocation,
-                                            contentDescription = "Pick Drop on Map",
-                                            tint = Color(0xFFEF4444),
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Surface(
-                                            shape = RoundedCornerShape(12.dp),
-                                            color = Color(0xFFEFF6FF),
-                                            border = BorderStroke(0.8.dp, Color(0xFF93C5FD))
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
+                                            Icon(
+                                                imageVector = Icons.Default.MyLocation,
+                                                contentDescription = "Pick Drop on Map",
+                                                tint = Color(0xFFEF4444),
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
                                             Text(
                                                 text = "Map",
-                                                fontSize = 9.sp,
+                                                fontSize = 11.5.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF1D4ED8),
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                                                color = Color(0xFF1E293B)
                                             )
                                         }
                                     }
