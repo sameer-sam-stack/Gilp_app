@@ -409,6 +409,7 @@ object RideRequestClient {
             }
             val payload = JSONObject().apply {
                 put("status", "CANCELLED")
+                put("cancelled_by", "PASSENGER")
             }
             OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { writer ->
                 writer.write(payload.toString())
