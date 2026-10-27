@@ -326,7 +326,7 @@ private fun RegistrationInputStep(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = if (uiState.isExistingUserMode) "Need a new account? " else "Already have an account? ",
+            text = if (uiState.isExistingUserMode) "Need a new account " else "Already have an account ",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -526,7 +526,7 @@ private fun RegistrationOtpStep(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Didn't receive code? ",
+            text = "Didn't receive code ",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

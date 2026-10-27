@@ -2026,7 +2026,7 @@ fun DriverRatingCard(
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = "How was your ride?",
+                text = "How was your ride",
                 fontSize = 13.5.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF334155)
