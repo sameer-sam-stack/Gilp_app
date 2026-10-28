@@ -33,7 +33,7 @@ object CorridorMatchingHelper {
         destLat: Double = 0.0,
         destLng: Double = 0.0,
         routePoints: List<Pair<Double, Double>>,
-        maxCorridorMeters: Double = 400.0
+        maxCorridorMeters: Double = 1200.0
     ): Boolean {
         // If passenger hasn't set search coordinates yet, allow showing nearby vehicles
         if (pLat == 0.0 || pLng == 0.0 || dLat == 0.0 || dLng == 0.0) return true
@@ -52,10 +52,10 @@ object CorridorMatchingHelper {
         val driverBearing = calculateBearing(dStartLat, dStartLng, dEndLat, dEndLng)
         val bearingDiff = angleDifference(passBearing, driverBearing)
 
-        // Strict angular threshold: Must be traveling within 55 degrees of each other.
+        // Strict angular threshold: Must be traveling within 70 degrees of each other.
         // If passenger is going A->B (e.g. 45°) and driver is going B->A (225°),
         // bearingDiff is 180° -> immediately rejected!
-        if (bearingDiff > 55.0) {
+        if (bearingDiff > 70.0) {
             return false
         }
 
@@ -69,7 +69,7 @@ object CorridorMatchingHelper {
 
         // If driver is already closer to dropoff than to pickup, driver is moving backwards
         // or has already passed the dropoff point.
-        if (distPassengerTrip > 600.0 && (distDriverToDrop + 200.0 < distDriverToPickup)) {
+        if (distPassengerTrip > 800.0 && (distDriverToDrop + 400.0 < distDriverToPickup)) {
             return false
         }
 
@@ -80,8 +80,8 @@ object CorridorMatchingHelper {
         val distDriverDestToPickup = distanceMeters(dEndLat, dEndLng, pLat, pLng)
         val distDriverDestToDrop = distanceMeters(dEndLat, dEndLng, dLat, dLng)
 
-        if (distPassengerTrip > 600.0 && (distDriverDestToPickup < distDriverDestToDrop)) {
-            return false // Driver's destination is near passenger pickup, not forward towards dropoff
+        if (distPassengerTrip > 800.0 && (distDriverDestToPickup + 300.0 < distDriverDestToDrop)) {
+            return false // Driver's destination terminates significantly before passenger dropoff
         }
 
         // =========================================================================

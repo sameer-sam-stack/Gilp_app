@@ -334,7 +334,7 @@ class HomeViewModel(
                             destLat = destLat,
                             destLng = destLng,
                             routePoints = polylinePoints,
-                            maxCorridorMeters = 400.0
+                            maxCorridorMeters = 1200.0
                         )
                         if (!matchesCorridor) {
                             Log.d(TAG, "Driver ${drv.fullName} destination $destName does not match passenger corridor/direction - excluded.")

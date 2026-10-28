@@ -798,40 +798,12 @@ fun HomeScreen(
                         }
                     )
 
-                    // Floating Top-Left Back Button: Takes user 1 step back to Pickup & Drop selection screen
-                    Surface(
-                        onClick = {
-                            viewModel.cancelCurrentRide()
-                            onChangeLocation()
-                        },
-                        shape = CircleShape,
-                        color = Color.White,
-                        shadowElevation = 4.dp,
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(top = 12.dp, start = 12.dp)
-                            .size(34.dp)
-                    ) {
-                        Box(
-                            contentAlignment = Alignment.Center,
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color(0xFF0F172A),
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
                     // Rapido-style Floating "Active Order" Pill (matching media_1792370698775_970cba94.png)
                     if (uiState.rideBookingStatus in listOf("REQUESTED", "ACCEPTED", "IN_PROGRESS")) {
                         Surface(
                             modifier = Modifier
                                 .align(Alignment.TopStart)
-                                .padding(top = 14.dp, start = 54.dp),
+                                .padding(top = 14.dp, start = 14.dp),
                             shape = RoundedCornerShape(topEnd = 24.dp, bottomEnd = 24.dp, topStart = 24.dp, bottomStart = 24.dp),
                             color = Color(0xFF0F172A),
                             border = BorderStroke(2.dp, Color(0xFFF59E0B)),
