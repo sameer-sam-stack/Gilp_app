@@ -34,7 +34,6 @@
     <string name="recenter_map">Recenter Map</string>
     <string name="seats_available">Seats Available</string>
     <string name="sample_fare_est">Est. ₹%s/km</string>
-    <string name="driver_rating">Rating: %s ★</string>
 
     <!-- Services -->
     <string name="service_ride_pool_title">Local Ride Pooling</string>
