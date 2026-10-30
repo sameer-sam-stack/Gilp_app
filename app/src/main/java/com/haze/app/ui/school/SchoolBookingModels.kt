@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.school
+package com.haze.app.ui.school
 
 import android.content.Context
 import org.json.JSONArray
@@ -40,7 +40,7 @@ data class SchoolBookingItem(
  * Local repository to persist and retrieve School Vehicle bookings (Offline Cache).
  */
 object SchoolBookingRepository {
-    private const val PREFS_NAME = "glip_school_vehicle_bookings"
+    private const val PREFS_NAME = "haze_school_vehicle_bookings"
     private const val KEY_BOOKINGS = "school_bookings_json"
 
     fun getBookings(context: Context): List<SchoolBookingItem> {

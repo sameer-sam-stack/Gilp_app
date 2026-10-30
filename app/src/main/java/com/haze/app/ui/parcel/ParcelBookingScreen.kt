@@ -1,4 +1,4 @@
-ï»¿package com.haze.app.ui.parcel
+package com.haze.app.ui.parcel
 
 import androidx.activity.compose.BackHandler
 import android.content.Context
@@ -43,7 +43,7 @@ import com.haze.app.data.supabase.RideRequestClient
 import com.haze.app.ui.home.PlaceAutocompleteDropdown
 import com.haze.app.ui.home.LocationPickerScreen
 import androidx.compose.ui.zIndex
-import com.haze.app.ui.theme.GlipBrandYellow
+import com.haze.app.ui.theme.HazeBrandYellow
 import com.haze.app.util.LocationTracker
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -821,7 +821,7 @@ fun ParcelBookingScreen(
                         .height(54.dp),
                     shape = RoundedCornerShape(27.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GlipBrandYellow,
+                        containerColor = HazeBrandYellow,
                         contentColor = Color(0xFF0F172A)
                     ),
                     elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
@@ -1101,7 +1101,7 @@ fun ParcelBookingScreen(
                         .height(52.dp),
                     shape = RoundedCornerShape(26.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GlipBrandYellow,
+                        containerColor = HazeBrandYellow,
                         contentColor = Color(0xFF0F172A)
                     )
                 ) {
@@ -1144,12 +1144,12 @@ fun ParcelBookingScreen(
                         fontSize = 13.sp,
                         color = Color(0xFF475569)
                     )
-                    Text(text = "â€¢ Flammable liquids, explosives or hazardous materials", fontSize = 13.sp, color = Color(0xFF334155))
-                    Text(text = "â€¢ Firearms, weapons, knives or ammunition", fontSize = 13.sp, color = Color(0xFF334155))
-                    Text(text = "â€¢ Illegal substances, drugs or narcotics", fontSize = 13.sp, color = Color(0xFF334155))
-                    Text(text = "â€¢ Cash, currency notes, coins or bullion", fontSize = 13.sp, color = Color(0xFF334155))
-                    Text(text = "â€¢ Unpackaged fragile glassware or liquids", fontSize = 13.sp, color = Color(0xFF334155))
-                    Text(text = "â€¢ Animals, birds or biological specimens", fontSize = 13.sp, color = Color(0xFF334155))
+                    Text(text = "• Flammable liquids, explosives or hazardous materials", fontSize = 13.sp, color = Color(0xFF334155))
+                    Text(text = "• Firearms, weapons, knives or ammunition", fontSize = 13.sp, color = Color(0xFF334155))
+                    Text(text = "• Illegal substances, drugs or narcotics", fontSize = 13.sp, color = Color(0xFF334155))
+                    Text(text = "• Cash, currency notes, coins or bullion", fontSize = 13.sp, color = Color(0xFF334155))
+                    Text(text = "• Unpackaged fragile glassware or liquids", fontSize = 13.sp, color = Color(0xFF334155))
+                    Text(text = "• Animals, birds or biological specimens", fontSize = 13.sp, color = Color(0xFF334155))
                 }
             },
             confirmButton = {
@@ -1200,7 +1200,7 @@ fun ParcelBookingScreen(
                         onNavigateBack()
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GlipBrandYellow,
+                        containerColor = HazeBrandYellow,
                         contentColor = Color(0xFF0F172A)
                     ),
                     shape = RoundedCornerShape(20.dp),

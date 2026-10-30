@@ -1,4 +1,4 @@
-﻿package com.haze.app.ads
+package com.haze.app.ads
 
 import android.content.Context
 import android.content.Intent
@@ -44,7 +44,7 @@ object AdManager {
     private var isInitialized = false
     private var appContext: Context? = null
 
-    private const val PREFS_NAME = "glip_ads_cache"
+    private const val PREFS_NAME = "haze_ads_cache"
     private const val KEY_PLACEMENTS_JSON = "cached_placements_json"
 
     // Track timestamp of last successful placement sync
@@ -151,7 +151,7 @@ object AdManager {
 
     private fun getDiskCacheFile(imageUrl: String): java.io.File? {
         val dir = appContext?.cacheDir ?: return null
-        val adsDir = java.io.File(dir, "glip_ads_img")
+        val adsDir = java.io.File(dir, "haze_ads_img")
         if (!adsDir.exists()) {
             adsDir.mkdirs()
         }
@@ -216,7 +216,7 @@ object AdManager {
                 readTimeout = 12000
                 doInput = true
                 useCaches = true
-                setRequestProperty("User-Agent", "GlipGo-Android-App/1.0")
+                setRequestProperty("User-Agent", "HazeGo-Android-App/1.0")
             }
             connection.connect()
             val bytes = connection.inputStream.buffered().use { it.readBytes() }
@@ -265,7 +265,7 @@ object AdManager {
                     connectTimeout = 8000
                     readTimeout = 8000
                     doInput = true
-                    setRequestProperty("User-Agent", "GlipGo-Android-App/1.0")
+                    setRequestProperty("User-Agent", "HazeGo-Android-App/1.0")
                 }
                 connection.inputStream.use { input ->
                     file.outputStream().use { output ->

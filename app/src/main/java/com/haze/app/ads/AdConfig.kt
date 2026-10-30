@@ -1,7 +1,7 @@
-﻿package com.haze.app.ads
+package com.haze.app.ads
 
 /**
- * Advertisement System Configuration for Glip_go Android App
+ * Advertisement System Configuration for Haze Android App
  */
 object AdConfig {
     /**

@@ -1,7 +1,7 @@
 # Supabase Future Backend Architecture
 
 ## 1. Overview
-The Glip app is designed with domain repository interfaces (`UserRepository`, `MobilityRepository`) to allow seamless transition to Supabase once live backend services are deployed.
+The Haze app is designed with domain repository interfaces (`UserRepository`, `MobilityRepository`) to allow seamless transition to Supabase once live backend services are deployed.
 
 ## 2. Recommended Database Schema
 

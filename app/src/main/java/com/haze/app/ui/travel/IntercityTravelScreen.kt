@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.travel
+package com.haze.app.ui.travel
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -26,7 +26,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.haze.app.domain.model.UserProfile
-import com.haze.app.ui.theme.GlipBrandYellow
+import com.haze.app.ui.theme.HazeBrandYellow
 
 data class BusItem(
     val id: String,
@@ -167,7 +167,7 @@ fun IntercityTravelScreen(
                                     color = Color(0xFF0F172A)
                                 )
                                 Text(
-                                    text = "₹${selectedBus!!.price}",
+                                    text = "?${selectedBus!!.price}",
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF15803D)
@@ -325,13 +325,13 @@ fun IntercityTravelScreen(
                             .height(54.dp),
                         shape = RoundedCornerShape(27.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = GlipBrandYellow,
+                            containerColor = HazeBrandYellow,
                             contentColor = Color(0xFF0F172A)
                         ),
                         elevation = ButtonDefaults.buttonElevation(2.dp)
                     ) {
                         Text(
-                            text = "Book Ticket • ₹${selectedBus!!.price}",
+                            text = "Book Ticket � ?${selectedBus!!.price}",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF0F172A)
@@ -489,7 +489,7 @@ fun IntercityTravelScreen(
                                         .height(50.dp),
                                     shape = RoundedCornerShape(25.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = GlipBrandYellow,
+                                        containerColor = HazeBrandYellow,
                                         contentColor = Color(0xFF0F172A)
                                     ),
                                     elevation = ButtonDefaults.buttonElevation(2.dp)
@@ -529,7 +529,7 @@ fun IntercityTravelScreen(
                                     color = Color(0xFF0F172A)
                                 )
                                 Text(
-                                    text = "$pickupCity → $dropCity",
+                                    text = "$pickupCity ? $dropCity",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = Color(0xFF64748B)
@@ -573,7 +573,7 @@ fun IntercityTravelScreen(
                                         }
                                         Column(horizontalAlignment = Alignment.End) {
                                             Text(
-                                                text = "₹${bus.price}",
+                                                text = "?${bus.price}",
                                                 fontSize = 18.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color(0xFF0F172A)
@@ -743,7 +743,7 @@ fun IntercityTravelScreen(
             },
             title = {
                 Text(
-                    text = "Booking Confirmed! 🎉",
+                    text = "Booking Confirmed! ??",
                     fontWeight = FontWeight.Bold,
                     fontSize = 19.sp,
                     color = Color(0xFF0F172A)
@@ -773,7 +773,7 @@ fun IntercityTravelScreen(
                             ) {
                                 Text(text = "Route:", fontSize = 12.sp, color = Color(0xFF64748B))
                                 Text(
-                                    text = "$pickupCity → $dropCity",
+                                    text = "$pickupCity ? $dropCity",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A)
@@ -812,7 +812,7 @@ fun IntercityTravelScreen(
                             ) {
                                 Text(text = "Fare:", fontSize = 12.sp, color = Color(0xFF64748B))
                                 Text(
-                                    text = "₹${confirmedBus!!.price}",
+                                    text = "?${confirmedBus!!.price}",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF15803D)
@@ -829,7 +829,7 @@ fun IntercityTravelScreen(
                         showBookingForm = false
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GlipBrandYellow,
+                        containerColor = HazeBrandYellow,
                         contentColor = Color(0xFF0F172A)
                     ),
                     shape = RoundedCornerShape(20.dp),

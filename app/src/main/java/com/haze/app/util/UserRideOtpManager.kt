@@ -1,4 +1,4 @@
-﻿package com.haze.app.util
+package com.haze.app.util
 
 import android.content.Context
 import kotlin.math.abs
@@ -9,7 +9,7 @@ import kotlin.math.abs
  * This PIN never changes across all rides taken by the user.
  */
 object UserRideOtpManager {
-    private const val PREFS_NAME = "glip_user_ride_otp_prefs"
+    private const val PREFS_NAME = "haze_user_ride_otp_prefs"
     private const val KEY_OTP_PREFIX = "permanent_ride_otp_"
 
     /**

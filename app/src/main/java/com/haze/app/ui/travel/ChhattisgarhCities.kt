@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.travel
+package com.haze.app.ui.travel
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.haze.app.ui.theme.GlipBrandYellow
+import com.haze.app.ui.theme.HazeBrandYellow
 
 val CHHATTISGARH_CITIES = listOf(
     "Raipur",
@@ -175,7 +175,7 @@ fun CitySelectionBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = GlipBrandYellow,
+                    focusedBorderColor = HazeBrandYellow,
                     unfocusedBorderColor = Color(0xFFE2E8F0)
                 )
             )
@@ -198,7 +198,7 @@ fun CitySelectionBottomSheet(
                     val isSelected = city.equals(selectedCity, ignoreCase = true)
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = if (isSelected) GlipBrandYellow else Color(0xFFF1F5F9),
+                        color = if (isSelected) HazeBrandYellow else Color(0xFFF1F5F9),
                         modifier = Modifier.clickable {
                             onCitySelected(city)
                             onDismiss()

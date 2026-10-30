@@ -1,12 +1,12 @@
-﻿package com.haze.app.data.supabase
+package com.haze.app.data.supabase
 
 /**
- * Supabase Backend Configuration for Glip Mobility.
- * Connects Glip_go (Passenger App) with glip_driver_app (Driver App) & Admin Panel.
+ * Supabase Backend Configuration for Haze Mobility.
+ * Connects Haze (Passenger App) with Haze Driver App (Driver App) & Admin Panel.
  */
 object SupabaseConfig {
     /**
-     * Shared Driver & Ride Requests Supabase Project URL (Connects Passenger App directly to Glip Driver App)
+     * Shared Driver & Ride Requests Supabase Project URL (Connects Passenger App directly to Haze Driver App)
      */
     var SUPABASE_URL: String = "https://prolxgzzgsnznhvatnye.supabase.co"
 

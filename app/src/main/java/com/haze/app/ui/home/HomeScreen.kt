@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.home
+package com.haze.app.ui.home
 
 import android.Manifest
 import android.app.Activity
@@ -36,10 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.haze.app.domain.model.Vehicle
 import com.haze.app.domain.model.VehicleCategory
-import com.haze.app.ui.theme.GlipBrandYellow
-import com.haze.app.ui.theme.GlipGreenDark
-import com.haze.app.ui.theme.GlipGreenPrimary
-import com.haze.app.ui.theme.GlipOrangeAccent
+import com.haze.app.ui.theme.HazeBrandYellow
+import com.haze.app.ui.theme.HazeGreenDark
+import com.haze.app.ui.theme.HazeGreenPrimary
+import com.haze.app.ui.theme.HazeOrangeAccent
 import com.haze.app.ads.AdBannerBox
 import com.haze.app.ads.AdConfig
 import com.haze.app.ui.components.RouteLoader
@@ -649,8 +649,8 @@ fun HomeScreen(
                             .height(48.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = GlipBrandYellow,
-                            disabledContainerColor = GlipBrandYellow.copy(alpha = 0.5f),
+                            containerColor = HazeBrandYellow,
+                            disabledContainerColor = HazeBrandYellow.copy(alpha = 0.5f),
                             contentColor = Color(0xFF0F172A),
                             disabledContentColor = Color(0xFF0F172A).copy(alpha = 0.5f)
                         )
@@ -926,7 +926,7 @@ fun HomeScreen(
                                 color = Color(0xFF0F172A)
                             )
                             Text(
-                                text = "${driverVeh?.licensePlateMasked ?: "DL 01"} • ${driverVeh?.modelName ?: "Auto"}",
+                                text = "${driverVeh?.licensePlateMasked ?: "DL 01"} � ${driverVeh?.modelName ?: "Auto"}",
                                 fontSize = 12.sp,
                                 color = Color(0xFF64748B)
                             )
@@ -935,7 +935,7 @@ fun HomeScreen(
                         // Call Driver Button
                         Surface(
                             shape = CircleShape,
-                            color = GlipGreenPrimary,
+                            color = HazeGreenPrimary,
                             shadowElevation = 2.dp,
                             modifier = Modifier
                                 .size(38.dp)
@@ -1080,7 +1080,7 @@ fun HomeScreen(
                                 border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF86EFAC))
                             ) {
                                 Text(
-                                    text = "Pooled ₹${uiState.liveFareAmount.toInt()}",
+                                    text = "Pooled ?${uiState.liveFareAmount.toInt()}",
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF166534),
@@ -1116,7 +1116,7 @@ fun HomeScreen(
                             val plate = driverVeh?.licensePlateMasked ?: "DL 01"
                             val model = driverVeh?.modelName ?: "Vehicle"
                             Text(
-                                text = "$plate • $model",
+                                text = "$plate � $model",
                                 fontSize = 12.sp,
                                 color = Color(0xFF64748B),
                                 maxLines = 1,
@@ -1131,7 +1131,7 @@ fun HomeScreen(
                             // Call Driver Button
                             Surface(
                                 shape = CircleShape,
-                                color = GlipGreenPrimary,
+                                color = HazeGreenPrimary,
                                 shadowElevation = 1.dp,
                                 modifier = Modifier
                                     .size(34.dp)
@@ -1166,7 +1166,7 @@ fun HomeScreen(
                                 }
                             ) {
                                 Text(
-                                    text = "🚨 SOS",
+                                    text = "?? SOS",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFFDC2626),
@@ -1236,10 +1236,10 @@ fun HomeScreen(
                             .weight(1f)
                             .clickable { viewModel.setPersonalRideMode(false) },
                         shape = RoundedCornerShape(8.dp),
-                        color = if (!isPersonalMode) GlipGreenPrimary.copy(alpha = 0.15f) else Color(0xFFF1F5F9),
+                        color = if (!isPersonalMode) HazeGreenPrimary.copy(alpha = 0.15f) else Color(0xFFF1F5F9),
                         border = androidx.compose.foundation.BorderStroke(
                             1.dp,
-                            if (!isPersonalMode) GlipGreenPrimary else Color(0xFFE2E8F0)
+                            if (!isPersonalMode) HazeGreenPrimary else Color(0xFFE2E8F0)
                         )
                     ) {
                         Row(
@@ -1251,7 +1251,7 @@ fun HomeScreen(
                                 text = "Shared Pooling",
                                 fontSize = 11.sp,
                                 fontWeight = if (!isPersonalMode) FontWeight.Bold else FontWeight.Medium,
-                                color = if (!isPersonalMode) GlipGreenDark else Color(0xFF475569)
+                                color = if (!isPersonalMode) HazeGreenDark else Color(0xFF475569)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
@@ -1468,7 +1468,7 @@ fun PersonalRideOptionsCard(
                         text = "Pooling",
                         fontSize = 10.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GlipGreenPrimary,
+                        color = HazeGreenPrimary,
                         modifier = Modifier.clickable { onSwitchToPooling() }
                     )
                 }
@@ -1543,7 +1543,7 @@ fun PersonalRideOptionsCard(
 
                             // Right: Upfront Fare Amount ONLY
                             Text(
-                                text = "₹${opt.fareAmount}",
+                                text = "?${opt.fareAmount}",
                                 fontSize = 17.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color(0xFF263959),
@@ -1565,7 +1565,7 @@ fun PersonalRideOptionsCard(
                 PersonalVehicleType.CAB -> "CAB"
                 else -> "Ride"
             }
-            val selFare = effectiveSel?.fareAmount?.let { " • ₹$it" } ?: ""
+            val selFare = effectiveSel?.fareAmount?.let { " � ?$it" } ?: ""
 
             Button(
                 onClick = {
@@ -1716,14 +1716,14 @@ fun RouteVehicleSearchingCard(
                         modifier = Modifier
                             .size(7.dp)
                             .clip(CircleShape)
-                            .background(GlipGreenPrimary)
+                            .background(HazeGreenPrimary)
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = "FINDING SHARED VEHICLES",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = GlipGreenDark,
+                        color = HazeGreenDark,
                         letterSpacing = 0.5.sp
                     )
                 }
@@ -1777,7 +1777,7 @@ fun RouteVehicleSearchingCard(
                     )
                     Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = "Skip Wait • Book Personal Ride Now",
+                        text = "Skip Wait � Book Personal Ride Now",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.Black
@@ -1811,7 +1811,7 @@ fun VehicleCard(
     val colorInt = try {
         Color(android.graphics.Color.parseColor(vehicle.routeColorHex))
     } catch (_: Exception) {
-        GlipGreenPrimary
+        HazeGreenPrimary
     }
 
     Card(
@@ -1873,7 +1873,7 @@ fun VehicleCard(
                         modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (vehicle.seatAvailability.availableSeats > 0) GlipGreenDark else GlipOrangeAccent,
+                        color = if (vehicle.seatAvailability.availableSeats > 0) HazeGreenDark else HazeOrangeAccent,
                         fontSize = 8.5.sp
                     )
                 }
@@ -1899,7 +1899,7 @@ fun VehicleCard(
                     color = Color(0xFFEFF6FF)
                 ) {
                     Text(
-                        text = "₹${vehicle.farePerKmEstimate.toInt()}",
+                        text = "?${vehicle.farePerKmEstimate.toInt()}",
                         fontSize = 10.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF1D4ED8),
@@ -2028,7 +2028,7 @@ fun DriverRatingCard(
                     val plate = driver?.licensePlateMasked ?: "DL 01"
                     val catName = driver?.category?.displayName ?: "Vehicle"
                     Text(
-                        text = "$plate • $catName",
+                        text = "$plate � $catName",
                         fontSize = 12.sp,
                         color = Color(0xFF64748B)
                     )
@@ -2139,7 +2139,7 @@ fun MatchedRouteDriverCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
-            // Row 1: Left [Icon + (Title & Route)] | Right [₹Fare + Save Badge]
+            // Row 1: Left [Icon + (Title & Route)] | Right [?Fare + Save Badge]
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -2189,7 +2189,7 @@ fun MatchedRouteDriverCard(
                     modifier = Modifier.padding(start = 8.dp)
                 ) {
                     Text(
-                        text = "₹${vehicle.farePerKmEstimate.toInt()}",
+                        text = "?${vehicle.farePerKmEstimate.toInt()}",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color(0xFF15803D),

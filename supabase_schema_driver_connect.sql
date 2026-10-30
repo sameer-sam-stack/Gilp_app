@@ -1,5 +1,5 @@
 -- ==============================================================================
--- GLIP MOBILITY: SUPABASE COMPLETE DATABASE SCHEMA
+-- HAZE MOBILITY: SUPABASE COMPLETE DATABASE SCHEMA
 -- (Users Authentication, Account Restoration, and Driver Real-time Ride Requests)
 -- Copy & Run this script in your Supabase SQL Editor (https://supabase.com/dashboard)
 -- ==============================================================================

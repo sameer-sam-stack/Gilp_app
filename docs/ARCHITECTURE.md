@@ -1,7 +1,7 @@
-# Glip Architecture Documentation
+# Haze Architecture Documentation
 
 ## 1. Overview
-Glip is architected around clean **MVVM (Model-View-ViewModel)** separation and unidirectional data flow (UDF) powered by Jetpack Compose and Kotlin Coroutines/Flow.
+Haze is architected around clean **MVVM (Model-View-ViewModel)** separation and unidirectional data flow (UDF) powered by Jetpack Compose and Kotlin Coroutines/Flow.
 
 ```
 +-------------------------------------------------------------+
@@ -39,8 +39,8 @@ Glip is architected around clean **MVVM (Model-View-ViewModel)** separation and 
 
 ## 2. Directory Structure
 ```
-app/src/main/java/com/glip/app/
-├── GlipApplication.kt             # Application entry point
+app/src/main/java/com/Haze/app/
+├── HazeApplication.kt             # Application entry point
 ├── MainActivity.kt                # Single Activity host with edge-to-edge support
 ├── navigation/
 │   ├── Screens.kt                 # Sealed routes
@@ -63,7 +63,7 @@ app/src/main/java/com/glip/app/
 │       └── RepositoryImpls.kt     # Concrete repositories
 └── ui/
     ├── theme/
-    │   ├── Color.kt               # Glip Green and Saffron brand colors
+    │   ├── Color.kt               # Haze Green and Saffron brand colors
     │   ├── Type.kt                # Material 3 typography
     │   └── Theme.kt               # Dark/Light MaterialTheme
     ├── components/

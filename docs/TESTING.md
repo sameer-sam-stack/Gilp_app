@@ -1,7 +1,7 @@
-# Glip Testing Documentation
+# Haze Testing Documentation
 
 ## 1. Unit Test Coverage
-Unit tests located at `app/src/test/java/com/glip/app/` verify core business rules without requiring an Android device or emulator:
+Unit tests located at `app/src/test/java/com/Haze/app/` verify core business rules without requiring an Android device or emulator:
 
 ### `ValidationAndOtpTest.kt`
 - Indian mobile number validation (+91, 0, 91, 10-digit formats).
@@ -22,7 +22,7 @@ Unit tests located at `app/src/test/java/com/glip/app/` verify core business rul
 - Simulated dataset validation (ratings, vehicle IDs, non-empty routes, promotions).
 
 ## 2. Manual Verification Checklist
-1. **First Launch**: Shows Glip Registration screen.
+1. **First Launch**: Shows Haze Registration screen.
 2. **Form Validation**: Entering invalid phone numbers highlights error without proceeding.
 3. **Demo OTP**: Clicking "Get Demo OTP" reveals simulated code and countdown.
 4. **Verification**: Entering correct code navigates to Home screen.

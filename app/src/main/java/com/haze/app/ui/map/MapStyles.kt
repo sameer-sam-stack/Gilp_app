@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.map
+package com.haze.app.ui.map
 
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
@@ -7,7 +7,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.views.MapView
 
 /**
- * Modern Map Styles for Glip Go.
+ * Modern Map Styles for Haze Go.
  * Uses official OpenStreetMap (OSM) Mapnik tiles with a modern pastel color filter.
  * 100% Free, NO API KEY REQUIRED, Zero Copyright / Licensing issues.
  */
@@ -15,7 +15,7 @@ object MapStyles {
     /**
      * Official OpenStreetMap tile source (100% Free, no API key required, no watermarks).
      */
-    val GLIP_CLEAN: ITileSource = TileSourceFactory.MAPNIK
+    val HAZE_CLEAN: ITileSource = TileSourceFactory.MAPNIK
 
     /**
      * Applies a modern clean pastel tone filter to standard OSM tiles:
@@ -23,7 +23,7 @@ object MapStyles {
      * - Maintains crisp street name readability.
      * - Completely local GPU filter, zero network cost and no API keys required.
      */
-    fun applyGlipTone(mapView: MapView) {
+    fun applyHazeTone(mapView: MapView) {
         try {
             val matrix = ColorMatrix().apply {
                 // Subtle desaturation (0.78f) turns harsh mapnik colors into soft modern pastel tones

@@ -1,7 +1,7 @@
-# Glip Security and Privacy Guidelines
+# Haze Security and Privacy Guidelines
 
 ## 1. Zero Sensitive Permissions
-The Glip MVP operates strictly without invasive permissions:
+The Haze MVP operates strictly without invasive permissions:
 - **No Background Location**: Demo map relies on simulated corridor coordinates.
 - **No SMS Permissions**: The app does not read or send SMS messages.
 - **No Contact / Camera / Microphone Access**: Privacy-by-design.

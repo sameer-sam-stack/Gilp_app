@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.home
+package com.haze.app.ui.home
 
 import android.app.Activity
 import android.content.Context
@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import com.haze.app.ui.map.MapStyles
-import com.haze.app.ui.theme.GlipGreenPrimary
+import com.haze.app.ui.theme.HazeGreenPrimary
 import com.haze.app.util.LocationTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -211,8 +211,8 @@ fun LocationPickerScreen(
                 Configuration.getInstance().tileFileSystemCacheMaxBytes = 150L * 1024 * 1024
                 Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                 MapView(ctx).apply {
-                    setTileSource(MapStyles.GLIP_CLEAN)
-                    MapStyles.applyGlipTone(this)
+                    setTileSource(MapStyles.HAZE_CLEAN)
+                    MapStyles.applyHazeTone(this)
                     zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
                     setMultiTouchControls(true)
                     isTilesScaledToDpi = true
@@ -650,7 +650,7 @@ fun LocationPickerScreen(
                             Icon(
                                 imageVector = Icons.Default.Check,
                                 contentDescription = null,
-                                tint = GlipGreenPrimary,
+                                tint = HazeGreenPrimary,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
@@ -705,7 +705,7 @@ private fun fetchAddressSuggestions(context: Context, query: String): List<Searc
             val encoded = URLEncoder.encode(query, "UTF-8")
             val url = URL("https://nominatim.openstreetmap.org/search?format=json&q=$encoded&countrycodes=in&limit=5&addressdetails=1")
             val conn = url.openConnection() as HttpURLConnection
-            conn.setRequestProperty("User-Agent", "GlipGoApp/1.0 (contact@glipgo.com)")
+            conn.setRequestProperty("User-Agent", "HazeGoApp/1.0 (contact@hazego.com)")
             conn.connectTimeout = 4000
             conn.readTimeout = 4000
             if (conn.responseCode == 200) {

@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.registration
+package com.haze.app.ui.registration
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -53,8 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.haze.app.ui.components.HazeBrandHeader
-import com.haze.app.ui.theme.GlipGreenPrimary
-import com.haze.app.ui.theme.GlipOrangeAccent
+import com.haze.app.ui.theme.HazeGreenPrimary
+import com.haze.app.ui.theme.HazeOrangeAccent
 
 @Composable
 fun RegistrationScreen(
@@ -112,7 +112,7 @@ fun RegistrationScreen(
 }
 
 /**
- * Step 1: Input Page (Glip Logo, Name + Phone OR Phone Only if already an account)
+ * Step 1: Input Page (Haze Logo, Name + Phone OR Phone Only if already an account)
  */
 @Composable
 private fun RegistrationInputStep(
@@ -182,7 +182,7 @@ private fun RegistrationInputStep(
                 label = { Text("Full Name") },
                 placeholder = { Text("e.g. Ramesh Kumar") },
                 leadingIcon = {
-                    Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = GlipGreenPrimary)
+                    Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = HazeGreenPrimary)
                 },
                 isError = uiState.fullNameError != null,
                 supportingText = {
@@ -216,7 +216,7 @@ private fun RegistrationInputStep(
             )
         },
         leadingIcon = {
-            Icon(imageVector = Icons.Default.Phone, contentDescription = null, tint = GlipGreenPrimary)
+            Icon(imageVector = Icons.Default.Phone, contentDescription = null, tint = HazeGreenPrimary)
         },
         isError = uiState.phoneError != null,
         supportingText = {
@@ -299,7 +299,7 @@ private fun RegistrationInputStep(
             .height(52.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = GlipGreenPrimary
+            containerColor = HazeGreenPrimary
         )
     ) {
         if (uiState.isLoading) {
@@ -335,7 +335,7 @@ private fun RegistrationInputStep(
             text = if (uiState.isExistingUserMode) "Register" else "Log In",
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
-            color = GlipOrangeAccent,
+            color = HazeOrangeAccent,
             modifier = Modifier.clickable {
                 viewModel.toggleExistingUserMode(!uiState.isExistingUserMode)
             }
@@ -418,7 +418,7 @@ private fun RegistrationOtpStep(
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Edit Number",
-                    tint = GlipGreenPrimary,
+                    tint = HazeGreenPrimary,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -499,7 +499,7 @@ private fun RegistrationOtpStep(
             .height(52.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = GlipGreenPrimary
+            containerColor = HazeGreenPrimary
         )
     ) {
         if (uiState.isLoading) {
@@ -543,7 +543,7 @@ private fun RegistrationOtpStep(
                 text = "Resend OTP",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
-                color = GlipOrangeAccent,
+                color = HazeOrangeAccent,
                 modifier = Modifier.clickable {
                     (context as? Activity)?.let { viewModel.resendOtp(it) }
                 }
@@ -567,12 +567,12 @@ private fun OtpSingleDigitBox(
 ) {
     val borderColor = when {
         isError -> MaterialTheme.colorScheme.error
-        digit.isNotEmpty() -> GlipGreenPrimary
+        digit.isNotEmpty() -> HazeGreenPrimary
         else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
     }
 
     val backgroundColor = if (digit.isNotEmpty()) {
-        GlipGreenPrimary.copy(alpha = 0.06f)
+        HazeGreenPrimary.copy(alpha = 0.06f)
     } else {
         MaterialTheme.colorScheme.surface
     }

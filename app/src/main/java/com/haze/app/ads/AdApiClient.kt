@@ -1,4 +1,4 @@
-﻿package com.haze.app.ads
+package com.haze.app.ads
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -143,7 +143,7 @@ object AdApiClient {
                 setRequestProperty("Accept", "application/json")
                 setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate")
                 setRequestProperty("Pragma", "no-cache")
-                setRequestProperty("User-Agent", "GlipGo-Android-App/1.0")
+                setRequestProperty("User-Agent", "HazeGo-Android-App/1.0")
             }
 
             val responseCode = connection.responseCode
@@ -197,7 +197,7 @@ object AdApiClient {
                 readTimeout = 5000
                 setRequestProperty("Content-Type", "application/json")
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("User-Agent", "GlipGo-Android-App/1.0")
+                setRequestProperty("User-Agent", "HazeGo-Android-App/1.0")
             }
 
             val payload = JSONObject().apply {

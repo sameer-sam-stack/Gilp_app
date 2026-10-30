@@ -1,4 +1,4 @@
-﻿package com.haze.app.navigation
+package com.haze.app.navigation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -31,7 +31,7 @@ import com.haze.app.ui.travel.IntercityTravelScreen
 import com.haze.app.ui.travel.TravelServicesScreen
 
 import androidx.compose.ui.text.font.FontWeight
-import com.haze.app.ui.theme.GlipGreenPrimary
+import com.haze.app.ui.theme.HazeGreenPrimary
 import com.haze.app.ui.components.AppLoadingSplashScreen
 import com.haze.app.data.supabase.RideRequestClient
 import kotlinx.coroutines.delay
@@ -204,7 +204,7 @@ fun AppNavigation(
         Scaffold(
             modifier = modifier.fillMaxSize(),
             bottomBar = {
-                GlipCompactBottomBar(
+                HazeCompactBottomBar(
                     currentTab = currentBottomTab,
                     onTabSelected = { currentBottomTab = it }
                 )
@@ -316,7 +316,7 @@ fun AppNavigation(
  * Compact, robust Bottom Navigation Bar with clear icons & labels that never clips or disappears
  */
 @Composable
-fun GlipCompactBottomBar(
+fun HazeCompactBottomBar(
     currentTab: Int,
     onTabSelected: (Int) -> Unit
 ) {

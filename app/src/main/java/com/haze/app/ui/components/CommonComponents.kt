@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.components
+package com.haze.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.haze.app.ui.theme.GlipGreenPrimary
-import com.haze.app.ui.theme.GlipOrangeAccent
+import com.haze.app.ui.theme.HazeGreenPrimary
+import com.haze.app.ui.theme.HazeOrangeAccent
 
 @Composable
 fun HazeBrandHeader(
@@ -30,7 +30,7 @@ fun HazeBrandHeader(
             modifier = Modifier
                 .size(42.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(GlipGreenPrimary),
+                .background(HazeGreenPrimary),
             contentAlignment = Alignment.Center
         ) {
             Text(

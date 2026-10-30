@@ -1,4 +1,4 @@
-# ProGuard / R8 rules for Glip Go Consumer App
+# ProGuard / R8 rules for Haze Go Consumer App
 # Preserves stack traces, reflection, data models, coroutines, and serialization
 
 # Preserve Line Numbers and Source File Attributes for accurate Play Console Crash Reports
@@ -14,10 +14,10 @@
 }
 
 # Keep Data Models, Remote DTOs & Repositories
--keep class com.glip.app.data.model.** { *; }
--keep class com.glip.app.domain.model.** { *; }
--keep class com.glip.app.data.remote.** { *; }
--keep class com.glip.app.ads.** { *; }
+-keep class com.haze.app.data.model.** { *; }
+-keep class com.haze.app.domain.model.** { *; }
+-keep class com.haze.app.data.remote.** { *; }
+-keep class com.haze.app.ads.** { *; }
 
 # Keep OpenStreetMap (OSMDroid)
 -keep class org.osmdroid.** { *; }

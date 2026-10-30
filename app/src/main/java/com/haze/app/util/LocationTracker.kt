@@ -1,4 +1,4 @@
-﻿package com.haze.app.util
+package com.haze.app.util
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -113,7 +113,7 @@ object LocationTracker {
                 try {
                     val url = URL("https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}&zoom=18&addressdetails=1")
                     val conn = url.openConnection() as HttpURLConnection
-                    conn.setRequestProperty("User-Agent", "GlipGoApp/2.0 (contact@glipgo.com)")
+                    conn.setRequestProperty("User-Agent", "HazeGoApp/2.0 (contact@hazego.com)")
                     conn.connectTimeout = 3500
                     conn.readTimeout = 3500
                     if (conn.responseCode == 200) {
@@ -269,7 +269,7 @@ object LocationTracker {
             try {
                 val url = URL("https://nominatim.openstreetmap.org/reverse?format=json&lat=$latitude&lon=$longitude&zoom=18&addressdetails=1")
                 val conn = url.openConnection() as HttpURLConnection
-                conn.setRequestProperty("User-Agent", "GlipGoApp/1.0 (contact@glipgo.com)")
+                conn.setRequestProperty("User-Agent", "HazeGoApp/1.0 (contact@hazego.com)")
                 conn.connectTimeout = 3500
                 conn.readTimeout = 3500
                 if (conn.responseCode == 200) {

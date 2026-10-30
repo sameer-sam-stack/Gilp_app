@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.travel
+package com.haze.app.ui.travel
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.haze.app.domain.model.UserProfile
-import com.haze.app.ui.theme.GlipBrandYellow
+import com.haze.app.ui.theme.HazeBrandYellow
 import com.haze.app.util.LocationTracker
 
 data class RentalVehicle(
@@ -49,9 +49,9 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         id = "1",
         name = "Toofan",
         seatCapacity = "7 Seat",
-        ratePerKm = "₹14/km",
+        ratePerKm = "?14/km",
         tag = "Popular for CG Tours",
-        features = "AC • Diesel • Luggage Carrier",
+        features = "AC � Diesel � Luggage Carrier",
         icon = Icons.Default.DirectionsCar,
         iconColor = Color(0xFF0284C7),
         badgeColor = Color(0xFFE0F2FE)
@@ -60,9 +60,9 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         id = "2",
         name = "Mini Bus",
         seatCapacity = "20 Seat",
-        ratePerKm = "₹28/km",
+        ratePerKm = "?28/km",
         tag = "Group & Family Specialist",
-        features = "2x2 Pushback • AC • Sound System",
+        features = "2x2 Pushback � AC � Sound System",
         icon = Icons.Default.DirectionsBus,
         iconColor = Color(0xFFEAB308),
         badgeColor = Color(0xFFFEFCE8)
@@ -71,9 +71,9 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         id = "3",
         name = "Tempo Traveller",
         seatCapacity = "14 Seat",
-        ratePerKm = "₹22/km",
+        ratePerKm = "?22/km",
         tag = "Comfortable Long Distance",
-        features = "Recliner Seats • AC • USB Charging",
+        features = "Recliner Seats � AC � USB Charging",
         icon = Icons.Default.AirportShuttle,
         iconColor = Color(0xFF8B5CF6),
         badgeColor = Color(0xFFF5F3FF)
@@ -82,9 +82,9 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         id = "4",
         name = "Innova Crysta",
         seatCapacity = "7 Seat",
-        ratePerKm = "₹18/km",
+        ratePerKm = "?18/km",
         tag = "VIP & Premium Travel",
-        features = "Captain Seats • Dual AC • Smooth Ride",
+        features = "Captain Seats � Dual AC � Smooth Ride",
         icon = Icons.Default.DirectionsCar,
         iconColor = Color(0xFF15803D),
         badgeColor = Color(0xFFDCFCE7)
@@ -93,9 +93,9 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         id = "5",
         name = "Cruiser Trax",
         seatCapacity = "12 Seat",
-        ratePerKm = "₹16/km",
+        ratePerKm = "?16/km",
         tag = "Rugged Touring",
-        features = "Power Steering • High Clearance",
+        features = "Power Steering � High Clearance",
         icon = Icons.Default.AirportShuttle,
         iconColor = Color(0xFFEA580C),
         badgeColor = Color(0xFFFFEDD5)
@@ -104,9 +104,9 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         id = "6",
         name = "Deluxe Coach Bus",
         seatCapacity = "32 Seat",
-        ratePerKm = "₹45/km",
+        ratePerKm = "?45/km",
         tag = "Weddings & Large Events",
-        features = "Air Suspension • Luxury Interiors",
+        features = "Air Suspension � Luxury Interiors",
         icon = Icons.Default.DirectionsBus,
         iconColor = Color(0xFF4F46E5),
         badgeColor = Color(0xFFEEF2FF)
@@ -115,9 +115,9 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         id = "7",
         name = "Bolero Neo",
         seatCapacity = "9 Seat",
-        ratePerKm = "₹13/km",
+        ratePerKm = "?13/km",
         tag = "Economical Outstation",
-        features = "Spacious Cabin • Reliable Engine",
+        features = "Spacious Cabin � Reliable Engine",
         icon = Icons.Default.DirectionsCar,
         iconColor = Color(0xFF0F766E),
         badgeColor = Color(0xFFCCFBF1)
@@ -126,9 +126,9 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         id = "8",
         name = "Ertiga",
         seatCapacity = "6 Seat",
-        ratePerKm = "₹12/km",
+        ratePerKm = "?12/km",
         tag = "Budget Friendly",
-        features = "CNG / Petrol • Compact Group",
+        features = "CNG / Petrol � Compact Group",
         icon = Icons.Default.DirectionsCar,
         iconColor = Color(0xFF64748B),
         badgeColor = Color(0xFFF1F5F9)
@@ -157,7 +157,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF8B5CF6),
         backgroundColor = Color(0xFFF5F3FF),
         description = "Outstation vehicle rental (Toofan, Mini Bus, Innova, Cruiser) across Chhattisgarh.",
-        startingPrice = "From ₹12/km"
+        startingPrice = "From ?12/km"
     ),
     HubServiceItem(
         id = "intercity_travels",
@@ -167,7 +167,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF0284C7),
         backgroundColor = Color(0xFFF0F9FF),
         description = "Express intercity bus routes connecting all major cities across CG.",
-        startingPrice = "From ₹150"
+        startingPrice = "From ?150"
     ),
     HubServiceItem(
         id = "ride_pooling",
@@ -177,7 +177,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF15803D),
         backgroundColor = Color(0xFFF0FDF4),
         description = "Affordable daily commuter shared rides and pooling along common routes.",
-        startingPrice = "From ₹30"
+        startingPrice = "From ?30"
     ),
     HubServiceItem(
         id = "parcel_delivery",
@@ -187,7 +187,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFFEA580C),
         backgroundColor = Color(0xFFFFF7ED),
         description = "Same-day fast doorstep courier & document delivery across the city.",
-        startingPrice = "From ₹40"
+        startingPrice = "From ?40"
     ),
     HubServiceItem(
         id = "school_vehicle",
@@ -207,7 +207,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF0284C7),
         backgroundColor = Color(0xFFF0F9FF),
         description = "Complete deep home cleaning, floor scrubbing & kitchen sanitization.",
-        startingPrice = "From ₹499"
+        startingPrice = "From ?499"
     ),
     HubServiceItem(
         id = "sofa_cleaning",
@@ -217,7 +217,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFFD97706),
         backgroundColor = Color(0xFFFFFBEB),
         description = "Shampooing, fabric stain removal & deep vacuuming for sofas and mattresses.",
-        startingPrice = "From ₹299"
+        startingPrice = "From ?299"
     ),
     HubServiceItem(
         id = "ac_repair",
@@ -227,7 +227,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF0891B2),
         backgroundColor = Color(0xFFECFEFF),
         description = "Gas refill, cooling check, jet pump foam wash & compressor diagnostics.",
-        startingPrice = "From ₹399"
+        startingPrice = "From ?399"
     ),
     HubServiceItem(
         id = "electrician",
@@ -237,7 +237,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFFF59E0B),
         backgroundColor = Color(0xFFFEF3C7),
         description = "Wiring, switchboard, ceiling fan, MCB & home inverter fitting & repair.",
-        startingPrice = "From ₹149"
+        startingPrice = "From ?149"
     ),
     HubServiceItem(
         id = "plumber",
@@ -247,7 +247,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF4F46E5),
         backgroundColor = Color(0xFFEEF2FF),
         description = "Tap leakages, water motor repair, bathroom fittings & pipeline work.",
-        startingPrice = "From ₹149"
+        startingPrice = "From ?149"
     ),
     HubServiceItem(
         id = "carpenter",
@@ -257,7 +257,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFFB45309),
         backgroundColor = Color(0xFFFEF3C7),
         description = "Door locks, cupboard handles, bed assembly, woodwork & hinges.",
-        startingPrice = "From ₹199"
+        startingPrice = "From ?199"
     ),
     HubServiceItem(
         id = "appliance_repair",
@@ -267,7 +267,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF0D9488),
         backgroundColor = Color(0xFFCCFBF1),
         description = "Washing machine, refrigerator, microwave oven & geyser service.",
-        startingPrice = "From ₹249"
+        startingPrice = "From ?249"
     ),
     HubServiceItem(
         id = "painting_polish",
@@ -287,7 +287,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFFDC2626),
         backgroundColor = Color(0xFFFEE2E2),
         description = "Herbal & chemical control for termites, cockroaches, bedbugs & mosquitoes.",
-        startingPrice = "From ₹599"
+        startingPrice = "From ?599"
     ),
     HubServiceItem(
         id = "salon_women",
@@ -297,7 +297,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFFEC4899),
         backgroundColor = Color(0xFFFCE7F3),
         description = "At-home facials, waxing, threading, manicure, pedicure & hair treatments.",
-        startingPrice = "From ₹299"
+        startingPrice = "From ?299"
     ),
     HubServiceItem(
         id = "salon_men",
@@ -307,7 +307,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF475569),
         backgroundColor = Color(0xFFF1F5F9),
         description = "Grooming, haircut, beard styling, head massage & facial at your doorstep.",
-        startingPrice = "From ₹199"
+        startingPrice = "From ?199"
     ),
     HubServiceItem(
         id = "car_wash",
@@ -317,7 +317,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF2563EB),
         backgroundColor = Color(0xFFEFF6FF),
         description = "High pressure water wash, interior vacuuming & dashboard polish.",
-        startingPrice = "From ₹249"
+        startingPrice = "From ?249"
     ),
     HubServiceItem(
         id = "bike_service",
@@ -327,7 +327,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF16A34A),
         backgroundColor = Color(0xFFDCFCE7),
         description = "Doorstep engine oil change, spark plug tuning, brake pad & chain lube.",
-        startingPrice = "From ₹199"
+        startingPrice = "From ?199"
     ),
     HubServiceItem(
         id = "ro_water",
@@ -337,7 +337,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF0284C7),
         backgroundColor = Color(0xFFE0F2FE),
         description = "Water purifier filter change, TDS testing, pump repair & membrane flush.",
-        startingPrice = "From ₹299"
+        startingPrice = "From ?299"
     ),
     HubServiceItem(
         id = "packers_movers",
@@ -357,7 +357,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF334155),
         backgroundColor = Color(0xFFF8FAFC),
         description = "Security camera setup, DVR configuration & mobile remote view setup.",
-        startingPrice = "From ₹499"
+        startingPrice = "From ?499"
     ),
     HubServiceItem(
         id = "laundry_service",
@@ -367,7 +367,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF059669),
         backgroundColor = Color(0xFFD1FAE5),
         description = "Doorstep pickup, steam press, blanket dry cleaning & spotless wash.",
-        startingPrice = "From ₹79"
+        startingPrice = "From ?79"
     ),
     HubServiceItem(
         id = "gardening",
@@ -377,7 +377,7 @@ val ALL_HUB_SERVICES = listOf(
         iconColor = Color(0xFF15803D),
         backgroundColor = Color(0xFFDCFCE7),
         description = "Lawn mowing, tree trimming, seasonal pest spray & garden beautification.",
-        startingPrice = "From ₹349"
+        startingPrice = "From ?349"
     ),
     HubServiceItem(
         id = "masonry_work",
@@ -945,10 +945,10 @@ fun TravelServicesScreen(
                                     val isSelected = seatOpt == selectedSeatFilter
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
-                                        color = if (isSelected) GlipBrandYellow else Color(0xFFF1F5F9),
+                                        color = if (isSelected) HazeBrandYellow else Color(0xFFF1F5F9),
                                         border = BorderStroke(
                                             1.dp,
-                                            if (isSelected) GlipBrandYellow else Color(0xFFE2E8F0)
+                                            if (isSelected) HazeBrandYellow else Color(0xFFE2E8F0)
                                         ),
                                         modifier = Modifier.clickable { selectedSeatFilter = seatOpt }
                                     ) {
@@ -1008,7 +1008,7 @@ fun TravelServicesScreen(
                                     .height(50.dp),
                                 shape = RoundedCornerShape(25.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = GlipBrandYellow,
+                                    containerColor = HazeBrandYellow,
                                     contentColor = Color(0xFF0F172A)
                                 ),
                                 elevation = ButtonDefaults.buttonElevation(2.dp)
@@ -1048,7 +1048,7 @@ fun TravelServicesScreen(
                                 color = Color(0xFF0F172A)
                             )
                             Text(
-                                text = "$pickupCity → $travelCity",
+                                text = "$pickupCity ? $travelCity",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = Color(0xFF64748B)
@@ -1125,7 +1125,7 @@ fun TravelServicesScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "${vehicle.ratePerKm} • ${if (fuelAndMaintenanceIncluded) "Fuel Included" else "Standard Rate"}",
+                                        text = "${vehicle.ratePerKm} � ${if (fuelAndMaintenanceIncluded) "Fuel Included" else "Standard Rate"}",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF15803D)
@@ -1306,7 +1306,7 @@ fun TravelServicesScreen(
                         Toast.makeText(context, "Request received for ${srv.title} in $activeCity! Team will call you shortly.", Toast.LENGTH_LONG).show()
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GlipBrandYellow,
+                        containerColor = HazeBrandYellow,
                         contentColor = Color(0xFF0F172A)
                     ),
                     shape = RoundedCornerShape(20.dp),
@@ -1379,7 +1379,7 @@ fun TravelServicesScreen(
             },
             title = {
                 Text(
-                    text = "Booking Confirmed! 🎉",
+                    text = "Booking Confirmed! ??",
                     fontWeight = FontWeight.Bold,
                     fontSize = 19.sp,
                     color = Color(0xFF0F172A)
@@ -1422,7 +1422,7 @@ fun TravelServicesScreen(
                             ) {
                                 Text(text = "Route:", fontSize = 12.sp, color = Color(0xFF64748B))
                                 Text(
-                                    text = "$pickupCity → $travelCity",
+                                    text = "$pickupCity ? $travelCity",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF0F172A)
@@ -1482,7 +1482,7 @@ fun TravelServicesScreen(
                         showConfirmDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GlipBrandYellow,
+                        containerColor = HazeBrandYellow,
                         contentColor = Color(0xFF0F172A)
                     ),
                     shape = RoundedCornerShape(20.dp),

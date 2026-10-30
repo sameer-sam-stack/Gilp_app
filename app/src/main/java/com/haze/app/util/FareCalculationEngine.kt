@@ -1,4 +1,4 @@
-﻿package com.haze.app.util
+package com.haze.app.util
 
 import android.location.Location
 import com.haze.app.data.supabase.RemoteDriver
@@ -20,27 +20,27 @@ enum class PersonalVehicleType(
         categoryId = "E_RICKSHAW",
         displayName = "E - Rickshaw",
         capacity = 4,
-        perKmRate = 15.0, // Exact user requirement: ₹15 - 1 KM, 4 Seats
+        perKmRate = 15.0, // Exact user requirement: ?15 - 1 KM, 4 Seats
         minFare = 15.0,
-        iconEmoji = "🛺",
+        iconEmoji = "??",
         description = "4-Seater electric rickshaw"
     ),
     AUTO(
         categoryId = "AUTO",
         displayName = "Auto",
         capacity = 5,
-        perKmRate = 20.0, // Exact user requirement: ₹20 - 1 KM, 5 Seats
+        perKmRate = 20.0, // Exact user requirement: ?20 - 1 KM, 5 Seats
         minFare = 20.0,
-        iconEmoji = "🛺",
+        iconEmoji = "??",
         description = "5-Seater auto rickshaw"
     ),
     CAB(
         categoryId = "CAB",
         displayName = "CAB",
         capacity = 4,
-        perKmRate = 25.0, // Exact user requirement: ₹25 - 1 KM, 4 Seats
+        perKmRate = 25.0, // Exact user requirement: ?25 - 1 KM, 4 Seats
         minFare = 25.0,
-        iconEmoji = "🚗",
+        iconEmoji = "??",
         description = "Comfortable 4-wheeler AC cab"
     )
 }
@@ -63,11 +63,11 @@ data class PoolingFareEstimate(
 )
 
 /**
- * Intelligent Dynamic Pricing Engine for Glip Mobility.
+ * Intelligent Dynamic Pricing Engine for Haze Mobility.
  * Enforces exact user per-KM rates:
- * - E-Rickshaw: ₹15/KM (4 Seats)
- * - Auto: ₹20/KM (5 Seats)
- * - Cab: ₹25/KM (4 Seats)
+ * - E-Rickshaw: ?15/KM (4 Seats)
+ * - Auto: ?20/KM (5 Seats)
+ * - Cab: ?25/KM (4 Seats)
  * (Bike has been completely removed)
  *
  * Checks driver vehicle type and live online presence so only genuine available vehicles

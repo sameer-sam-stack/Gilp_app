@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.home
+package com.haze.app.ui.home
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -31,9 +31,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.haze.app.domain.model.Vehicle
 import com.haze.app.domain.model.VehicleCategory
-import com.haze.app.ui.theme.GlipGreenPrimary
+import com.haze.app.ui.theme.HazeGreenPrimary
 import com.haze.app.ui.map.MapStyles
-import com.haze.app.ui.map.GlipLocationOverlay
+import com.haze.app.ui.map.HazeLocationOverlay
 import com.haze.app.util.LocationTracker
 import com.haze.app.util.OsrmRoutingHelper
 import org.osmdroid.config.Configuration
@@ -68,7 +68,7 @@ fun InteractiveDemoMap(
 ) {
     val context = LocalContext.current
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
-    var locationOverlay by remember { mutableStateOf<GlipLocationOverlay?>(null) }
+    var locationOverlay by remember { mutableStateOf<HazeLocationOverlay?>(null) }
     val userCoords by LocationTracker.currentCoordinates.collectAsState()
     var lastZoomedBookingStatus by remember { mutableStateOf("NONE") }
     var lastFramedTripKey by remember { mutableStateOf<String?>(null) }
@@ -203,7 +203,7 @@ fun InteractiveDemoMap(
                     Configuration.getInstance().tileFileSystemCacheMaxBytes = 150L * 1024 * 1024
                     Configuration.getInstance().tileFileSystemCacheTrimBytes = 120L * 1024 * 1024
                     MapView(ctx).apply {
-                        setTileSource(MapStyles.GLIP_CLEAN)
+                        setTileSource(MapStyles.HAZE_CLEAN)
                         if (isBlurred) {
                             MapStyles.applyBlurredTone(this)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -212,7 +212,7 @@ fun InteractiveDemoMap(
                                 } catch (_: Exception) {}
                             }
                         } else {
-                            MapStyles.applyGlipTone(this)
+                            MapStyles.applyHazeTone(this)
                         }
                         zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
                         setMultiTouchControls(isInteractive)
@@ -242,7 +242,7 @@ fun InteractiveDemoMap(
                     // 1. User live location beacon
                     userCoords?.let { (uLat, uLng) ->
                         val geoPoint = GeoPoint(uLat, uLng)
-                        val overlay = locationOverlay ?: GlipLocationOverlay(view, geoPoint).also {
+                        val overlay = locationOverlay ?: HazeLocationOverlay(view, geoPoint).also {
                             locationOverlay = it
                         }
                         overlay.position = geoPoint

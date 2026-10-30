@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.wallet
+package com.haze.app.ui.wallet
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -74,7 +74,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.haze.app.ui.theme.GlipBrandYellow
+import com.haze.app.ui.theme.HazeBrandYellow
 
 data class WalletTransaction(
     val id: String,
@@ -103,7 +103,7 @@ fun WalletScreen(
     }
 
     if (showMyAccountScreen) {
-        // Dedicated "My Account" Screen (MY QR & My Glip ID)
+        // Dedicated "My Account" Screen (MY QR & My Haze ID)
         Column(
             modifier = modifier
                 .fillMaxSize()
@@ -137,7 +137,7 @@ fun WalletScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Main Card: MY QR and My Glip ID
+            // Main Card: MY QR and My Haze ID
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -178,7 +178,7 @@ fun WalletScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ConsumerQrCodeCanvas(
-                            glipId = "haze@564879",
+                            hazeId = "haze@564879",
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -312,7 +312,7 @@ fun WalletScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "₹00",
+                    text = "?00",
                     fontSize = 36.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color(0xFF16A34A)
@@ -696,7 +696,7 @@ fun WalletScreen(
                                 modifier = Modifier.fillMaxSize()
                             ) {
                                 Text(
-                                    text = "₹$amt",
+                                    text = "?$amt",
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = if (isSelected) Color(0xFFB45309) else Color(0xFF334155)
@@ -733,7 +733,7 @@ fun WalletScreen(
                     ),
                     leadingIcon = {
                         Text(
-                            text = "₹",
+                            text = "?",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFEAB308)
@@ -746,7 +746,7 @@ fun WalletScreen(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "Only numbers allowed. Maximum amount is ₹10,000.",
+                    text = "Only numbers allowed. Maximum amount is ?10,000.",
                     fontSize = 12.sp,
                     color = Color(0xFF64748B)
                 )
@@ -776,7 +776,7 @@ fun WalletScreen(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "Add ₹$customAmountText",
+                            text = "Add ?$customAmountText",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -853,7 +853,7 @@ private fun MoneyTransferOptionRow(
 
 @Composable
 fun ConsumerQrCodeCanvas(
-    glipId: String,
+    hazeId: String,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier) {
@@ -893,7 +893,7 @@ fun ConsumerQrCodeCanvas(
                     }
                     r in 10..14 && c in 10..14 -> false
                     else -> {
-                        val h = ((r * 37 + c * 19) xor glipId.hashCode()) * 1103515245 + 12345
+                        val h = ((r * 37 + c * 19) xor hazeId.hashCode()) * 1103515245 + 12345
                         ((h ushr 16) and 1) == 1
                     }
                 }
@@ -908,7 +908,7 @@ fun ConsumerQrCodeCanvas(
             }
         }
 
-        // Center Glip logo badge
+        // Center Haze logo badge
         val centerSize = moduleSize * 5.2f
         drawCircle(
             color = lightColor,
@@ -916,7 +916,7 @@ fun ConsumerQrCodeCanvas(
             center = Offset(sizePx / 2f, sizePx / 2f)
         )
         drawCircle(
-            color = Color(0xFFFFC72C), // Glip Brand Gold Yellow
+            color = Color(0xFFFFC72C), // Haze Brand Gold Yellow
             radius = centerSize / 2.1f,
             center = Offset(sizePx / 2f, sizePx / 2f),
             style = Stroke(width = moduleSize * 0.7f)

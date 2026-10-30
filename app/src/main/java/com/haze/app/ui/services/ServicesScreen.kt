@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.services
+package com.haze.app.ui.services
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import com.haze.app.ui.theme.GlipGreenPrimary
-import com.haze.app.ui.theme.GlipOrangeAccent
+import com.haze.app.ui.theme.HazeGreenPrimary
+import com.haze.app.ui.theme.HazeOrangeAccent
 import com.haze.app.ads.AdBannerBox
 import com.haze.app.ads.AdConfig
 
@@ -78,7 +78,7 @@ fun ServicesScreen(
             ServiceTile(
                 title = "Parcel",
                 icon = Icons.Default.Inventory2,
-                iconColor = GlipOrangeAccent,
+                iconColor = HazeOrangeAccent,
                 backgroundColor = Color(0xFFFFF7ED),
                 onClick = onNavigateToParcelBooking,
                 modifier = Modifier.weight(1f)
@@ -118,7 +118,7 @@ fun ServicesScreen(
             ServiceTile(
                 title = "Personal Vehicle",
                 icon = Icons.Default.DirectionsCar,
-                iconColor = GlipGreenPrimary,
+                iconColor = HazeGreenPrimary,
                 backgroundColor = Color(0xFFF0FDF4),
                 onClick = onNavigateToPersonalVehicle,
                 modifier = Modifier.weight(1f)

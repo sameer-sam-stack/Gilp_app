@@ -1,24 +1,24 @@
-﻿package com.haze.app.ui.theme
+package com.haze.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Glip Brand Signature Palette (Vibrant Gold Yellow & Deep Charcoal Black)
-val GlipBrandYellow = Color(0xFFFFC72C)
-val GlipBrandYellowDark = Color(0xFFE5A800)
-val GlipBrandYellowLight = Color(0xFFFFFBEA)
-val GlipBrandBlack = Color(0xFF18181B)
-val GlipBrandDarkSlate = Color(0xFF27272A)
+// Haze Brand Signature Palette (Vibrant Gold Yellow & Deep Charcoal Black)
+val HazeBrandYellow = Color(0xFFFFC72C)
+val HazeBrandYellowDark = Color(0xFFE5A800)
+val HazeBrandYellowLight = Color(0xFFFFFBEA)
+val HazeBrandBlack = Color(0xFF18181B)
+val HazeBrandDarkSlate = Color(0xFF27272A)
 
 // Primary Brand tokens
-val GlipGreenPrimary = Color(0xFFFFC72C)
-val GlipGreenDark = Color(0xFFD99B00)
-val GlipGreenLight = Color(0xFFFFFBEA)
+val HazeGreenPrimary = Color(0xFFFFC72C)
+val HazeGreenDark = Color(0xFFD99B00)
+val HazeGreenLight = Color(0xFFFFFBEA)
 
-val GlipOrangeAccent = Color(0xFF18181B)   // Jet Black
-val GlipOrangeLight = Color(0xFFF4F4F5)
+val HazeOrangeAccent = Color(0xFF18181B)   // Jet Black
+val HazeOrangeLight = Color(0xFFF4F4F5)
 
-val GlipBlue = Color(0xFF2563EB)
-val GlipBlueLight = Color(0xFFEFF6FF)
+val HazeBlue = Color(0xFF2563EB)
+val HazeBlueLight = Color(0xFFEFF6FF)
 
 val BackgroundLight = Color(0xFFF9FAFB)
 val SurfaceLight = Color(0xFFFFFFFF)

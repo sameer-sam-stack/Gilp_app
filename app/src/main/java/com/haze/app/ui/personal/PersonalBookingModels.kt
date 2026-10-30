@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.personal
+package com.haze.app.ui.personal
 
 import android.content.Context
 import org.json.JSONArray
@@ -31,7 +31,7 @@ data class PersonalBookingItem(
  * No data is sent to Supabase or external servers as per user requirement.
  */
 object PersonalBookingRepository {
-    private const val PREFS_NAME = "glip_personal_vehicle_bookings"
+    private const val PREFS_NAME = "haze_personal_vehicle_bookings"
     private const val KEY_BOOKINGS = "personal_bookings_json"
 
     fun getBookings(context: Context): List<PersonalBookingItem> {

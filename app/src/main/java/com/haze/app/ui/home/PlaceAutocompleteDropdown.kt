@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.home
+package com.haze.app.ui.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -24,7 +24,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.haze.app.data.places.AutocompletePlace
-import com.haze.app.ui.theme.GlipGreenPrimary
+import com.haze.app.ui.theme.HazeGreenPrimary
 
 /**
  * Real-time dropdown showing nearby location suggestions with distances.
@@ -144,7 +144,7 @@ fun PlaceAutocompleteDropdown(
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         strokeWidth = 2.dp,
-                        color = GlipGreenPrimary
+                        color = HazeGreenPrimary
                     )
                     Text(
                         text = "Searching nearby places for \"$searchQuery\"...",

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- GLIP MOBILITY: SCHOOL VEHICLE DEDICATED SUPABASE DATABASE SCHEMA
+-- HAZE MOBILITY: SCHOOL VEHICLE DEDICATED SUPABASE DATABASE SCHEMA
 -- Database Project: https://uugzolriwmbhssgfjbap.supabase.co
 -- Run this script in your Supabase SQL Editor (https://supabase.com/dashboard)
 -- ==============================================================================

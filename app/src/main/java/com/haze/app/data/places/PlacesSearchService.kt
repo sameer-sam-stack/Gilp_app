@@ -1,4 +1,4 @@
-﻿package com.haze.app.data.places
+package com.haze.app.data.places
 
 import android.content.Context
 import android.location.Geocoder
@@ -108,7 +108,7 @@ object PlacesSearchService {
 
         val url = URL(urlBuilder.toString())
         val conn = url.openConnection() as HttpURLConnection
-        conn.setRequestProperty("User-Agent", "GlipTransportationApp/1.0 (contact@glipapp.com)")
+        conn.setRequestProperty("User-Agent", "HazeTransportationApp/1.0 (contact@hazeapp.com)")
         conn.connectTimeout = 5000
         conn.readTimeout = 5000
 
@@ -254,7 +254,7 @@ object PlacesSearchService {
 
         val url = URL(urlBuilder.toString())
         val conn = url.openConnection() as HttpURLConnection
-        conn.setRequestProperty("User-Agent", "GlipTransportationApp/1.0 (contact@glipapp.com)")
+        conn.setRequestProperty("User-Agent", "HazeTransportationApp/1.0 (contact@hazeapp.com)")
         conn.connectTimeout = 4000
         conn.readTimeout = 4000
 

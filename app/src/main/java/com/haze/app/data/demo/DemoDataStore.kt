@@ -1,4 +1,4 @@
-﻿package com.haze.app.data.demo
+package com.haze.app.data.demo
 
 import com.haze.app.domain.model.DriverProfile
 import com.haze.app.domain.model.LocalPromotion
@@ -112,10 +112,10 @@ object DemoDataStore {
             title = "15% Off Fresh Organic Groceries",
             businessName = "Apna Kirana & Fresh Mart",
             category = "Daily Groceries",
-            discountDescription = "Flat 15% discount on orders above ₹499",
+            discountDescription = "Flat 15% discount on orders above ?499",
             distanceDescription = "350 m away along Dhaula Kuan route",
             validUntil = "Valid till 30th of this month",
-            terms = "Show Glip demo token at the billing counter. Demo partner listing."
+            terms = "Show Haze demo token at the billing counter. Demo partner listing."
         ),
         LocalPromotion(
             id = "promo-002",
@@ -124,7 +124,7 @@ object DemoDataStore {
             category = "Food & Snacks",
             discountDescription = "Complimentary hot tea with morning snack platter",
             distanceDescription = "500 m away near Karol Bagh stop",
-            validUntil = "Daily 7:00 AM – 11:00 AM",
+            validUntil = "Daily 7:00 AM � 11:00 AM",
             terms = "Valid for in-store dining. Not redeemable for cash."
         ),
         LocalPromotion(
@@ -139,7 +139,7 @@ object DemoDataStore {
         ),
         LocalPromotion(
             id = "promo-004",
-            title = "Fast Phone Screen Guard & Back Cover ₹99",
+            title = "Fast Phone Screen Guard & Back Cover ?99",
             businessName = "Speed Mobile Care & Accessories",
             category = "Electronics Care",
             discountDescription = "Tempered glass installation and shockproof case bundle",

@@ -1,4 +1,4 @@
-﻿package com.haze.app.util
+package com.haze.app.util
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -62,7 +62,7 @@ object OsrmRoutingHelper {
                     requestMethod = "GET"
                     connectTimeout = 8000
                     readTimeout = 8000
-                    setRequestProperty("User-Agent", "GlipGoApp/2.0 (Android; OpenStreetMap)")
+                    setRequestProperty("User-Agent", "HazeGoApp/2.0 (Android; OpenStreetMap)")
                     setRequestProperty("Accept", "application/json")
                 }
 
@@ -114,7 +114,7 @@ object OsrmRoutingHelper {
                     requestMethod = "GET"
                     connectTimeout = 8000
                     readTimeout = 8000
-                    setRequestProperty("User-Agent", "GlipGoApp/2.0 (Android; OpenStreetMap)")
+                    setRequestProperty("User-Agent", "HazeGoApp/2.0 (Android; OpenStreetMap)")
                     setRequestProperty("Accept", "application/json")
                 }
 

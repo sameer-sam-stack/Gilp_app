@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.theme
+package com.haze.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -8,15 +8,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
-    primary = GlipGreenPrimary,
+    primary = HazeGreenPrimary,
     onPrimary = Color(0xFF18181B),
-    primaryContainer = GlipGreenLight,
+    primaryContainer = HazeGreenLight,
     onPrimaryContainer = Color(0xFF18181B),
-    secondary = GlipOrangeAccent,
+    secondary = HazeOrangeAccent,
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFF4F4F5),
     onSecondaryContainer = Color(0xFF18181B),
-    tertiary = GlipBlue,
+    tertiary = HazeBlue,
     onTertiary = Color.White,
     background = BackgroundLight,
     onBackground = TextPrimary,
@@ -31,11 +31,11 @@ private val LightColorScheme = lightColorScheme(
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = GlipGreenPrimary,
+    primary = HazeGreenPrimary,
     onPrimary = Color.White,
     primaryContainer = Color(0xFF1E3A2B),
     onPrimaryContainer = Color(0xFFA7F3D0),
-    secondary = GlipOrangeAccent,
+    secondary = HazeOrangeAccent,
     onSecondary = Color.White,
     background = Color(0xFF121212),
     onBackground = Color(0xFFE0E0E0),
