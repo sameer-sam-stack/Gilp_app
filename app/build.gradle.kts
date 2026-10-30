@@ -2,17 +2,18 @@ plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
+  alias(libs.plugins.google.services)
 }
 
 android {
-    namespace = "com.glip.app"
+    namespace = "com.haze.app"
     compileSdk = 36
     defaultConfig {
-        applicationId = "com.glip.app"
+        applicationId = "com.haze.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 88
-        versionName = "1.0.3"
+        versionCode = 89
+        versionName = "1.0.4"
         multiDexEnabled = true
 
         ndk {
@@ -72,6 +73,11 @@ kotlin {
 dependencies {
   coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
   implementation("androidx.multidex:multidex:2.0.1")
+
+  // Firebase (BoM & Phone Auth)
+  val firebaseBom = platform(libs.firebase.bom)
+  implementation(firebaseBom)
+  implementation(libs.firebase.auth)
 
   val composeBom = platform(libs.androidx.compose.bom)
   implementation(composeBom)

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "289952186514",
+    "project_id": "haze123",
+    "storage_bucket": "haze123.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:289952186514:android:12596d2726191bfea6664b",
+        "android_client_info": {
+          "package_name": "com.haze.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjwLw7lbVHASzgGOa-OVP8LyxoIfT3uq8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
