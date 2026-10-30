@@ -70,7 +70,8 @@ class RegistrationViewModel(
     }
 
     fun onPhoneNumberChange(phone: String) {
-        val digits = phone.filter { it.isDigit() }.take(10)
+        val sanitized = PhoneValidator.sanitizeIndianMobile(phone)
+        val digits = sanitized.filter { it.isDigit() }.take(10)
         _uiState.update { it.copy(phoneNumber = digits, phoneError = null) }
     }
 
@@ -94,15 +95,16 @@ class RegistrationViewModel(
 
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, phoneError = null, generalMessage = null) }
-            val cleanPhone = PhoneValidator.sanitizeIndianMobile(state.phoneNumber)
+            val rawPhone = PhoneValidator.sanitizeIndianMobile(state.phoneNumber)
+            val e164Phone = "+91$rawPhone"
 
             if (state.isExistingUserMode) {
                 // Check if account exists first
-                val searchResult = UserSupabaseClient.findUserByPhone(cleanPhone)
+                val searchResult = UserSupabaseClient.findUserByPhone(e164Phone)
                 val existingProfile = searchResult.getOrNull()
 
                 val localProfile = userRepository.getUserProfile().firstOrNull()
-                val hasLocal = localProfile != null && (localProfile.phoneNumber == cleanPhone || localProfile.phoneNumber.endsWith(state.phoneNumber))
+                val hasLocal = localProfile != null && (localProfile.phoneNumber == e164Phone || localProfile.phoneNumber == rawPhone || localProfile.phoneNumber.endsWith(rawPhone))
 
                 if (existingProfile == null && !hasLocal) {
                     _uiState.update {
@@ -115,8 +117,8 @@ class RegistrationViewModel(
                 }
             }
 
-            // Send real Firebase Phone OTP SMS to +91XXXXXXXXXX
-            sendFirebaseOtp(activity, cleanPhone)
+            // Send real Firebase Phone OTP SMS to +91XXXXXXXXXX (E.164 format)
+            sendFirebaseOtp(activity, e164Phone)
         }
     }
 
@@ -215,8 +217,9 @@ class RegistrationViewModel(
 
     fun resendOtp(activity: Activity) {
         if (_uiState.value.resendCountdownSeconds > 0) return
-        val cleanPhone = PhoneValidator.sanitizeIndianMobile(_uiState.value.phoneNumber)
-        sendFirebaseOtp(activity, cleanPhone, _uiState.value.resendToken)
+        val rawPhone = PhoneValidator.sanitizeIndianMobile(_uiState.value.phoneNumber)
+        val e164Phone = "+91$rawPhone"
+        sendFirebaseOtp(activity, e164Phone, _uiState.value.resendToken)
     }
 
     fun verifyOtpAndContinue() {
