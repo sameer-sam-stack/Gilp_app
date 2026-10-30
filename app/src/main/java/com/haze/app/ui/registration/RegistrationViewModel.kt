@@ -162,12 +162,29 @@ class RegistrationViewModel(
                 }
             },
             onVerificationFailed = { e ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        phoneError = e.localizedMessage ?: "Failed to send SMS OTP. Please check your network or try again.",
-                        otpError = e.localizedMessage
-                    )
+                val errorMsg = e.localizedMessage ?: ""
+                if (errorMsg.contains("BILLING_NOT_ENABLED", ignoreCase = true) || errorMsg.contains("billing", ignoreCase = true)) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            currentStep = RegistrationStep.OTP_VERIFY,
+                            verificationId = "billing-fallback",
+                            otpDigits = List(6) { "" },
+                            otpInput = "",
+                            otpError = "Firebase Billing not active for real SMS. Use test OTP: 123456",
+                            phoneError = null,
+                            resendCountdownSeconds = 30
+                        )
+                    }
+                    startCountdown()
+                } else {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            phoneError = e.localizedMessage ?: "Failed to send SMS OTP. Please check your network or try again.",
+                            otpError = e.localizedMessage
+                        )
+                    }
                 }
             }
         )
@@ -219,7 +236,17 @@ class RegistrationViewModel(
         if (_uiState.value.resendCountdownSeconds > 0) return
         val rawPhone = PhoneValidator.sanitizeIndianMobile(_uiState.value.phoneNumber)
         val e164Phone = "+91$rawPhone"
-        sendFirebaseOtp(activity, e164Phone, _uiState.value.resendToken)
+        if (_uiState.value.verificationId == "billing-fallback") {
+            _uiState.update {
+                it.copy(
+                    otpError = "Use test OTP: 123456",
+                    resendCountdownSeconds = 30
+                )
+            }
+            startCountdown()
+        } else {
+            sendFirebaseOtp(activity, e164Phone, _uiState.value.resendToken)
+        }
     }
 
     fun verifyOtpAndContinue() {
@@ -234,12 +261,12 @@ class RegistrationViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, otpError = null) }
 
-            // Verify with Firebase Phone Auth
-            val verificationResult = if (state.verificationId.isNotBlank()) {
+            // Verify with Firebase Phone Auth (or test fallback if billing is disabled)
+            val verificationResult = if (state.verificationId.isNotBlank() && state.verificationId != "billing-fallback") {
                 FirebaseAuthHelper.verifyCode(state.verificationId, enteredOtp)
             } else {
                 // Fallback for direct test code 123456
-                if (enteredOtp == "123456") Result.success(true) else Result.failure(Exception("Invalid verification ID"))
+                if (enteredOtp == "123456") Result.success(true) else Result.failure(Exception("Incorrect OTP. For testing, enter 123456"))
             }
 
             if (verificationResult.isFailure && enteredOtp != "123456") {

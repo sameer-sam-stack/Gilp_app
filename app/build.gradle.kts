@@ -12,8 +12,8 @@ android {
         applicationId = "com.haze.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 90
-        versionName = "1.0.5"
+        versionCode = 91
+        versionName = "1.0.6"
         multiDexEnabled = true
 
         ndk {
