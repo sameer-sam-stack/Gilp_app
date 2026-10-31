@@ -1,4 +1,4 @@
-﻿package com.haze.app.ui.travel
+package com.haze.app.ui.travel
 
 import android.widget.Toast
 import kotlinx.coroutines.launch
@@ -454,6 +454,10 @@ val ALL_CITIES_CATALOG = listOf(
 fun TravelServicesScreen(
     userProfile: UserProfile?,
     onNavigateBack: () -> Unit,
+    onNavigateToParcelBooking: () -> Unit = {},
+    onNavigateToSchoolVehicle: () -> Unit = {},
+    onNavigateToDailyRide: () -> Unit = {},
+    onNavigateToIntercityTravel: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -736,23 +740,18 @@ fun TravelServicesScreen(
                                 CompactServiceTile(
                                     item = service,
                                     onClick = {
-                                        val isAvailableService = service.id in listOf(
-                                            "parcel_delivery",
-                                            "school_vehicle",
-                                            "travel_outstation",
-                                            "intercity_travels",
-                                            "ride_pooling"
-                                        )
-                                        if (isAvailableService) {
-                                            if (service.id == "travel_outstation") {
+                                        when (service.id) {
+                                            "parcel_delivery" -> onNavigateToParcelBooking()
+                                            "school_vehicle" -> onNavigateToSchoolVehicle()
+                                            "ride_pooling" -> onNavigateToDailyRide()
+                                            "intercity_travels" -> onNavigateToIntercityTravel()
+                                            "travel_outstation" -> {
                                                 currentViewMode = "VEHICLE_RENTAL"
-                                            } else {
+                                            }
+                                            else -> {
                                                 selectedServiceForBooking = service
                                                 showBookingDialog = true
                                             }
-                                        } else {
-                                            unavailableServiceItem = service
-                                            showUnavailableDialog = true
                                         }
                                     }
                                 )

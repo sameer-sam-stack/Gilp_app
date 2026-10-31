@@ -144,6 +144,23 @@ fun AppNavigation(
         TravelServicesScreen(
             userProfile = userProfile ?: preferences.getUserProfile(),
             onNavigateBack = { isTravelServicesOpen = false },
+            onNavigateToParcelBooking = {
+                isTravelServicesOpen = false
+                isParcelBookingOpen = true
+            },
+            onNavigateToSchoolVehicle = {
+                isTravelServicesOpen = false
+                isSchoolVehicleOpen = true
+            },
+            onNavigateToDailyRide = {
+                isTravelServicesOpen = false
+                currentBottomTab = 0
+                hasConfirmedRoute = false
+            },
+            onNavigateToIntercityTravel = {
+                isTravelServicesOpen = false
+                isIntercityTravelOpen = true
+            },
             modifier = modifier.fillMaxSize()
         )
     } else if (editingLocationMode != null) {

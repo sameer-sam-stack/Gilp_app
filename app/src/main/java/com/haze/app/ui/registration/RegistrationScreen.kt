@@ -364,7 +364,7 @@ private fun RegistrationInputStep(
 
     // Version Badge to eliminate any confusion about installed APK build
     Text(
-        text = "HAZE v1.0.9 (Build 94)",
+        text = "HAZE v1.0.10 (Build 95)",
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
         modifier = Modifier.fillMaxWidth(),
