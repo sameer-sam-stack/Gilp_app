@@ -32,4 +32,11 @@ object SupabaseConfig {
     const val SCHOOL_SUPABASE_URL: String = "https://uugzolriwmbhssgfjbap.supabase.co"
     const val SCHOOL_SUPABASE_ANON_KEY: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV1Z3pvbHJpd21iaHNzZ2ZqYmFwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIzNTYzMTQsImV4cCI6MjEwNzkzMjMxNH0.rVBGf5CDhLSevaXbZrMptk0-w1xU4YOl2UIsr5FzeP8"
     const val TABLE_SCHOOL_BOOKINGS: String = "school_bookings"
+
+    /**
+     * Dedicated Home & Local Services Supabase Database URL & Anon Key (Provider App & Customer Directory)
+     */
+    const val SERVICES_SUPABASE_URL: String = "https://aqksqqjoioztotizzvad.supabase.co"
+    const val SERVICES_SUPABASE_ANON_KEY: String = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxa3NxcWpvaW96dG90aXp6dmFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM0NDQ5NTMsImV4cCI6MjEwOTAyMDk1M30.7TzA1HP9nry7bCpD1m23xX0m7q1ZakReiGxVf5deHeU"
+    const val TABLE_SERVICES_LEADS: String = "leads"
 }

@@ -1,6 +1,7 @@
-package com.haze.app.ui.travel
+ï»¿package com.haze.app.ui.travel
 
 import android.widget.Toast
+import kotlinx.coroutines.launch
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -51,7 +52,7 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         seatCapacity = "7 Seat",
         ratePerKm = "?14/km",
         tag = "Popular for CG Tours",
-        features = "AC • Diesel • Luggage Carrier",
+        features = "AC ï¿½ Diesel ï¿½ Luggage Carrier",
         icon = Icons.Default.DirectionsCar,
         iconColor = Color(0xFF0284C7),
         badgeColor = Color(0xFFE0F2FE)
@@ -62,7 +63,7 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         seatCapacity = "20 Seat",
         ratePerKm = "?28/km",
         tag = "Group & Family Specialist",
-        features = "2x2 Pushback • AC • Sound System",
+        features = "2x2 Pushback ï¿½ AC ï¿½ Sound System",
         icon = Icons.Default.DirectionsBus,
         iconColor = Color(0xFFEAB308),
         badgeColor = Color(0xFFFEFCE8)
@@ -73,7 +74,7 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         seatCapacity = "14 Seat",
         ratePerKm = "?22/km",
         tag = "Comfortable Long Distance",
-        features = "Recliner Seats • AC • USB Charging",
+        features = "Recliner Seats ï¿½ AC ï¿½ USB Charging",
         icon = Icons.Default.AirportShuttle,
         iconColor = Color(0xFF8B5CF6),
         badgeColor = Color(0xFFF5F3FF)
@@ -84,7 +85,7 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         seatCapacity = "7 Seat",
         ratePerKm = "?18/km",
         tag = "VIP & Premium Travel",
-        features = "Captain Seats • Dual AC • Smooth Ride",
+        features = "Captain Seats ï¿½ Dual AC ï¿½ Smooth Ride",
         icon = Icons.Default.DirectionsCar,
         iconColor = Color(0xFF15803D),
         badgeColor = Color(0xFFDCFCE7)
@@ -95,7 +96,7 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         seatCapacity = "12 Seat",
         ratePerKm = "?16/km",
         tag = "Rugged Touring",
-        features = "Power Steering • High Clearance",
+        features = "Power Steering ï¿½ High Clearance",
         icon = Icons.Default.AirportShuttle,
         iconColor = Color(0xFFEA580C),
         badgeColor = Color(0xFFFFEDD5)
@@ -106,7 +107,7 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         seatCapacity = "32 Seat",
         ratePerKm = "?45/km",
         tag = "Weddings & Large Events",
-        features = "Air Suspension • Luxury Interiors",
+        features = "Air Suspension ï¿½ Luxury Interiors",
         icon = Icons.Default.DirectionsBus,
         iconColor = Color(0xFF4F46E5),
         badgeColor = Color(0xFFEEF2FF)
@@ -117,7 +118,7 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         seatCapacity = "9 Seat",
         ratePerKm = "?13/km",
         tag = "Economical Outstation",
-        features = "Spacious Cabin • Reliable Engine",
+        features = "Spacious Cabin ï¿½ Reliable Engine",
         icon = Icons.Default.DirectionsCar,
         iconColor = Color(0xFF0F766E),
         badgeColor = Color(0xFFCCFBF1)
@@ -128,7 +129,7 @@ val SAMPLE_RENTAL_VEHICLES = listOf(
         seatCapacity = "6 Seat",
         ratePerKm = "?12/km",
         tag = "Budget Friendly",
-        features = "CNG / Petrol • Compact Group",
+        features = "CNG / Petrol ï¿½ Compact Group",
         icon = Icons.Default.DirectionsCar,
         iconColor = Color(0xFF64748B),
         badgeColor = Color(0xFFF1F5F9)
@@ -478,6 +479,11 @@ fun TravelServicesScreen(
     var selectedCategory by remember { mutableStateOf("All") }
     var selectedServiceForBooking by remember { mutableStateOf<HubServiceItem?>(null) }
     var showBookingDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    var isSubmittingBooking by remember { mutableStateOf(false) }
+    var activeLeadQuotation by remember { mutableStateOf<com.haze.app.data.supabase.ServiceLeadItem?>(null) }
+    var showQuotationStatusDialog by remember { mutableStateOf(false) }
+    var isRefreshingQuotes by remember { mutableStateOf(false) }
     var showUnavailableDialog by remember { mutableStateOf(false) }
     var unavailableServiceItem by remember { mutableStateOf<HubServiceItem?>(null) }
     var showCityPickerModal by remember { mutableStateOf(false) }
@@ -495,7 +501,9 @@ fun TravelServicesScreen(
     var showConfirmDialog by remember { mutableStateOf(false) }
 
     BackHandler {
-        if (showUnavailableDialog) {
+        if (showQuotationStatusDialog) {
+            showQuotationStatusDialog = false
+        } else if (showUnavailableDialog) {
             showUnavailableDialog = false
             unavailableServiceItem = null
         } else if (showBookingDialog) {
@@ -1125,7 +1133,7 @@ fun TravelServicesScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = "${vehicle.ratePerKm} • ${if (fuelAndMaintenanceIncluded) "Fuel Included" else "Standard Rate"}",
+                                        text = "${vehicle.ratePerKm} ï¿½ ${if (fuelAndMaintenanceIncluded) "Fuel Included" else "Standard Rate"}",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color(0xFF15803D)
@@ -1302,9 +1310,35 @@ fun TravelServicesScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        showBookingDialog = false
-                        Toast.makeText(context, "Request received for ${srv.title} in $activeCity! Team will call you shortly.", Toast.LENGTH_LONG).show()
+                        if (!isSubmittingBooking) {
+                            coroutineScope.launch {
+                                isSubmittingBooking = true
+                                val result = com.haze.app.data.supabase.ServicesSupabaseClient.createServiceLead(
+                                    customerId = userProfile?.userId ?: "cust-${System.currentTimeMillis()}",
+                                    customerName = defaultName,
+                                    customerPhone = defaultPhone,
+                                    serviceCategory = srv.category.lowercase().replace(" ", "_"),
+                                    serviceTitle = srv.title,
+                                    description = srv.description,
+                                    city = activeCity,
+                                    address = activeArea
+                                )
+                                isSubmittingBooking = false
+                                showBookingDialog = false
+                                result.fold(
+                                    onSuccess = { lead ->
+                                        activeLeadQuotation = lead
+                                        showQuotationStatusDialog = true
+                                        Toast.makeText(context, "Request sent to $activeCity providers! Tracking quote...", Toast.LENGTH_SHORT).show()
+                                    },
+                                    onFailure = { err ->
+                                        Toast.makeText(context, "Request received! Team in $activeCity will call you shortly.", Toast.LENGTH_LONG).show()
+                                    }
+                                )
+                            }
+                        }
                     },
+                    enabled = !isSubmittingBooking,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = HazeBrandYellow,
                         contentColor = Color(0xFF0F172A)
@@ -1312,11 +1346,19 @@ fun TravelServicesScreen(
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "Book Service Now",
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF0F172A)
-                    )
+                    if (isSubmittingBooking) {
+                        CircularProgressIndicator(
+                            color = Color(0xFF0F172A),
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = "Book Service Now",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF0F172A)
+                        )
+                    }
                 }
             },
             dismissButton = {
@@ -1331,6 +1373,191 @@ fun TravelServicesScreen(
                         color = Color(0xFF64748B),
                         fontWeight = FontWeight.SemiBold
                     )
+                }
+            }
+        )
+    }
+
+    // Live Quotation & Provider Response Dialog for Customer
+    if (showQuotationStatusDialog && activeLeadQuotation != null) {
+        val lead = activeLeadQuotation!!
+        val isQuoted = lead.status.equals("quoted", ignoreCase = true)
+        val isAccepted = lead.status.equals("accepted", ignoreCase = true)
+
+        AlertDialog(
+            onDismissRequest = {
+                showQuotationStatusDialog = false
+            },
+            icon = {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .clip(CircleShape)
+                        .background(if (isQuoted || isAccepted) Color(0xFFDCFCE7) else Color(0xFFFEF3C7)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (isAccepted) Icons.Default.CheckCircle else if (isQuoted) Icons.Default.Call else Icons.Default.Schedule,
+                        contentDescription = "Status",
+                        tint = if (isQuoted || isAccepted) Color(0xFF15803D) else Color(0xFFB45309),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            },
+            title = {
+                Text(
+                    text = if (isAccepted) "Booking Confirmed! Ã°Å¸Å½â€°" else if (isQuoted) "Quotation Received! Ã°Å¸â€™Â°" else "Request Sent to $activeCity Ã°Å¸â€œÂ¨",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = Color(0xFF0F172A),
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = "Service: ${lead.description.ifBlank { lead.serviceCategory }}",
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1E293B)
+                    )
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFF8FAFC),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("City:", fontSize = 12.5.sp, color = Color(0xFF64748B))
+                                Text(lead.city, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Status:", fontSize = 12.5.sp, color = Color(0xFF64748B))
+                                Text(
+                                    text = when (lead.status.lowercase()) {
+                                        "new" -> "Waiting for Provider Quote"
+                                        "quoted" -> "Quotation Ready"
+                                        "accepted" -> "Accepted & Scheduled"
+                                        else -> lead.status.replaceFirstChar { it.uppercase() }
+                                    },
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isQuoted || isAccepted) Color(0xFF15803D) else Color(0xFFD97706)
+                                )
+                            }
+
+                            if (lead.visitingCharges > 0 || isQuoted) {
+                                Divider(modifier = Modifier.padding(vertical = 4.dp), color = Color(0xFFE2E8F0))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Visiting / Service Charge:", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF0F172A))
+                                    Text("Ã¢â€šÂ¹${lead.visitingCharges.toInt()}", fontSize = 15.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF15803D))
+                                }
+                            }
+
+                            if (!lead.estimatedArrival.isNullOrBlank()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Estimated Arrival:", fontSize = 12.5.sp, color = Color(0xFF64748B))
+                                    Text(lead.estimatedArrival, fontSize = 12.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
+                                }
+                            }
+
+                            if (!lead.providerNotes.isNullOrBlank()) {
+                                Text(
+                                    text = "Provider Note: ${lead.providerNotes}",
+                                    fontSize = 11.5.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
+                        }
+                    }
+
+                    if (!isQuoted && !isAccepted) {
+                        Text(
+                            text = "Providers in $activeCity are reviewing your request. Hit Refresh to check for latest quotations.",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF64748B),
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                if (isQuoted && !isAccepted) {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val acceptRes = com.haze.app.data.supabase.ServicesSupabaseClient.acceptQuotation(lead.id)
+                                acceptRes.onSuccess {
+                                    activeLeadQuotation = lead.copy(status = "accepted")
+                                    Toast.makeText(context, "Quotation accepted! Provider notified.", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF15803D),
+                            contentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Accept Quote & Confirm", fontWeight = FontWeight.Bold)
+                    }
+                } else if (!isAccepted) {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                isRefreshingQuotes = true
+                                val refreshRes = com.haze.app.data.supabase.ServicesSupabaseClient.fetchCustomerLeads(defaultPhone)
+                                isRefreshingQuotes = false
+                                refreshRes.onSuccess { list ->
+                                    val updated = list.firstOrNull { it.id == lead.id }
+                                    if (updated != null) {
+                                        activeLeadQuotation = updated
+                                        if (updated.status.equals("quoted", ignoreCase = true)) {
+                                            Toast.makeText(context, "Quotation received from provider!", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            Toast.makeText(context, "Checked: Still awaiting provider quote.", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        enabled = !isRefreshingQuotes,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = HazeBrandYellow,
+                            contentColor = Color(0xFF0F172A)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(if (isRefreshingQuotes) "Checking..." else "Refresh Quotes", fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showQuotationStatusDialog = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Close", color = Color(0xFF64748B), fontWeight = FontWeight.SemiBold)
                 }
             }
         )
